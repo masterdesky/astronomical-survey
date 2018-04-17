@@ -1,38 +1,98 @@
-#############################################################################################
-#                           Csillész II Problem Solver Program                              #
-#                                                                                           #
-#                           > Conversion of Coordinate Systems                              #
-#                           > Geographical Distances                                        #
-#                           > Sidereal Time/Local Sidereal Time (ST, LST)                   #
-#                           > Calculate Twilights' Correct Datetimes                        #
-#                                                                                           #
-#############################################################################################
-# # LEGENDS                                                                                 #
-# φ: Latitude                                                                               #
-# λ: Longitude                                                                              #
-# H: Local Hour Angle in Degrees
-# t: Local Hour Angle in Hours                                                                       #
-# S: Local Sidereal Time
-# A: Azimuth at Horizontal Coords                                                           #
-# m: Altitude at Horizontal Coords                                                          #
-# δ: Declination at Equatorial Coords
-# α: Right Ascension at Equatorial Coords
+###############################################################################################
+####  ______             __  __  __    __                               ______  ______     ####
+##   /      \           |  \|  \|  \   \_\                              |      \|      \     ##
+##  |  $$$$$$\  _______  \$$| $$| $$  ______    _______  ________        \$$$$$$ \$$$$$$     ##
+##  | $$   \$$ /       \|  \| $$| $$ /      \  /       \|        \        | $$    | $$       ##
+##  | $$      |  $$$$$$$| $$| $$| $$|  $$$$$$\|  $$$$$$$ \$$$$$$$$        | $$    | $$       ##
+##  | $$   __  \$$    \ | $$| $$| $$| $$    $$ \$$    \   /    $$         | $$    | $$       ##
+##  | $$__/  \ _\$$$$$$\| $$| $$| $$| $$$$$$$$ _\$$$$$$\ /  $$$$_        _| $$_  _| $$_      ##
+##   \$$    $$|       $$| $$| $$| $$ \$$     \|       $$|  $$    \      |   $$ \|   $$ \     ##
+##    \$$$$$$  \$$$$$$$  \$$ \$$ \$$  \$$$$$$$ \$$$$$$$  \$$$$$$$$       \$$$$$$ \$$$$$$     ##
+##                                            __                                             ##
+##                                           / _|                                            ##
+##                                          | |_ _ __ ___  _ __ ___                          ##
+##                                          |  _| '__/ _ \| '_ ` _ \                         ##
+##              _______            __       | | | | | (_) | | | | | |                        ##
+##             /       \          /  |      |_| |_|  \___/|_| |_| |_|                        ##
+##             $$$$$$$  | ______  $$ |  ______    ______    ______                           ##
+##             $$ |__$$ |/      \ $$ | /      \  /      \  /      \                          ##
+##             $$    $$/ $$$$$$  |$$ |/$$$$$$  |/$$$$$$  |/$$$$$$  |                         ##
+##             $$$$$$$/  /    $$ |$$ |$$    $$ |$$    $$ |$$    $$ |                         ##
+##             $$ |     /$$$$$$$ |$$ |$$$$$$$$/ $$$$$$$$/ $$$$$$$$/                          ##
+##             $$ |     $$    $$ |$$ |$$       |$$       |$$       |                         ##
+##             $$/       $$$$$$$/ $$/  $$$$$$$/  $$$$$$$/  $$$$$$$/                          ##
+##                                                                                           ##
+##                                                                                           ##
+##        > Conversion Between Coordinate Systems                                            ##
+##        > Calculate Geographical Distances                                                 ##
+##        > Convert Sidereal Time/Local Sidereal Time (ST, LST)                              ##
+##        > Calculate Twilights' Correct Datetimes on Specific Locations                     ##
+####                                                                                       ####
+###############################################################################################
+####                                                                                       ####
+##        USED LEGENDS AND LABELS:                                                           ##
+##                                                                                           ##
+##        φ: Latitude                                                                        ##
+##        λ: Longitude                                                                       ##
+##        H: Local Hour Angle in Degrees                                                     ##
+##        t: Local Hour Angle in Hours                                                       ##
+##        S: Local Sidereal Time                                                             ##
+##        A: Azimuth at Horizontal Coords                                                    ##
+##        m: Altitude at Horizontal Coords                                                   ##
+##        δ: Declination at Equatorial Coords                                                ##
+##        α: Right Ascension at Equatorial Coords                                            ##
+####                                                                                       ####
+###############################################################################################
+
+# If libraries are not installed, decomment and run
+# pip install matplotlib --upgrade
+# pip install numpy --upgrade
 
 import math
-#import matplotlib.pyplot as plt
-#import numpy as np
+import matplotlib.pyplot as plt
+import numpy as np
 
 
-######## UTILITY FUNCTIONS FOR NORMALIZATION ########
+######## CONSTANTS FOR CALCULATIONS ########
 
-# Normalization with bound [0,NonZeroBound]
+# Earth's Radius
+R = 6378e03
+
+# Lenght of 1 Solar Day = 1.002737909350795 Sidereal Days
+# It is Labeled as a dS/dm Quotient
+# We Simply Label It as dS
+dS = 1.002737909350795
+
+# Predefined Coordinates of Some Notable Cities
+Beijing = [39.9042,116.4074]
+Budapest = [47.4979,19.0402]
+Brussels = [50.8503,4.3517]
+Debrecen = [47.5316,21.6273]
+Gyor = [47.6875,17.6504]
+Jerusalem = [31.7683,35.2137]
+Kecskemet = [46.8964,19.6897]
+Mako = [46.2219,20.4809]
+Miskolc = [48.1035,20.7784]
+NewYork = [40.7128,-74.0060]
+Pecs = [46.0727,18.2323]
+Rio = [-22.9068,-43.1729]
+Szeged = [46.2530,20.1414]
+Szekesfehervar = [47.1860,18.4221]
+Tokyo = [35.6895,139.6917]
+Washington = [47.7511,-120.7401]
+Zalaegerszeg = [46.8417,16.8416]
+
+
+######## UTILITY FUNCTIONS ########
+
+# Normalization with Bound [0,NonZeroBound]
 def NormalizeZeroBounded(Parameter, NonZeroBound):
 
     Parameter = Parameter - (int(Parameter / NonZeroBound) * NonZeroBound)
 
     return(Parameter)
 
-# Normalization between to [-π/2,+π/2]
+# Normalization Between to [-π/2,+π/2]
 def NormalizeSymmetricallyBoundedPI(Parameter):
     
     if(Parameter <= -360 or Parameter >= 360):
@@ -52,7 +112,7 @@ def NormalizeSymmetricallyBoundedPI(Parameter):
 
     return(Parameter)
 
-# Normalization between to [-π,+π]
+# Normalization Between to [-π,+π]
 def NormalizeSymmetricallyBoundedPI_2(Parameter):
 
     if(Parameter <= -360 or Parameter >= 360):
@@ -64,12 +124,21 @@ def NormalizeSymmetricallyBoundedPI_2(Parameter):
     return(Parameter)
 
 
+# Convert String Input to Variable for Geographic Distance Calculation
+def ExtractFromVars(ChoosenCity):
+
+    Latitude = ChoosenCity[0]
+    Longitude = ChoosenCity[1]
+
+    return(Latitude, Longitude)
+
+
 ######## 1. CONVERSION OF COORDINATE SYSTEMS ########
 
 # 1. Horizontal to Equatorial I
 def HorToEquI(Latitude, Altitude, Azimuth, LocalSiderealTime=None):
 
-    # Initial data normalization
+    # Initial Data Normalization
     # Latitude: [-π,+π]
     # Altitude: [-π/2,+π/2]
     # Azimuth: [0,2π]
@@ -106,17 +175,19 @@ def HorToEquI(Latitude, Altitude, Azimuth, LocalSiderealTime=None):
     return(Declination, LocalHourAngle, RightAscension)
 
 # 2. Horizontal to Equatorial II
-def HorToEquII(Latitude, Altitude, Azimuth, LocalSiderealTime=None):
+def HorToEquII(Latitude, Altitude, Azimuth, LocalSiderealTime):
 
-    Declination, LocalHourAngle, RightAscension = HorToEquI(Latitude, Altitude, Azimuth, LocalSiderealTime=None)
+    # First Convert Horizontal to Equatorial I Coordinates
+    Declination, LocalHourAngle, RightAscension = HorToEquI(Latitude, Altitude, Azimuth, LocalSiderealTime)
 
+    # Convert Equatorial I to Equatorial II
+    LocalSiderealTime = LocalHourAngle + RightAscension
 
-
-    return()
+    return(Declination, LocalSiderealTime)
 
 
 # 3. Equatorial I to Horizontal
-def EquIToHor(Latitude, RightAscension, Declination, LocalHourAngle, LocalSiderealTime):
+def EquIToHor(Latitude, RightAscension, Declination, LocalSiderealTime, LocalHourAngle):
 
     # Initial data normalization
     # Latitude: [-π,+π]
@@ -147,11 +218,11 @@ def EquIToHor(Latitude, RightAscension, Declination, LocalHourAngle, LocalSidere
     return(Altitude, Azimuth)
 
 # 4. Equatorial I to Equatorial II
-def EquIToEquII(Latitude, RightAscension, Declination, LocalHourAngle):
+def EquIToEquII(RightAscension, LocalHourAngle):
     
     LocalSiderealTime = LocalHourAngle + RightAscension
 
-    return(Latitude, RightAscension, Declination, LocalSiderealTime)
+    return(LocalSiderealTime)
 
 # 5. Equatorial II to Equatorial I
 def EquIIToEquI(RightAscension, LocalSiderealTime):
@@ -169,9 +240,9 @@ def EquIIToEquI(RightAscension, LocalSiderealTime):
 def EquIIToHor(Latitude, RightAscension, Declination, LocalSiderealTime):
 
     RightAscension, LocalHourAngle = EquIIToEquI(RightAscension, LocalSiderealTime)
-    EquIToHor(Latitude, RightAscension, Declination, LocalHourAngle, LocalSiderealTime)
+    Altitude, Azimuth = EquIToHor(Latitude, RightAscension, Declination, LocalHourAngle, LocalSiderealTime)
 
-
+    return(Altitude, Azimuth)
 
 
 ######## 2. GEOGRAPHICAL DISTANCE ########
@@ -191,184 +262,321 @@ def GeogDistCalc(Latitude1, Latitude2, Longitude1, Longitude2):
     # Step 1.: hav_1 = (sin((φ2 - φ1) / 2))^2 + cos(φ1) ⋅ cos(φ2) ⋅ (sin((λ2 - λ1) / 2))^2
     # Step 2.: hav_2 = 2 * atan2(sqrt(hav_1),sqrt(1 − hav_1))
     # Step 3.: d = R * hav_2
-    
-    # Constant : Earth's Radius
-    R = 6378e03
 
     # Step 1
-    a = ((math.sin(math.radians(Latitude2 - Latitude1) / 2))**2 +
+    hav_1 = ((math.sin(math.radians(Latitude2 - Latitude1) / 2))**2 +
         (math.cos(math.radians(Latitude1)) * math.cos(math.radians(Latitude2)) * (math.sin(math.radians(Longitude2 - Longitude1) / 2))**2))
 
     # Step 2
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+    hav_2 = 2 * math.atan2(math.sqrt(hav_1), math.sqrt(1-hav_1))
 
     # Step 3
-    Distance = R * c
+    Distance = R * hav_2
 
-    distmsg = ">>> Calculate geographical distance between\n>>> {0}°,{1}° and\n >>>{2}°,{3}°:\n {4} m"
-    print(distmsg.format(Latitude1,Longitude1,Latitude2,Longitude2, Distance))
+    return(Distance)
+
+
+# Calculate distances between choosen cities
+def GeogDistCityCalc(Latitude1, Latitude2, Longitude1, Longitude2):
+    
+    # Initial data normalization
+    # Latitude: [-π,+π]
+    # Longitude: [0,+2π]
+    Latitude1 = NormalizeSymmetricallyBoundedPI(Latitude1)
+    Latitude2 = NormalizeSymmetricallyBoundedPI(Latitude2)
+    Longitude1 = NormalizeZeroBounded(Longitude1, 360)
+    Longitude2 = NormalizeZeroBounded(Longitude2, 360)
+
+    # Haversine formula:
+    # Step 1.: hav_1 = (sin((φ2 - φ1) / 2))^2 + cos(φ1) ⋅ cos(φ2) ⋅ (sin((λ2 - λ1) / 2))^2
+    # Step 2.: hav_2 = 2 * atan2(sqrt(hav_1),sqrt(1 − hav_1))
+    # Step 3.: d = R * hav_2
+
+    # Step 1
+    hav_1 = ((math.sin(math.radians(Latitude2 - Latitude1) / 2))**2 +
+        (math.cos(math.radians(Latitude1)) * math.cos(math.radians(Latitude2)) * (math.sin(math.radians(Longitude2 - Longitude1) / 2))**2))
+
+    # Step 2
+    hav_2 = 2 * math.atan2(math.sqrt(hav_1), math.sqrt(1-hav_1))
+
+    # Step 3
+    Distance = R * hav_2
+
+    return(Distance)
+
+
+######## 3. GEOGRAPHICAL DISTANCE ########
 
 #########################################
 
 ######## MAIN ########
 
-def __main__():
 
-    print(">>> Csillész II Problem Solver Program v0.5\n")
+print(">>> Csillész II Problem Solver Program v0.8\n")
 
-    while(True):
-        
-        print(">> Please choose a mode!\n")
-        print("(1) Coordinate System Conversion")
-        print("(2) Geographical Distances")
-        print("(3) Local Sidereal Time")
-        print("(4) Datetimes of Twilights\n")
-        print("(Q) Quit Program")
-        
-        # Choose mode by user input
-        mode = input("> Choose a mode and press enter...:")
-        
-        print('\n')
-        
-        if(mode == '1'):
-            while(True):
-                print(">> Coordinate System Conversion")
-                print(">> Please choose which coordinate system conversion you'd like to make!")
-                print("(1) Horizontal to Equatorial I")
-                print("(2) Horizontal to Equatorial II")
-                print("(3) Equatorial I to Horizontal")
-                print("(4) Equatorial I to Equatorial II")
-                print("(5) Equatorial II to Equatorial I")
-                print("(6) Equatorial II to Horizontal")
-                print("(Q) Quit to Main Menu")
-                CoordMode = input("> Choose a number and press enter...:")
+while(True):
+    
+    print(">> MAIN MENU <<")
+    print("(1) Coordinate System Conversion")
+    print("(2) Geographical Distances")
+    print("(3) Local Sidereal Time")
+    print("(4) Datetimes of Twilights")
+    print("(Q) Quit Program\n")
+    
+    # Choose mode by user input
+    mode = input("> Choose a mode and press enter...:")
+    
+    print('\n')
+    
+    if(mode == '1'):
+        while(True):
+            print(">> Coordinate System Conversion")
+            print(">> Please choose which coordinate system conversion you'd like to make!")
+            print("(1) Horizontal to Equatorial I")
+            print("(2) Horizontal to Equatorial II")
+            print("(3) Equatorial I to Horizontal")
+            print("(4) Equatorial I to Equatorial II")
+            print("(5) Equatorial II to Equatorial I")
+            print("(6) Equatorial II to Horizontal")
+            print("(Q) Quit to Main Menu")
+            CoordMode = input("> Choose a number and press enter...:")
 
-                if(CoordMode == '1'):
-                    print(">> Conversion from Horizontal to Equatorial I Coordinate System")
-                    print(">> Give Parameters: ")
-                    Latitude = float(input("> Latitude (φ): "))
-                    Altitude = float(input("> Altitude (m): "))
-                    Azimuth = float(input("> Azimuth (A): "))
-                    LocalSiderealTime = float(input("> Local Sidereal Time (S): "))
+            if(CoordMode == '1'):
+                print(">> Conversion from Horizontal to Equatorial I Coordinate System")
+                print(">> Give Parameters: ")
+                Latitude = float(input("> Latitude (φ): "))
+                Altitude = float(input("> Altitude (m): "))
+                Azimuth = float(input("> Azimuth (A): "))
+                LocalSiderealTime = float(input("> Local Sidereal Time (S): "))
 
-                    Altitud, Azimuth = HorToEquI(Latitude, Altitude, Azimuth, LocalSiderealTime)
+                Declination, LocalHourAngle, RightAscension = HorToEquI(Latitude, Altitude, Azimuth, LocalSiderealTime)
 
-                    # Print Results
-                    print("\n> Calculated parameters:")
-                    
-                    declinmsg = "- Declination (δ): {0}°"
-                    print(declinmsg.format(Declination))
+                # Print Results
+                print("\n> Calculated parameters:")
+                
+                declinmsg = "- Declination (δ): {0}°"
+                hourangmsg = "- Local Hour Angle (t): {0} h"
+                print(declinmsg.format(Declination))
+                print(hourangmsg.format(LocalHourAngle))
+                
+                if(LocalSiderealTime != None):
+                    RAmsg = "- Right Ascension (α):  {0} h"
+                    print(RAmsg.format(RightAscension))
 
-                    hourangmsg = "- Local Hour Angle (t): {0} h"
-                    print(hourangmsg.format(LocalHourAngle))
-                    
-                    if(LocalSiderealTime != None):
-                        RAmsg = "- Right Ascension (α):  {0} h"
-                        print(RAmsg.format(RightAscension))
-                    
-                    print('\n')
+                print('\n')
 
-                elif(CoordMode == '2'):
-                    print(">> Conversion from Horizontal to Equatorial II Coordinate System")
-                    print(">> Give Parameters: ")
-                    Latitude = float(input("> Latitude (φ): "))
-                    Altitude = float(input("> Altitude (m): "))
-                    Azimuth = float(input("> Azimuth (A): "))
-                    LocalSiderealTime = float(input("> Local Sidereal Time (S): "))
+            elif(CoordMode == '2'):
+                print(">> Conversion from Horizontal to Equatorial II Coordinate System")
+                print(">> Give Parameters: ")
+                Latitude = float(input("> Latitude (φ): "))
+                Altitude = float(input("> Altitude (m): "))
+                Azimuth = float(input("> Azimuth (A): "))
+                LocalSiderealTime = float(input("> Local Sidereal Time (S): "))
 
-                    HorToEquII(Latitude, Altitude, Azimuth, LocalSiderealTime)
+                Declination, LocalSiderealTime = HorToEquII(Latitude, Altitude, Azimuth, LocalSiderealTime)
 
-                    
-                elif(CoordMode == '3'):
-                    print(">> Conversion from Equatorial I to Horizontal Coordinate System")
-                    print(">> Give Parameters: ")
-                    Latitude = float(input("> Latitude (φ): "))
-                    RightAscension = float(input("> Right Ascension (α): "))
-                    Declination = float(input("> Declination (δ): "))
-                    LocalHourAngle = float(input("> Local Hour Angle (t): "))
-                    LocalSiderealTime = float(input("> Local Sidereal Time (S): "))
+                # Print Results
+                print("\n> Calculated Parameters:")
+                
+                declinmsg = "- Declination (δ): {0}°"
+                sidermsg = "- Local Sidereal Time (S):  {0}°"
+                print(declinmsg.format(Declination))
+                print(sidermsg.format(LocalSiderealTime))
+                print('\n')
+                
+            elif(CoordMode == '3'):
+                print(">> Conversion from Equatorial I to Horizontal Coordinate System")
+                print(">> Give Parameters: ")
+                Latitude = float(input("> Latitude (φ): "))
+                RightAscension = float(input("> Right Ascension (α): "))
+                Declination = float(input("> Declination (δ): "))
+                LocalSiderealTime = float(input("> Local Sidereal Time (S): "))
+                LocalHourAngle = float(input("> Local Hour Angle (t): "))
 
-                    EquIToHor(Latitude, RightAscension, Declination, LocalHourAngle, LocalSiderealTime)
+                Altitude, Azimuth = EquIToHor(Latitude, RightAscension, Declination, LocalSiderealTime, LocalHourAngle)
 
-                    # Print Results
-                    print("> Calculated Parameters:")
-                    
-                    altitmsg = "- Altitude (m): {0}°"
-                    azimmsg = "- Azimuth (A):  {0}°"
-                    print(altitmsg.format(Altitude))
-                    print(azimmsg.format(Azimuth))
-                    print('\n')
+                # Print Results
+                print("\n> Calculated Parameters:")
+                
+                altitmsg = "- Altitude (m): {0}°"
+                azimmsg = "- Azimuth (A):  {0}°"
+                print(altitmsg.format(Altitude))
+                print(azimmsg.format(Azimuth))
+                print('\n')
 
-                elif(CoordMode == '4'):
-                    print(">> Conversion from Equatorial I to Equatorial II Coordinate System")
-                    print(">> Give Parameters: ")
-                    Latitude = float(input("> Latitude (φ): "))
-                    RightAscension = float(input("> Right Ascension (α): "))
-                    Declination = float(input("> Declination (δ): "))
-                    LocalHourAngle = float(input("> Local Hour Angle in Hours (t): "))
-                    LocalSiderealTime = float(input("> Local Sidereal Time (S): "))
+            elif(CoordMode == '4'):
+                print(">> Conversion from Equatorial I to Equatorial II Coordinate System")
+                print(">> Give Parameters: ")
+                Latitude = float(input("> Latitude (φ): "))
+                RightAscension = float(input("> Right Ascension (α): "))
+                Declination = float(input("> Declination (δ): "))
+                LocalHourAngle = float(input("> Local Hour Angle in Hours (t): "))
+                LocalSiderealTime = float(input("> Local Sidereal Time (S): "))
 
-                    EquIToEquII(Latitude, RightAscension, Declination, LocalHourAngle, LocalSiderealTime)
+                LocalSiderealTime = EquIToEquII(RightAscension, LocalHourAngle)
 
-                    # Print Results
-                    print("> Calculated Parameters:")
-                    
-                    altitmsg = "- Altitude (m): {0}°"
-                    azimmsg = "- Azimuth (A):  {0}°"
-                    print(altitmsg.format(Altitude))
-                    print(azimmsg.format(Azimuth))
-                                        
+                # Print Results
+                print("\n> Calculated Parameters:")
+                
+                latmsg = "- Latitude (φ): {0}°"
+                declinmsg = "- Declination (δ): {0}°"
+                sidermsg = "- Local Sidereal Time (S):  {0}°"
+                print(latmsg.format(Latitude))
+                print(declinmsg.format(Declination))
+                print(sidermsg.format(LocalSiderealTime))
+                print('\n')
+                                    
 
-                elif(CoordMode == '5'):
-                    print(">> Conversion from Equatorial II to Equatorial I")
-                    print(">> Give Parameters: ")
-                    RightAscension = float(input("> Right Ascension (α): "))
-                    LocalSiderealTime = float(input("> Local Sidereal Time (S): "))
+            elif(CoordMode == '5'):
+                print(">> Conversion from Equatorial II to Equatorial I")
+                print(">> Give Parameters: ")
+                RightAscension = float(input("> Right Ascension (α): "))
+                LocalSiderealTime = float(input("> Local Sidereal Time (S): "))
 
-                    EquIIToEquI(RightAscension, LocalSiderealTime)
+                EquIIToEquI(RightAscension, LocalSiderealTime)
 
-                elif(CoordMode == '6'):
-                    print(">> Conversion from Equatorial II to Horizontal")
-                    print(">> Give Parameters: ")
-                    Latitude = float(input("> Latitude (φ): "))
-                    RightAscension = float(input("> Right Ascension (α): "))
-                    Declination = float(input("> Declination (δ): "))
-                    LocalHourAngle = float(input("> Local Hour Angle (t): "))
-                    LocalSiderealTime = float(input("> Local Sidereal Time (S): "))
-                    
-                    EquIIToHor(Latitude, RightAscension, Declination, LocalSiderealTime)
-                    
+                # Print Results
+                print("\n> Calculated parameters:")
+                
+                declinmsg = "- Declination (δ): {0}°"
+                hourangmsg = "- Local Hour Angle (t): {0} h"
+                print(declinmsg.format(Declination))
+                print(hourangmsg.format(LocalHourAngle))
+                
+                if(LocalSiderealTime != None):
+                    RAmsg = "- Right Ascension (α):  {0} h"
+                    print(RAmsg.format(RightAscension))
+                
+                print('\n')
 
+            elif(CoordMode == '6'):
+                print(">> Conversion from Equatorial II to Horizontal")
+                print(">> Give Parameters: ")
+                Latitude = float(input("> Latitude (φ): "))
+                RightAscension = float(input("> Right Ascension (α): "))
+                Declination = float(input("> Declination (δ): "))
+                LocalHourAngle = float(input("> Local Hour Angle (t): "))
+                LocalSiderealTime = float(input("> Local Sidereal Time (S): "))
+                
+                Altitude, Azimuth = EquIIToHor(Latitude, RightAscension, Declination, LocalSiderealTime)
+                
+                # Print Results
+                print("> Calculated Parameters:")
+                
+                altitmsg = "- Altitude (m): {0}°"
+                azimmsg = "- Azimuth (A):  {0}°"
+                print(altitmsg.format(Altitude))
+                print(azimmsg.format(Azimuth))
+                print('\n')
 
-                elif(CoordMode == 'Q'):
-                    break
+            elif(CoordMode == 'Q' or CoordMode == 'q'):
+                break
 
-                else:
-                    print("Invalid option!")
-        
-        elif(mode == '2'):
-            while(True):
-                print(">> Geographical Distance Calculator")
+            else:
+                print("Invalid option! Try again!\n")
+    
+    elif(mode == '2'):
+        while(True):
+            print(">> Geographical Distance Calculator\n")
+            print(">> Please choose a mode you'd like to use!")
+            print("(1) Positional Coordinates from User Input")
+            print("(2) Positional Coordinates of Predefined Cities")
+            print("(Q) Quit to Main Menu")
+            DistMode = input("> Choose a mode and press enter...:")
+
+            print()
+            if(DistMode == '1'):
+                print(">> Calculate Distance from give Coordinates\n")
                 print(">> Give Parameters: ")
                 Latitude1 = float(input("> Latitude #1 (φ1): "))
                 Longitude1 = float(input("> Longitude #1 (λ1): "))
                 Latitude2 = float(input("> Latitude #2 (φ2): "))
                 Longitude2 = float(input("> Longitude #2 (λ2): "))
 
-                GeogDistCalc(Latitude1, Latitude2, Longitude1, Longitude2)
-                break
+                Distance = GeogDistCalc(Latitude1, Latitude2, Longitude1, Longitude2)
+
+                distmsg = "\n>>> The Geographical Distance Between\n>>> {0}°,{1}°\n>>> and\n>>> {2}°,{3}°\n>>> is\n>>> {4} m\n"
+                print(distmsg.format(Latitude1,Longitude1,Latitude2,Longitude2, Distance))
             
-        elif(mode == '3'):
-            while(True):
-                print(">> Local Sidereal Time Calculator")
+            elif(DistMode == '2'):
+                print(">> Calculate Distance of Choosen Predefined Cities\n")
+                print(">> Write the Name on the Input of Two Choosen Cities!")
+                City1 = input("City #1: ")
+                City2 = input("City #2: ")
+
+                # Convert Input String to Usable Variable
+                # Only Predefined Variable Names Could Be Used
+                # Which are Listed from Line 30 (Lists with City Names)
+                VarsCity1 = vars()[(City1)]
+                VarsCity2 = vars()[(City2)]
+
+                Latitude1, Longitude1 = ExtractFromVars(VarsCity1)
+                Latitude2, Longitude2 = ExtractFromVars(VarsCity2)
+
+                Distance = GeogDistCityCalc(Latitude1, Latitude2, Longitude1, Longitude2)
+
+                distmsg = "\n>>> The Geographical Distance Between\n>>> {0} and {1} is\n>>> {2} m\n"
+                print(distmsg.format(City1, City2, Distance))
+            
+            elif(DistMode == 'Q' or DistMode == 'q'):
+                break
+
+            else:
+                print("Invalid option! Try again!")
+        
+    elif(mode == '3'):
+        while(True):
+            print(">> Local Sidereal Time Calculator")
+            print(">> Please choose a mode you'd like to use!")
+            print("(1) Positional Coordinates from User Input")
+            print("(2) Positional Coordinates of Predefined Cities")
+            print("(Q) Quit to Main Menu")
+            DistMode = input("> Choose a mode and press enter...:")
+
+            print()
+            if(DistMode == '1'):
+                print(">> Calculate Distance from give Coordinates\n")
                 print(">> Give Parameters: ")
+                Latitude = float(input("> Latitude (φ): "))
+                Longitude = float(input("> Longitud (λ): "))
 
-        elif(mode == '4'):
-            while(True):
-                print(">> Calculate Datetimes of Twilights at Specific Location")
-                print(">> Give Parameters")
-        else:
-            print("Invalid option!")
+                UnitedDateTime, LocalSiderealTime = SiderealFromInput(Latitude, Longitude, UnitedTime)
 
-######## RUN PROGRAM ########
-__main__()
+                sidmsg = "\n>>> The Local Sidereal Time\n>>> at {0} UT, at location\n>>> {1}°,{2}° is\n>>> {3}"
+                print(distmsg.format(UnitedDateTime, Latitude, Longitude, LocalSiderealTime))
+            
+            elif(DistMode == '2'):
+                print(">> Calculate from the Coordinates of a Predefined City\n")
+                print(">> Write the Name on the Input of the Choosen City!")
+                City = input("City's name: ")
+
+                # Convert Input String to Usable Variable
+                # Only Predefined Variable Names Could Be Used
+                # Which are Listed from Line 30 (Lists with City Names)
+                VarsCity = vars()[(City)]
+
+                Latitude1, Longitude1 = ExtractFromVars(VarsCity1)
+                Latitude2, Longitude2 = ExtractFromVars(VarsCity2)
+
+                Distance = GeogDistCityCalc(Latitude1, Latitude2, Longitude1, Longitude2)
+
+                distmsg = "\n>>> The Geographical Distance Between\n>>> {0} and {1} is\n>>> {2} m\n"
+                print(distmsg.format(City1, City2, Distance))
+
+            elif(DistMode == 'Q' or DistMode == 'q'):
+                break
+
+            else:
+                print("Invalid option! Try again!")
+
+    elif(mode == '4'):
+        while(True):
+            print(">> Calculate Datetimes of Twilights at Specific Location")
+            print(">> Give Parameters")
+
+    elif(mode == 'Q' or mode == 'q'):
+        print("All Rights Reserved to Balage Paliere Co.!")
+        exit()
+        
+    else:
+        print("Invalid option! Try again!")
