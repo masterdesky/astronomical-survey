@@ -100,12 +100,19 @@ def HorToEquI(Latitude, Altitude, Azimuth, LocalSiderealTime=None):
         # Calculate Right Ascension (α)
         # α = S – t
         RightAscension = LocalSiderealTime - LocalHourAngle
+    else:
+        RightAscension = None
 
-    return()
+    return(Declination, LocalHourAngle, RightAscension)
 
 # 2. Horizontal to Equatorial II
-def HorToEquII():
+def HorToEquII(Latitude, Altitude, Azimuth, LocalSiderealTime=None):
 
+    Declination, LocalHourAngle, RightAscension = HorToEquI(Latitude, Altitude, Azimuth, LocalSiderealTime=None)
+
+
+
+    return()
 
 
 # 3. Equatorial I to Horizontal
@@ -207,7 +214,7 @@ def GeogDistCalc(Latitude1, Latitude2, Longitude1, Longitude2):
 
 def __main__():
 
-    print(">>> Csillész II Problem Solver Program v1.0\n")
+    print(">>> Csillész II Problem Solver Program v0.5\n")
 
     while(True):
         
@@ -309,8 +316,8 @@ def __main__():
                     altitmsg = "- Altitude (m): {0}°"
                     azimmsg = "- Azimuth (A):  {0}°"
                     print(altitmsg.format(Altitude))
-                    print(azimmsg.format(Azimuth))                   
-                    
+                    print(azimmsg.format(Azimuth))
+                                        
 
                 elif(CoordMode == '5'):
                     print(">> Conversion from Equatorial II to Equatorial I")
