@@ -53,6 +53,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import datetime
 
+# Current Version of the Csillész II Problem Solver
+ActualVersion = 'v0.9'
 
 ######## CONSTANTS FOR CALCULATIONS ########
 
@@ -68,7 +70,7 @@ dS = 1.002737909350795
 CityDict = {
 "Beijing": [39.9042,116.4074],
 "Budapest": [47.4979,19.0402],
-"Budakesz": [47.5136,18.9278],
+"Budakeszi": [47.5136,18.9278],
 "Budaors": [47.4621,18.9530],
 "Brussels": [50.8503,4.3517],
 "Debrecen": [47.5316,21.6273],
@@ -100,7 +102,10 @@ MonthLengthListLeapYear = [31,28,31,30,31,30,31,31,30,31,30,31]
 # Normalization with Bound [0,NonZeroBound]
 def NormalizeZeroBounded(Parameter, NonZeroBound):
 
-    Parameter = Parameter - (int(Parameter / NonZeroBound) * NonZeroBound)
+    if(Parameter >= 0):
+        Parameter = Parameter - (int(Parameter / NonZeroBound) * NonZeroBound)
+    else:
+        Parameter = Parameter + ((int(Parameter / NonZeroBound) + 1) * NonZeroBound)
 
     return(Parameter)
 
@@ -316,7 +321,8 @@ def CalculateGMST(Longitude, UnitedHours, UnitedMinutes, UnitedDateYear, UnitedD
     # Days = UT days since J2000.0, including parts of a day
     # Could be + or - or 0
     Dwhole = 367 * UnitedDateYear - int(7 * (UnitedDateYear + int((UnitedDateMonth + 9) / 12)) / 4) + int(275 * UnitedDateMonth / 9) + UnitedDateDay - 730531.5
-    Dfrac = (UnitedHours + UnitedMinutes/60)/24
+    # Dfrac = (UnitedHours + UnitedMinutes/60)/24
+    Dfrac = 0 # Now UT = 00:00
     Days = Dwhole + Dfrac
 
     # Number of Julian centuries since J2000.0
@@ -342,7 +348,14 @@ def SiderealFromInput(Longitude, LocalHours, LocalMinutes, DateYear, DateMonth, 
 
     # Calculate United Time
     LocalTime = LocalHours + LocalMinutes/60
-    UnitedTime = LocalTime + int(Longitude/15)
+
+    # Summer/Winter Saving time
+    # Summer: March 26/31 - October 8/14 LT+1
+    # Winter: October 8/14 - March 26/31 LT+0
+    if((DateMonth > 3 and DateMonth < 10) or ((DateMonth == 3 and DateDay >=25) or (DateMonth == 10 and (DateDay >= 8 and DateDay <=14)))):
+        UnitedTime = LocalTime - (int(Longitude/15) + 1)
+    else:
+        UnitedTime = LocalTime - int(Longitude/15)
 
     if(UnitedTime < 0):
         UnitedHours = 24 - int(UnitedTime)
@@ -379,12 +392,21 @@ def SiderealFromInput(Longitude, LocalHours, LocalMinutes, DateYear, DateMonth, 
     # Calculate Greenwich Mean Sidereal Time (GMST)
     S_0 = CalculateGMST(Longitude, UnitedHours, UnitedMinutes, UnitedDateYear, UnitedDateMonth, UnitedDateDay)
 
+    # Greenwich Zero Time for Supervision
+    GreenwichHours = int(S_0)
+    GreenwichMinutes = int((S_0 - GreenwichHours) * 60)
+    GreenwichSeconds = int(((S_0 - GreenwichHours) - GreenwichMinutes) * 60)
+
     # Calculate LST
     LST = S_0 + Longitude/15 + dS * UnitedTime
-    LocalSiderealHours = int(LST)
+
+    # Norm LST
+    LSTNorm = NormalizeZeroBounded(LST, 24)
+
+    LocalSiderealHours = int(LSTNorm)
     LocalSiderealMinutes = int((LocalSiderealHours - LocalSiderealHours) * 60)
 
-    return(LocalSiderealHours, LocalSiderealMinutes, UnitedHours, UnitedMinutes)
+    return(LocalSiderealHours, LocalSiderealMinutes, UnitedHours, UnitedMinutes, GreenwichHours, GreenwichMinutes, GreenwichSeconds)
 
 def SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, DateYear, DateMonth, DateDay):
 
@@ -394,7 +416,7 @@ def SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, DateYear, DateMo
 
     # Calculate United Time
     LocalTime = LocalHours + LocalMinutes/60
-    UnitedTime = LocalTime + int(Longitude/15)
+    UnitedTime = LocalTime - int(Longitude/15)
 
     # 
     if(UnitedTime < 0):
@@ -430,20 +452,49 @@ def SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, DateYear, DateMo
         UnitedDateDay = DateDay
 
     # Calculate Greenwich Mean Sidereal Time (GMST)
-    S_0, UnitedTime = CalculateGMST(Longitude, UnitedHours, UnitedMinutes, UnitedDateYear, UnitedDateMonth, UnitedDateDay)
+    S_0 = CalculateGMST(Longitude, UnitedHours, UnitedMinutes, UnitedDateYear, UnitedDateMonth, UnitedDateDay)
+
+    # Greenwich Zero Time for Supervision
+    GreenwichHours = int(S_0)
+    GreenwichMinutes = int((S_0 - GreenwichHours) * 60)
+    GreenwichSeconds = int(((S_0 - GreenwichHours) * 60 - GreenwichMinutes) * 60)
 
     # Calculate LST
     LST = S_0 + Longitude/15 + dS * UnitedTime
-    LocalSiderealHours = int(LST)
-    LocalSiderealMinutes = int((LocalSiderealHours - LocalSiderealHours) * 60)
+    
+    # Norm LST
+    LSTNorm = NormalizeZeroBounded(LST, 24)
+    print("LSTNorm: ", LSTNorm)
 
-    return(LocalSiderealHours, LocalSiderealMinutes, UnitedHours, UnitedMinutes)
+    LocalSiderealHours = int(LSTNorm)
+    LocalSiderealMinutes = int((LSTNorm - LocalSiderealHours) * 60)
 
-#########################################
+    return(LocalSiderealHours, LocalSiderealMinutes, UnitedHours, UnitedMinutes, GreenwichHours, GreenwichMinutes, GreenwichSeconds)
 
-######## MAIN ########
 
-print(">>> Csillész II Problem Solver Program v0.8.9\n")
+###############################################################################################
+####               ...     ..      ..                    .                                 ####
+##               x*8888x.:*8888: -"888:                 @88>                                 ##
+##              X   48888X `8888H  8888                 %8P      u.    u.                    ##
+##             X8x.  8888X  8888X  !888>        u        .     x@88k u@88c.                  ##
+##             X8888 X8888  88888   "*8%-    us888u.   .@88u  ^"8888""8888"                  ##
+##             '*888!X8888> X8888  xH8>   .@88 "8888" ''888E`   8888  888R                   ##
+##               `?8 `8888  X888X X888>   9888  9888    888E    8888  888R                   ##
+##               -^  '888"  X888  8888>   9888  9888    888E    8888  888R                   ##
+##                dx '88~x. !88~  8888>   9888  9888    888E    8888  888R                   ##
+##              .8888Xf.888x:!    X888X.: 9888  9888    888&   "*88*" 8888"                  ##
+##             :""888":~"888"     `888*"  "888*""888"   R888"    ""   'Y"                    ##
+##                 "~'    "~        ""     ^Y"   ^Y'     ""                                  ##
+####                                                                                       ####
+###############################################################################################
+###  ####                                                                             ####  ###
+  ####  ###                                                                         ###  ####
+        ##                                                                           ##
+  #   ###                                                                             ###   #
+   ####                                                                                 ####
+
+STARTMSG = ">>> Csillész II Problem Solver Program {0}\n"
+print(STARTMSG.format(ActualVersion))
 
 while(True):
 
@@ -456,8 +507,7 @@ while(True):
 
     # Choose mode by user input
     mode = input("> Choose a mode and press enter...:")
-
-    print('\n')
+    print('\n\n')
 
     if(mode == '1'):
         while(True):
@@ -469,7 +519,7 @@ while(True):
             print("(4) Equatorial I to Equatorial II")
             print("(5) Equatorial II to Equatorial I")
             print("(6) Equatorial II to Horizontal")
-            print("(Q) Quit to Main Menu")
+            print("(Q) Quit to Main Menu\n")
             CoordMode = input("> Choose a number and press enter...:")
 
             if(CoordMode == '1'):
@@ -605,6 +655,7 @@ while(True):
             else:
                 print("Invalid option! Try again!\n")
 
+
     elif(mode == '2'):
         while(True):
             print(">> Geographical Distance Calculator\n")
@@ -630,21 +681,25 @@ while(True):
 
             elif(DistMode == '2'):
                 print(">> Calculate Distance of Choosen Predefined Cities\n")
-                print(">> Write the Name on the Input of Two Choosen Cities!")
+                print(">> Write the Names to the Input of Two Choosen Cities!")
+                
                 City1 = input("City #1: ")
-                City2 = input("City #2: ")
 
                 try:
                     Latitude1 = CityDict[City1][0]
                     Longitude1 = CityDict[City1][1]
                 except KeyError:
-                    print("The city, named " + City1 + "is not in the database")
-
+                    print(">>>> ERROR: The city, named \"" + City1 + "\" is not in the database")
+                    break
+                
+                City2 = input("City #2: ")
+                
                 try:
                     Latitude2 = CityDict[City2][0]
                     Longitude2 = CityDict[City2][1]
                 except KeyError:
-                    print("The city, named " + City2 + "is not in the database")
+                    print(">>>> ERROR: The city, named \"" + City2 + "\" is not in the database")
+                    break
 
                 Distance = GeogDistCityCalc(Latitude1, Latitude2, Longitude1, Longitude2)
 
@@ -656,6 +711,7 @@ while(True):
 
             else:
                 print("Invalid option! Try again!")
+
 
     elif(mode == '3'):
         while(True):
@@ -670,6 +726,8 @@ while(True):
             if(DistMode == '1'):
                 print(">> Calculate LST from given Parameters\n")
                 print(">> Give Parameters: ")
+                
+                # Input Positional Parameters
                 Latitude = float(input("> Latitude (φ): "))
                 Longitude = float(input("> Longitude (λ): "))
                 
@@ -679,58 +737,60 @@ while(True):
                     if(DateYear != 0):
                         break
                     else:
-                        print("Year 0 is not defined! Please write another date!\n")
+                        print(">>>> ERROR: Year 0 is not defined! Please write another date!\n")
                 
                 while(True):
                     DateMonth = int(input("> Month: "))
                     if(DateMonth > 0 and DateMonth < 13):
                         break
                     else:
-                        print("Months should be inside [1,12] interval, and should be Integer!\n")
+                        print(">>>> ERROR: Months should be inside [1,12] interval, and should be Integer!\n")
 
                 while(True):
                     DateDay = int(input("> Day: "))
                     if(DateYear%4 == 0 and DateYear%400 != 0):
-                        if(MonthLengthListLeapYear[DateMonth - 1] <= DateDay or DateDay > 0):
+                        if(MonthLengthListLeapYear[DateMonth - 1] >= DateDay and DateDay > 0):
                             break
                         else:
-                            daysmsg = "Days should be inside [1,{0}] interval, and should be Integer!\n"
+                            daysmsg = ">>>> ERROR: Days should be inside [1,{0}] interval, and should be Integer!\n"
                             print(daysmsg.format(MonthLengthListLeapYear[DateMonth - 1]))
                     else:
-                        if(MonthLengthList[DateMonth - 1] <= DateDay or DateDay > 0):
+                        if(MonthLengthList[DateMonth - 1] >= DateDay and DateDay > 0):
                             break
                         else:
-                            daysmsg = "Days should be inside [1,{0}] interval, and should be Integer!\n"
+                            daysmsg = ">>>> ERROR: Days should be inside [1,{0}] interval, and should be Integer!\n"
                             print(daysmsg.format(MonthLengthListLeapYear[DateMonth - 1]))
 
                 while(True):
                     LocalHours = int(input("> Local Hours: "))
-                    if(LocalHours >= 0 or LocalHours <= 23):
+                    if(LocalHours >= 0 and LocalHours <= 23):
                         break
                     else:
-                        print("Hours should be inside [0,23] interval, and should be Integer!\n")
+                        print(">>>> ERROR: Hours should be inside [0,23] interval, and should be Integer!\n")
 
                 while(True):
                     LocalMinutes = int(input("> Local Minutes: "))
-                    if(LocalMinutes >= 0 or LocalMinutes <= 59):
+                    if(LocalMinutes >= 0 and LocalMinutes <= 59):
                         break
                     else:
-                        print("Minutes should be inside [0,59] interval, and should be Integer!\n")
+                        print(">>>> ERROR: Minutes should be inside [0,59] interval, and should be Integer!\n")
 
-                LocalSiderealHours, LocalSiderealMinutes, UnitedHours, UnitedMinutes = SiderealFromInput(Longitude, LocalHours, LocalMinutes, DateYear, DateMonth, DateDay)
+                LocalSiderealHours, LocalSiderealMinutes, UnitedHours, UnitedMinutes, GreenwichHours, GreenwichMinutes, GreenwichSeconds = SiderealFromInput(Longitude, LocalHours, LocalMinutes, DateYear, DateMonth, DateDay)
 
-                sidmsg = "\n>>> The Local Sidereal Time\n>>> at {0}:{1} UT, at location\n>>> {2}°,{3}° is\n>>> {4}:{5}"
-                print(sidmsg.format(UnitedHours, UnitedMinutes, Latitude, Longitude, LocalSiderealHours, LocalSiderealMinutes))
+                sidmsg = "\n>>> The Local Sidereal Time\n>>> at {0}h {1}m UT, at location\n>>> {2}°,{3}° with\n>>> GMST {4}h {5}m {6}s at UT 0h 0m\n>>> is {7}h {8}m\n\n"
+                print(sidmsg.format(UnitedHours, UnitedMinutes, Latitude, Longitude, GreenwichHours, GreenwichMinutes, GreenwichSeconds, LocalSiderealHours, LocalSiderealMinutes))
 
             elif(DistMode == '2'):
                 print(">> Calculate LST from the Coordinates of a Predefined City\n")
-                print(">> Write the Name on the Input of the Choosen City!")
-                # Input Choosen city's Name
-                City = input("City's name: ")
+                print(">> Write the Name to the Input of a Choosen City!")
+
+                # Input Choosen City's Name
+                City = input("> City's name: ")
                 try:
                     Longitude = CityDict[City][1]
                 except KeyError:
-                    print("The city, named \"" + City + "\" is not in the database")
+                    print(">>>> ERROR: The city, named \"" + City + "\" is not in the database")
+                    break
 
                 # Input Time Parameters
                 while(True):
@@ -738,48 +798,48 @@ while(True):
                     if(DateYear != 0):
                         break
                     else:
-                        print("Year 0 is not defined! Please write another date!\n")
+                        print(">>>> ERROR: Year 0 is not defined! Please write another date!\n")
                 
                 while(True):
                     DateMonth = int(input("> Month: "))
                     if(DateMonth > 0 and DateMonth < 13):
                         break
                     else:
-                        print("Months should be inside [1,12] interval, and should be Integer!\n")
+                        print(">>>> ERROR: Months should be inside [1,12] interval, and should be Integer!\n")
 
                 while(True):
                     DateDay = int(input("> Day: "))
                     if(DateYear%4 == 0 and DateYear%400 != 0):
-                        if(MonthLengthListLeapYear[DateMonth - 1] <= DateDay or DateDay > 0):
+                        if(MonthLengthListLeapYear[DateMonth - 1] >= DateDay and DateDay > 0):
                             break
                         else:
-                            daysmsg = "Days should be inside [1,{0}] interval, and should be Integer!\n"
+                            daysmsg = ">>>> ERROR: Days should be inside [1,{0}] interval, and should be Integer!\n"
                             print(daysmsg.format(MonthLengthListLeapYear[DateMonth - 1]))
                     else:
-                        if(MonthLengthList[DateMonth - 1] <= DateDay or DateDay > 0):
+                        if(MonthLengthList[DateMonth - 1] >= DateDay and DateDay > 0):
                             break
                         else:
-                            daysmsg = "Days should be inside [1,{0}] interval, and should be Integer!\n"
+                            daysmsg = ">>>> ERROR: Days should be inside [1,{0}] interval, and should be Integer!\n"
                             print(daysmsg.format(MonthLengthListLeapYear[DateMonth - 1]))
 
                 while(True):
                     LocalHours = int(input("> Local Hours: "))
-                    if(LocalHours >= 0 or LocalHours <= 23):
+                    if(LocalHours >= 0 and LocalHours <= 23):
                         break
                     else:
-                        print("Hours should be inside [0,23] interval, and should be Integer!\n")
+                        print(">>>> ERROR: Hours should be inside [0,23] interval, and should be Integer!\n")
 
                 while(True):
                     LocalMinutes = int(input("> Local Minutes: "))
-                    if(LocalMinutes >= 0 or LocalMinutes <= 59):
+                    if(LocalMinutes >= 0 and LocalMinutes <= 59):
                         break
                     else:
-                        print("Minutes should be inside [0,59] interval, and should be Integer!\n")
+                        print(">>>> ERROR: Minutes should be inside [0,59] interval, and should be Integer!\n")
 
-                LocalSiderealHours, LocalSiderealMinutes, UnitedHours, UnitedMinutes = SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, DateYear, DateMonth, DateDay)
+                LocalSiderealHours, LocalSiderealMinutes, UnitedHours, UnitedMinutes, GreenwichHours, GreenwichMinutes, GreenwichSeconds = SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, DateYear, DateMonth, DateDay)
 
-                sidmsg = "\n>>> The Local Sidereal Time\n>>> at {0}:{1} UT, in\n>>> {2} is\n>>> {3}:{4}"
-                print(sidmsg.format(UnitedHours, UnitedMinutes, City, LocalSiderealHours, LocalSiderealMinutes))
+                sidmsg = "\n>>> The Local Sidereal Time at {0}h {1}m UT\n>>> in {2} with\n>>> GMST {3}h {4}m {5}s at UT 0h 0m\n>>> is {6}h {7}m\n\n"
+                print(sidmsg.format(UnitedHours, UnitedMinutes, City, GreenwichHours, GreenwichMinutes, GreenwichSeconds, LocalSiderealHours, LocalSiderealMinutes))
 
             elif(DistMode == 'Q' or DistMode == 'q'):
                 break
@@ -789,6 +849,7 @@ while(True):
 
     elif(mode == '4'):
         while(True):
+
             print(">> Calculate Datetimes of Twilights at Specific Location")
             print(">> Give Parameters")
 
