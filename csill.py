@@ -51,6 +51,7 @@
 import math
 import matplotlib.pyplot as plt
 import numpy as np
+import datetime
 
 
 ######## CONSTANTS FOR CALCULATIONS ########
@@ -64,24 +65,34 @@ R = 6378e03
 dS = 1.002737909350795
 
 # Predefined Coordinates of Some Notable Cities
-Beijing = [39.9042,116.4074]
-Budapest = [47.4979,19.0402]
-Brussels = [50.8503,4.3517]
-Debrecen = [47.5316,21.6273]
-Gyor = [47.6875,17.6504]
-Jerusalem = [31.7683,35.2137]
-Kecskemet = [46.8964,19.6897]
-Mako = [46.2219,20.4809]
-Miskolc = [48.1035,20.7784]
-NewYork = [40.7128,-74.0060]
-Pecs = [46.0727,18.2323]
-Rio = [-22.9068,-43.1729]
-Szeged = [46.2530,20.1414]
-Szekesfehervar = [47.1860,18.4221]
-Tokyo = [35.6895,139.6917]
-Washington = [47.7511,-120.7401]
-Zalaegerszeg = [46.8417,16.8416]
+CityDict = {
+"Beijing": [39.9042,116.4074],
+"Budapest": [47.4979,19.0402],
+"Budaors": [47.4621,18.9530],
+"Brussels": [50.8503,4.3517],
+"Debrecen": [47.5316,21.6273],
+"Gyor": [47.6875,17.6504],
+"Jerusalem": [31.7683,35.2137],
+"Kecskemet": [46.8964,19.6897],
+"Mako": [46.2219,20.4809],
+"Miskolc": [48.1035,20.7784],
+"Nagykanizsa": [46.4590,16.9897],
+"NewYork": [40.7128,-74.0060],
+"Pecs": [46.0727,18.2323],
+"Rio": [-22.9068,-43.1729],
+"Szeged": [46.2530,20.1414],
+"Szeghalom": [47.0239,21.1667],
+"Szekesfehervar": [47.1860,18.4221],
+"Tokyo": [35.6895,139.6917],
+"Washington": [47.7511,-120.7401],
+"Zalaegerszeg": [46.8417,16.8416]
+}
 
+# Months' length int days, without leap day
+MonthLengthList = [31,28,31,30,31,30,31,31,30,31,30,31]
+
+# Months' length int days, with leap day
+MonthLengthListLeapYear = [31,28,31,30,31,30,31,31,30,31,30,31]
 
 ######## UTILITY FUNCTIONS ########
 
@@ -122,15 +133,6 @@ def NormalizeSymmetricallyBoundedPI_2(Parameter):
         Parameter = 180 - Parameter
 
     return(Parameter)
-
-
-# Convert String Input to Variable for Geographic Distance Calculation
-def ExtractFromVars(ChoosenCity):
-
-    Latitude = ChoosenCity[0]
-    Longitude = ChoosenCity[1]
-
-    return(Latitude, Longitude)
 
 
 ######## 1. CONVERSION OF COORDINATE SYSTEMS ########
@@ -278,7 +280,7 @@ def GeogDistCalc(Latitude1, Latitude2, Longitude1, Longitude2):
 
 # Calculate distances between choosen cities
 def GeogDistCityCalc(Latitude1, Latitude2, Longitude1, Longitude2):
-    
+
     # Initial data normalization
     # Latitude: [-π,+π]
     # Longitude: [0,+2π]
@@ -305,29 +307,130 @@ def GeogDistCityCalc(Latitude1, Latitude2, Longitude1, Longitude2):
     return(Distance)
 
 
-######## 3. GEOGRAPHICAL DISTANCE ########
+######## 3. CALCULATE LOCAL SIDEREAL TIME (LST) ########
+def CalculateGMST(UnitedHours, UnitedMinutes, UnitedDateYear, UnitedDateMonth, UnitedDateDay):
+
+    # Days = UT days since J2000.0, including parts of a day
+    # Could be + or - or 0
+    Dwhole = 367 * UnitedDateYear - int(7 * (UnitedDateYear + int((UnitedDateMonth + 9) / 12)) / 4) + int(275 * UnitedDateMonth / 9) + UnitedDateDay - 730531.5
+    Dfrac = (UnitedHours + UnitedMinutes/60)/24
+    Days = Dwhole + Dfrac
+
+    # Julian centuries since J2000.0
+    JulianCenturies = Days / 36525
+
+    # Calculate GMST
+    GMST = 280.46061837 + 360.98564736629 * Days + 0.000388 * JulianCenturies^2
+
+    if(GMST < 0):
+        GMST = GMST - math.floor(GMST)
+    else:
+        GMST = GMST - math.ceil(GMST)
+
+    GMST = GMST/15
+
+    return(GMST)
+
+def SiderealFromInput(LocalHours, LocalMinutes, DateYear, DateMonth, DateDay):
+
+    # Initial data normalization
+    # Longitude: [0,+2π]
+    Longitude = NormalizeZeroBounded(Longitude, 360)
+
+    # Calculate United Time
+    LocalTime = LocalHours + LocalMinutes/60
+    UnitedTime = LocalTime + int(Longitude/15)
+    if(UnitedTime < 0):
+        UnitedHours = 24 - int(UnitedTime)
+        UnitedDateDay = DateDay - 1
+        if(UnitedDateDay <= 0):
+            UnitedDateMonth = DateMonth - 1
+            if(UnitedDateMonth == 0):
+                UnitedDateMonth = 12
+                UnitetDateYear = DateYear - 1
+            if(DateYear%4 == 0 and DateYear%400 != 0):
+                UnitedDateDay = MonthLengthListLeapYear[UnitedDateMonth - 1]
+            else:
+                UnitedDateDay = MonthLengthList[UnitedDateMonth - 1]
+
+    elif(UnitedTime >= 24):
+        UnitedHours = int(UnitedTime) - 24
+        UnitedDateDay = DateDay + 1
+        if(DateYear%4 == 0 and DateYear%400 != 0):
+            if(UnitedDateDay >= MonthLengthListLeapYear[DateMonth]):
+                UnitedDateMonth = DateMonth + 1
+                if(UnitedDateMonth == 0):
+                    UnitedDateMonth = 12
+                    UnitetDateYear = DateYear - 1
+                if(DateYear%4 == 0 and DateYear%400 != 0):
+                    UnitedDateDay = MonthLengthListLeapYear[UnitedDateMonth - 1]
+                else:
+                    UnitedDateDay = MonthLengthList[UnitedDateMonth - 1]
+    else:
+        UnitedHours = int(UnitedTime)
+        UnitedDateDay = DateDay
+        UnitedMinutes = int((UnitedTime - UnitedHours) * 60)
+    
+    # Calculate Greenwich Mean Sidereal Time (GMST)
+    S_0 = CalculateGMST(UnitedHours, UnitedMinutes, DateYear, DateMonth, UnitedDateDay)
+
+    # Calculate LST
+    LST = S_0 + Longitude/15 + dS * UnitedTime
+    LocalSiderealHours = int(LST)
+    LocalSiderealMinutes = int((LocalSiderealHours - LocalSiderealHours) * 60)
+
+    return(LocalSiderealHours, LocalSiderealMinutes, UnitedHours, UnitedMinutes)
+
+def SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, DateYear, DateMonth, DateDay):
+
+    # Initial data normalization
+    # Longitude: [0,+2π]
+    Longitude = NormalizeZeroBounded(Longitude, 360)
+
+    # Calculate United Time
+    LocalTime = LocalHours + LocalMinutes/60
+    UnitedTime = LocalTime + int(Longitude/15)
+    if(UnitedTime < 0):
+        UnitedHours = 24 - int(UnitedTime)
+        UnitedDateDay = DateDay - 1
+    elif(UnitedTime >= 24):
+        UnitedHours = int(UnitedTime) - 24
+        UnitedDateDay = DateDay + 1
+    else:
+        UnitedHours = int(UnitedTime)
+        UnitedDateDay = DateDay
+    UnitedMinutes = int((UnitedTime - UnitedHours) * 60)
+
+    # Calculate Greenwich Mean Sidereal Time (GMST)
+    S_0, UnitedTime = CalculateGMST(UnitedHours, UnitedMinutes, DateYear, DateMonth, UnitedDateDay)
+
+    # Calculate LST
+    LST = S_0 + Longitude/15 + dS * UnitedTime
+    LocalSiderealHours = int(LST)
+    LocalSiderealMinutes = int((LocalSiderealHours - LocalSiderealHours) * 60)
+
+    return(LocalSiderealHours, LocalSiderealMinutes, UnitedHours, UnitedMinutes)
 
 #########################################
 
 ######## MAIN ########
 
-
 print(">>> Csillész II Problem Solver Program v0.8\n")
 
 while(True):
-    
+
     print(">> MAIN MENU <<")
     print("(1) Coordinate System Conversion")
     print("(2) Geographical Distances")
     print("(3) Local Sidereal Time")
     print("(4) Datetimes of Twilights")
     print("(Q) Quit Program\n")
-    
+
     # Choose mode by user input
     mode = input("> Choose a mode and press enter...:")
-    
+
     print('\n')
-    
+
     if(mode == '1'):
         while(True):
             print(">> Coordinate System Conversion")
@@ -425,7 +528,6 @@ while(True):
                 print(declinmsg.format(Declination))
                 print(sidermsg.format(LocalSiderealTime))
                 print('\n')
-                                    
 
             elif(CoordMode == '5'):
                 print(">> Conversion from Equatorial II to Equatorial I")
@@ -437,16 +539,16 @@ while(True):
 
                 # Print Results
                 print("\n> Calculated parameters:")
-                
+
                 declinmsg = "- Declination (δ): {0}°"
                 hourangmsg = "- Local Hour Angle (t): {0} h"
                 print(declinmsg.format(Declination))
                 print(hourangmsg.format(LocalHourAngle))
-                
+
                 if(LocalSiderealTime != None):
                     RAmsg = "- Right Ascension (α):  {0} h"
                     print(RAmsg.format(RightAscension))
-                
+
                 print('\n')
 
             elif(CoordMode == '6'):
@@ -457,12 +559,12 @@ while(True):
                 Declination = float(input("> Declination (δ): "))
                 LocalHourAngle = float(input("> Local Hour Angle (t): "))
                 LocalSiderealTime = float(input("> Local Sidereal Time (S): "))
-                
+
                 Altitude, Azimuth = EquIIToHor(Latitude, RightAscension, Declination, LocalSiderealTime)
-                
+
                 # Print Results
                 print("> Calculated Parameters:")
-                
+
                 altitmsg = "- Altitude (m): {0}°"
                 azimmsg = "- Azimuth (A):  {0}°"
                 print(altitmsg.format(Altitude))
@@ -474,7 +576,7 @@ while(True):
 
             else:
                 print("Invalid option! Try again!\n")
-    
+
     elif(mode == '2'):
         while(True):
             print(">> Geographical Distance Calculator\n")
@@ -486,7 +588,7 @@ while(True):
 
             print()
             if(DistMode == '1'):
-                print(">> Calculate Distance from give Coordinates\n")
+                print(">> Calculate Distance from given Coordinates\n")
                 print(">> Give Parameters: ")
                 Latitude1 = float(input("> Latitude #1 (φ1): "))
                 Longitude1 = float(input("> Longitude #1 (λ1): "))
@@ -497,71 +599,81 @@ while(True):
 
                 distmsg = "\n>>> The Geographical Distance Between\n>>> {0}°,{1}°\n>>> and\n>>> {2}°,{3}°\n>>> is\n>>> {4} m\n"
                 print(distmsg.format(Latitude1,Longitude1,Latitude2,Longitude2, Distance))
-            
+
             elif(DistMode == '2'):
                 print(">> Calculate Distance of Choosen Predefined Cities\n")
                 print(">> Write the Name on the Input of Two Choosen Cities!")
                 City1 = input("City #1: ")
                 City2 = input("City #2: ")
 
-                # Convert Input String to Usable Variable
-                # Only Predefined Variable Names Could Be Used
-                # Which are Listed from Line 30 (Lists with City Names)
-                VarsCity1 = vars()[(City1)]
-                VarsCity2 = vars()[(City2)]
+                try:
+                    Latitude1 = CityDict[City1][0]
+                    Longitude1 = CityDict[City1][1]
+                except KeyError:
+                    print("The city, named " + City1 + "is not in the database")
 
-                Latitude1, Longitude1 = ExtractFromVars(VarsCity1)
-                Latitude2, Longitude2 = ExtractFromVars(VarsCity2)
+                try:
+                    Latitude2 = CityDict[City2][0]
+                    Longitude2 = CityDict[City2][1]
+                except KeyError:
+                    print("The city, named " + City2 + "is not in the database")
 
                 Distance = GeogDistCityCalc(Latitude1, Latitude2, Longitude1, Longitude2)
 
                 distmsg = "\n>>> The Geographical Distance Between\n>>> {0} and {1} is\n>>> {2} m\n"
                 print(distmsg.format(City1, City2, Distance))
-            
+
             elif(DistMode == 'Q' or DistMode == 'q'):
                 break
 
             else:
                 print("Invalid option! Try again!")
-        
+
     elif(mode == '3'):
         while(True):
-            print(">> Local Sidereal Time Calculator")
+            print(">> Local Sidereal Time Calculator\n")
             print(">> Please choose a mode you'd like to use!")
-            print("(1) Positional Coordinates from User Input")
-            print("(2) Positional Coordinates of Predefined Cities")
+            print("(1) Parameters from User Input")
+            print("(2) Parameters of Predefined Cities")
             print("(Q) Quit to Main Menu")
             DistMode = input("> Choose a mode and press enter...:")
 
             print()
             if(DistMode == '1'):
-                print(">> Calculate Distance from give Coordinates\n")
+                print(">> Calculate LST from given Parameters\n")
                 print(">> Give Parameters: ")
                 Latitude = float(input("> Latitude (φ): "))
-                Longitude = float(input("> Longitud (λ): "))
+                Longitude = float(input("> Longitude (λ): "))
+                DateYear = float(input("> Year: "))
+                DateMonth = float(input("> Month: "))
+                DateDay = float(input("> Day: "))
+                LocalHours = float(input("> Local Hours: "))
+                LocalMinutes = float(input("> Local Minutes: "))
 
-                UnitedDateTime, LocalSiderealTime = SiderealFromInput(Latitude, Longitude, UnitedTime)
+                LocalSiderealHours, LocalSiderealMinutes, UnitedHours, UnitedMinutes = SiderealFromInput(Longitude, LocalHours, LocalMinutes, DateYear, DateMonth, DateDay)
 
-                sidmsg = "\n>>> The Local Sidereal Time\n>>> at {0} UT, at location\n>>> {1}°,{2}° is\n>>> {3}"
-                print(distmsg.format(UnitedDateTime, Latitude, Longitude, LocalSiderealTime))
-            
+                sidmsg = "\n>>> The Local Sidereal Time\n>>> at {0}:{1} UT, at location\n>>> {2}°,{3}° is\n>>> {4}:{5}"
+                print(sidmsg.format(UnitedHours, UnitedMinutes, Latitude, Longitude, LocalSiderealHours, LocalSiderealMinutes))
+
             elif(DistMode == '2'):
-                print(">> Calculate from the Coordinates of a Predefined City\n")
+                print(">> Calculate LST from the Coordinates of a Predefined City\n")
                 print(">> Write the Name on the Input of the Choosen City!")
                 City = input("City's name: ")
+                try:
+                    Longitude = CityDict[City][1]
+                except KeyError:
+                    print("The city, named \"" + City + "\" is not in the database")
 
-                # Convert Input String to Usable Variable
-                # Only Predefined Variable Names Could Be Used
-                # Which are Listed from Line 30 (Lists with City Names)
-                VarsCity = vars()[(City)]
+                DateYear = float(input("> Year: "))
+                DateMonth = float(input("> Month: "))
+                DateDay = float(input("> Day: "))
+                LocalHours = float(input("> Local Hours: "))
+                LocalMinutes = float(input("> Local Minutes: "))
 
-                Latitude1, Longitude1 = ExtractFromVars(VarsCity1)
-                Latitude2, Longitude2 = ExtractFromVars(VarsCity2)
+                LocalSiderealHours, LocalSiderealMinutes, UnitedHours, UnitedMinutes = SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, DateYear, DateMonth, DateDay)
 
-                Distance = GeogDistCityCalc(Latitude1, Latitude2, Longitude1, Longitude2)
-
-                distmsg = "\n>>> The Geographical Distance Between\n>>> {0} and {1} is\n>>> {2} m\n"
-                print(distmsg.format(City1, City2, Distance))
+                sidmsg = "\n>>> The Local Sidereal Time\n>>> at {0}:{1} UT, in\n>>> {2} is\n>>> {3}:{4}"
+                print(sidmsg.format(UnitedHours, UnitedMinutes, City, LocalSiderealHours, LocalSiderealMinutes))
 
             elif(DistMode == 'Q' or DistMode == 'q'):
                 break
@@ -577,6 +689,6 @@ while(True):
     elif(mode == 'Q' or mode == 'q'):
         print("All Rights Reserved to Balage Paliere Co.!")
         exit()
-        
+
     else:
         print("Invalid option! Try again!")
