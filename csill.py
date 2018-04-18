@@ -60,14 +60,15 @@ import datetime
 R = 6378e03
 
 # Lenght of 1 Solar Day = 1.002737909350795 Sidereal Days
-# It is Labeled as a dS/dm Quotient
-# We Simply Label It as dS
+# It's Usually Labeled dS/dm
+# We Simply Label It dS
 dS = 1.002737909350795
 
 # Predefined Coordinates of Some Notable Cities
 CityDict = {
 "Beijing": [39.9042,116.4074],
 "Budapest": [47.4979,19.0402],
+"Budakesz": [47.5136,18.9278],
 "Budaors": [47.4621,18.9530],
 "Brussels": [50.8503,4.3517],
 "Debrecen": [47.5316,21.6273],
@@ -308,7 +309,9 @@ def GeogDistCityCalc(Latitude1, Latitude2, Longitude1, Longitude2):
 
 
 ######## 3. CALCULATE LOCAL SIDEREAL TIME (LST) ########
-def CalculateGMST(UnitedHours, UnitedMinutes, UnitedDateYear, UnitedDateMonth, UnitedDateDay):
+
+# Calculate Greenwich Mean Sidereal Time (GMST = S_0)
+def CalculateGMST(Longitude, UnitedHours, UnitedMinutes, UnitedDateYear, UnitedDateMonth, UnitedDateDay):
 
     # Days = UT days since J2000.0, including parts of a day
     # Could be + or - or 0
@@ -316,22 +319,22 @@ def CalculateGMST(UnitedHours, UnitedMinutes, UnitedDateYear, UnitedDateMonth, U
     Dfrac = (UnitedHours + UnitedMinutes/60)/24
     Days = Dwhole + Dfrac
 
-    # Julian centuries since J2000.0
+    # Number of Julian centuries since J2000.0
     JulianCenturies = Days / 36525
 
-    # Calculate GMST
-    GMST = 280.46061837 + 360.98564736629 * Days + 0.000388 * JulianCenturies^2
+    # Calculate GMST in Degrees
+    GMSTDegrees = 280.46061837 + 360.98564736629 * Days + 0.000388 * JulianCenturies**2
 
-    if(GMST < 0):
-        GMST = GMST - math.floor(GMST)
-    else:
-        GMST = GMST - math.ceil(GMST)
+    # Normalize between to [0,+2π]
+    GMSTDegrees = NormalizeZeroBounded(GMSTDegrees, 360)
 
-    GMST = GMST/15
+    # Convert GMST to Hours
+    GMST = GMSTDegrees / 15
 
     return(GMST)
 
-def SiderealFromInput(LocalHours, LocalMinutes, DateYear, DateMonth, DateDay):
+# Calculate 
+def SiderealFromInput(Longitude, LocalHours, LocalMinutes, DateYear, DateMonth, DateDay):
 
     # Initial data normalization
     # Longitude: [0,+2π]
@@ -340,6 +343,7 @@ def SiderealFromInput(LocalHours, LocalMinutes, DateYear, DateMonth, DateDay):
     # Calculate United Time
     LocalTime = LocalHours + LocalMinutes/60
     UnitedTime = LocalTime + int(Longitude/15)
+
     if(UnitedTime < 0):
         UnitedHours = 24 - int(UnitedTime)
         UnitedDateDay = DateDay - 1
@@ -347,7 +351,7 @@ def SiderealFromInput(LocalHours, LocalMinutes, DateYear, DateMonth, DateDay):
             UnitedDateMonth = DateMonth - 1
             if(UnitedDateMonth == 0):
                 UnitedDateMonth = 12
-                UnitetDateYear = DateYear - 1
+                UnitedDateYear = DateYear - 1
             if(DateYear%4 == 0 and DateYear%400 != 0):
                 UnitedDateDay = MonthLengthListLeapYear[UnitedDateMonth - 1]
             else:
@@ -357,22 +361,23 @@ def SiderealFromInput(LocalHours, LocalMinutes, DateYear, DateMonth, DateDay):
         UnitedHours = int(UnitedTime) - 24
         UnitedDateDay = DateDay + 1
         if(DateYear%4 == 0 and DateYear%400 != 0):
-            if(UnitedDateDay >= MonthLengthListLeapYear[DateMonth]):
+            if(UnitedDateDay >= MonthLengthListLeapYear[DateMonth - 1]):
                 UnitedDateMonth = DateMonth + 1
-                if(UnitedDateMonth == 0):
-                    UnitedDateMonth = 12
-                    UnitetDateYear = DateYear - 1
-                if(DateYear%4 == 0 and DateYear%400 != 0):
-                    UnitedDateDay = MonthLengthListLeapYear[UnitedDateMonth - 1]
-                else:
-                    UnitedDateDay = MonthLengthList[UnitedDateMonth - 1]
+        else:
+            if(UnitedDateDay >= MonthLengthList[DateMonth - 1]):
+                UnitedDateMonth = DateMonth + 1
+        if(UnitedDateMonth == 13):
+            UnitedDateMonth = 1
+            UnitedDateYear = DateYear + 1
     else:
         UnitedHours = int(UnitedTime)
-        UnitedDateDay = DateDay
         UnitedMinutes = int((UnitedTime - UnitedHours) * 60)
+        UnitedDateYear = DateYear
+        UnitedDateMonth = DateMonth
+        UnitedDateDay = DateDay
     
     # Calculate Greenwich Mean Sidereal Time (GMST)
-    S_0 = CalculateGMST(UnitedHours, UnitedMinutes, DateYear, DateMonth, UnitedDateDay)
+    S_0 = CalculateGMST(Longitude, UnitedHours, UnitedMinutes, UnitedDateYear, UnitedDateMonth, UnitedDateDay)
 
     # Calculate LST
     LST = S_0 + Longitude/15 + dS * UnitedTime
@@ -390,19 +395,42 @@ def SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, DateYear, DateMo
     # Calculate United Time
     LocalTime = LocalHours + LocalMinutes/60
     UnitedTime = LocalTime + int(Longitude/15)
+
+    # 
     if(UnitedTime < 0):
         UnitedHours = 24 - int(UnitedTime)
         UnitedDateDay = DateDay - 1
+        if(UnitedDateDay <= 0):
+            UnitedDateMonth = DateMonth - 1
+            if(UnitedDateMonth == 0):
+                UnitedDateMonth = 12
+                UnitedDateYear = DateYear - 1
+            if(DateYear%4 == 0 and DateYear%400 != 0):
+                UnitedDateDay = MonthLengthListLeapYear[UnitedDateMonth - 1]
+            else:
+                UnitedDateDay = MonthLengthList[UnitedDateMonth - 1]
+
     elif(UnitedTime >= 24):
         UnitedHours = int(UnitedTime) - 24
         UnitedDateDay = DateDay + 1
+        if(DateYear%4 == 0 and DateYear%400 != 0):
+            if(UnitedDateDay >= MonthLengthListLeapYear[DateMonth - 1]):
+                UnitedDateMonth = DateMonth + 1
+        else:
+            if(UnitedDateDay >= MonthLengthList[DateMonth - 1]):
+                UnitedDateMonth = DateMonth + 1
+        if(UnitedDateMonth == 13):
+            UnitedDateMonth = 1
+            UnitedDateYear = DateYear + 1
     else:
         UnitedHours = int(UnitedTime)
+        UnitedMinutes = int((UnitedTime - UnitedHours) * 60)
+        UnitedDateYear = DateYear
+        UnitedDateMonth = DateMonth
         UnitedDateDay = DateDay
-    UnitedMinutes = int((UnitedTime - UnitedHours) * 60)
 
     # Calculate Greenwich Mean Sidereal Time (GMST)
-    S_0, UnitedTime = CalculateGMST(UnitedHours, UnitedMinutes, DateYear, DateMonth, UnitedDateDay)
+    S_0, UnitedTime = CalculateGMST(Longitude, UnitedHours, UnitedMinutes, UnitedDateYear, UnitedDateMonth, UnitedDateDay)
 
     # Calculate LST
     LST = S_0 + Longitude/15 + dS * UnitedTime
@@ -415,7 +443,7 @@ def SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, DateYear, DateMo
 
 ######## MAIN ########
 
-print(">>> Csillész II Problem Solver Program v0.8\n")
+print(">>> Csillész II Problem Solver Program v0.8.9\n")
 
 while(True):
 
@@ -644,11 +672,50 @@ while(True):
                 print(">> Give Parameters: ")
                 Latitude = float(input("> Latitude (φ): "))
                 Longitude = float(input("> Longitude (λ): "))
-                DateYear = float(input("> Year: "))
-                DateMonth = float(input("> Month: "))
-                DateDay = float(input("> Day: "))
-                LocalHours = float(input("> Local Hours: "))
-                LocalMinutes = float(input("> Local Minutes: "))
+                
+                # Input Time Parameters
+                while(True):
+                    DateYear = int(input("> Year: "))
+                    if(DateYear != 0):
+                        break
+                    else:
+                        print("Year 0 is not defined! Please write another date!\n")
+                
+                while(True):
+                    DateMonth = int(input("> Month: "))
+                    if(DateMonth > 0 and DateMonth < 13):
+                        break
+                    else:
+                        print("Months should be inside [1,12] interval, and should be Integer!\n")
+
+                while(True):
+                    DateDay = int(input("> Day: "))
+                    if(DateYear%4 == 0 and DateYear%400 != 0):
+                        if(MonthLengthListLeapYear[DateMonth - 1] <= DateDay or DateDay > 0):
+                            break
+                        else:
+                            daysmsg = "Days should be inside [1,{0}] interval, and should be Integer!\n"
+                            print(daysmsg.format(MonthLengthListLeapYear[DateMonth - 1]))
+                    else:
+                        if(MonthLengthList[DateMonth - 1] <= DateDay or DateDay > 0):
+                            break
+                        else:
+                            daysmsg = "Days should be inside [1,{0}] interval, and should be Integer!\n"
+                            print(daysmsg.format(MonthLengthListLeapYear[DateMonth - 1]))
+
+                while(True):
+                    LocalHours = int(input("> Local Hours: "))
+                    if(LocalHours >= 0 or LocalHours <= 23):
+                        break
+                    else:
+                        print("Hours should be inside [0,23] interval, and should be Integer!\n")
+
+                while(True):
+                    LocalMinutes = int(input("> Local Minutes: "))
+                    if(LocalMinutes >= 0 or LocalMinutes <= 59):
+                        break
+                    else:
+                        print("Minutes should be inside [0,59] interval, and should be Integer!\n")
 
                 LocalSiderealHours, LocalSiderealMinutes, UnitedHours, UnitedMinutes = SiderealFromInput(Longitude, LocalHours, LocalMinutes, DateYear, DateMonth, DateDay)
 
@@ -658,17 +725,56 @@ while(True):
             elif(DistMode == '2'):
                 print(">> Calculate LST from the Coordinates of a Predefined City\n")
                 print(">> Write the Name on the Input of the Choosen City!")
+                # Input Choosen city's Name
                 City = input("City's name: ")
                 try:
                     Longitude = CityDict[City][1]
                 except KeyError:
                     print("The city, named \"" + City + "\" is not in the database")
 
-                DateYear = float(input("> Year: "))
-                DateMonth = float(input("> Month: "))
-                DateDay = float(input("> Day: "))
-                LocalHours = float(input("> Local Hours: "))
-                LocalMinutes = float(input("> Local Minutes: "))
+                # Input Time Parameters
+                while(True):
+                    DateYear = int(input("> Year: "))
+                    if(DateYear != 0):
+                        break
+                    else:
+                        print("Year 0 is not defined! Please write another date!\n")
+                
+                while(True):
+                    DateMonth = int(input("> Month: "))
+                    if(DateMonth > 0 and DateMonth < 13):
+                        break
+                    else:
+                        print("Months should be inside [1,12] interval, and should be Integer!\n")
+
+                while(True):
+                    DateDay = int(input("> Day: "))
+                    if(DateYear%4 == 0 and DateYear%400 != 0):
+                        if(MonthLengthListLeapYear[DateMonth - 1] <= DateDay or DateDay > 0):
+                            break
+                        else:
+                            daysmsg = "Days should be inside [1,{0}] interval, and should be Integer!\n"
+                            print(daysmsg.format(MonthLengthListLeapYear[DateMonth - 1]))
+                    else:
+                        if(MonthLengthList[DateMonth - 1] <= DateDay or DateDay > 0):
+                            break
+                        else:
+                            daysmsg = "Days should be inside [1,{0}] interval, and should be Integer!\n"
+                            print(daysmsg.format(MonthLengthListLeapYear[DateMonth - 1]))
+
+                while(True):
+                    LocalHours = int(input("> Local Hours: "))
+                    if(LocalHours >= 0 or LocalHours <= 23):
+                        break
+                    else:
+                        print("Hours should be inside [0,23] interval, and should be Integer!\n")
+
+                while(True):
+                    LocalMinutes = int(input("> Local Minutes: "))
+                    if(LocalMinutes >= 0 or LocalMinutes <= 59):
+                        break
+                    else:
+                        print("Minutes should be inside [0,59] interval, and should be Integer!\n")
 
                 LocalSiderealHours, LocalSiderealMinutes, UnitedHours, UnitedMinutes = SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, DateYear, DateMonth, DateDay)
 
