@@ -54,7 +54,7 @@ import math
 # import datetime
 
 # Current Version of the Csillész II Problem Solver
-ActualVersion = 'v0.9'
+ActualVersion = 'v0.9.7'
 
 ######## CONSTANTS FOR CALCULATIONS ########
 
@@ -737,8 +737,10 @@ while(True):
                 print(">> Conversion from Equatorial I to Horizontal Coordinate System")
                 print(">> Give Parameters!")
                 
-                print(">> Would you like to give Geographical Coordinates by yourself,\n>> or would like just to choose a predefined city's Coordinates?")
-                HorToEquIICityChoose = input(">> Write \'1\' for User defined Coordinates, and write \'2\' for Predefined Cities's Coordinates: ")
+                print(">> Would you like to give Geographical Coordinates by yourself,\n>> Or would like just to choose a predefined city's Coordinates?")
+                HorToEquIICityChoose = input(">> Write \'1\' for User defined Coordinates, and\n>> Write \'2\' for Predefined Cities's Coordinates: ")
+
+                HorToEquIICityChoose = input(">> (1): User Defined, (2): Predefined")
                 
                 while(True):
                     if(HorToEquIICityChoose == '1'):
@@ -939,7 +941,7 @@ while(True):
                 Distance = GeogDistCalc(Latitude1, Latitude2, Longitude1, Longitude2)
                 # Convert Distance to Km
                 Distance = float(Distance / 1000)
-                
+
                 distmsg = "\n>>> The Geographical Distance Between\n>>> {0}°,{1}°\n>>> and\n>>> {2}°,{3}°\n>>> is\n>>> {4:.3f} km\n"
                 print(distmsg.format(Latitude1,Longitude1,Latitude2,Longitude2, Distance))
 
@@ -950,10 +952,10 @@ while(True):
                     City1 = input("City #1: ")
 
                     if(City1 == "Help" or City1 == "help" or City1 == "H" or City1 == "h"):
-                        print("Predefined Cities you can choose from:")
+                        print(">> Predefined Cities you can choose from:")
                         for keys in CityDict.items():
                             print(keys)
-                    
+
                     else:
                         try:
                             Latitude1 = CityDict[City1][0]
@@ -962,7 +964,7 @@ while(True):
                         except KeyError:
                             print(">>>> ERROR: The City, named \"" + City1 + "\" is not in the Database!")
                             print(">>>> Type \"Help\" to list Available Cities in Database!")
-                            
+
                         else:
                             break
 
@@ -970,7 +972,7 @@ while(True):
                     City2 = input("City #2: ")
 
                     if(City2 == "Help" or City2 == "help" or City2 == "H" or City2 == "h"):
-                        print("Predefined Cities you can choose from:")
+                        print(">> Predefined Cities you can choose from:")
                         for keys in CityDict.items():
                             print(keys)
 
@@ -997,7 +999,7 @@ while(True):
                 break
 
             else:
-                print("Invalid option! Try again!")
+                print(">>>>ERROR: Invalid option! Try again!")
 
     # LOCAL MEAN SIDEREAL TIME CALCULATION
     elif(mode == '3'):
@@ -1107,6 +1109,7 @@ while(True):
                     else:
                         print(">>>> ERROR: Months should be inside [1,12] interval, and should be Integer!\n")
 
+                # Leap Year	Handling
                 while(True):
                     DateDay = int(input("> Day: "))
                     if(DateYear%4 == 0 and DateYear%400 != 0):
@@ -1145,7 +1148,7 @@ while(True):
                 break
 
             else:
-                print("Invalid option! Try again!")
+                print(">>>> ERROR: Invalid option! Try again!")
 
     # DATETIME CALCULATION FOR TWILIGHTS
     elif(mode == '4'):
