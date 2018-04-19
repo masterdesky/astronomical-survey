@@ -49,9 +49,9 @@
 # pip install numpy --upgrade
 
 import math
-import matplotlib.pyplot as plt
-import numpy as np
-import datetime
+# import matplotlib.pyplot as plt
+# import numpy as np
+# import datetime
 
 # Current Version of the Csillész II Problem Solver
 ActualVersion = 'v0.9'
@@ -68,24 +68,32 @@ dS = 1.002737909350795
 
 # Predefined Coordinates of Some Notable Cities
 CityDict = {
+"Amsterdam": [52.3702,4.8952],
+"Athen": [37.9838,23.7275],
 "Beijing": [39.9042,116.4074],
+"Berlin": [52.5200,13.4050],
 "Budapest": [47.4979,19.0402],
 "Budakeszi": [47.5136,18.9278],
 "Budaors": [47.4621,18.9530],
 "Brussels": [50.8503,4.3517],
 "Debrecen": [47.5316,21.6273],
+"Dunaujvaros": [46.9619,18.9355],
 "Gyor": [47.6875,17.6504],
 "Jerusalem": [31.7683,35.2137],
 "Kecskemet": [46.8964,19.6897],
+"London": [51.5074,-0.1278],
 "Mako": [46.2219,20.4809],
 "Miskolc": [48.1035,20.7784],
 "Nagykanizsa": [46.4590,16.9897],
 "NewYork": [40.7128,-74.0060],
+"Paris": [48.8566,2.3522],
 "Pecs": [46.0727,18.2323],
 "Rio": [-22.9068,-43.1729],
+"Rome": [41.9028,12.4964],
 "Szeged": [46.2530,20.1414],
 "Szeghalom": [47.0239,21.1667],
 "Szekesfehervar": [47.1860,18.4221],
+"Szombathely": [47.2307,16.6218],
 "Tokyo": [35.6895,139.6917],
 "Washington": [47.7511,-120.7401],
 "Zalaegerszeg": [46.8417,16.8416]
@@ -105,7 +113,7 @@ def NormalizeZeroBounded(Parameter, NonZeroBound):
     if(Parameter >= 0):
         Parameter = Parameter - (int(Parameter / NonZeroBound) * NonZeroBound)
     else:
-        Parameter = Parameter + ((int(Parameter / NonZeroBound) + 1) * NonZeroBound)
+        Parameter = Parameter + ((int(Parameter / NonZeroBound) - 1) * NonZeroBound)
 
     return(Parameter)
 
@@ -135,8 +143,17 @@ def NormalizeSymmetricallyBoundedPI_2(Parameter):
     if(Parameter <= -360 or Parameter >= 360):
         Parameter = NormalizeZeroBounded(Parameter, 360)
 
-    if(Parameter <= -180 or Parameter >= 180):
+    if(Parameter <= -180 and Parameter >= -270):
+        Parameter = 360 + Parameter
+    
+    elif(Parameter >= 180 and Parameter <= 270):
         Parameter = 180 - Parameter
+    
+    elif(Parameter > 270):
+        Parameter = 360 - Parameter
+
+    elif(Parameter < -270):
+        Parameter = 360 + Parameter
 
     return(Parameter)
 
@@ -179,6 +196,8 @@ def HorToEquI(Latitude, Altitude, Azimuth, LocalSiderealTime=None):
         RightAscension = LocalSiderealTime - LocalHourAngle
     else:
         RightAscension = None
+
+    
 
     return(Declination, LocalHourAngle, RightAscension)
 
@@ -437,7 +456,7 @@ def SiderealFromInput(Longitude, LocalHours, LocalMinutes, DateYear, DateMonth, 
     LSTNorm = NormalizeZeroBounded(LST, 24)
 
     LocalSiderealHours = int(LSTNorm)
-    LocalSiderealMinutes = int((LocalSiderealHours - LocalSiderealHours) * 60)
+    LocalSiderealMinutes = int((LSTNorm - LocalSiderealHours) * 60)
 
     return(LocalSiderealHours, LocalSiderealMinutes, UnitedHours, UnitedMinutes, GreenwichHours, GreenwichMinutes, GreenwichSeconds)
 
@@ -497,7 +516,6 @@ def SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, DateYear, DateMo
     
     # Norm LST
     LSTNorm = NormalizeZeroBounded(LST, 24)
-    print("LSTNorm: ", LSTNorm)
 
     LocalSiderealHours = int(LSTNorm)
     LocalSiderealMinutes = int((LSTNorm - LocalSiderealHours) * 60)
@@ -506,18 +524,18 @@ def SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, DateYear, DateMo
 
 
 ###############################################################################################
-####               ...     ..      ..                    .                                 ####
-##               x*8888x.:*8888: -"888:                 @88>                                 ##
-##              X   48888X `8888H  8888                 %8P      u.    u.                    ##
-##             X8x.  8888X  8888X  !888>        u        .     x@88k u@88c.                  ##
-##             X8888 X8888  88888   "*8%-    us888u.   .@88u  ^"8888""8888"                  ##
-##             '*888!X8888> X8888  xH8>   .@88 "8888" ''888E`   8888  888R                   ##
-##               `?8 `8888  X888X X888>   9888  9888    888E    8888  888R                   ##
-##               -^  '888"  X888  8888>   9888  9888    888E    8888  888R                   ##
-##                dx '88~x. !88~  8888>   9888  9888    888E    8888  888R                   ##
-##              .8888Xf.888x:!    X888X.: 9888  9888    888&   "*88*" 8888"                  ##
-##             :""888":~"888"     `888*"  "888*""888"   R888"    ""   'Y"                    ##
-##                 "~'    "~        ""     ^Y"   ^Y'     ""                                  ##
+####                ...     ..      ..                    .                                ####
+##                x*8888x.:*8888: -"888:                 @88>                                ##
+##               X   48888X `8888H  8888                 %8P      u.    u.                   ##
+##              X8x.  8888X  8888X  !888>        u        .     x@88k u@88c.                 ##
+##              X8888 X8888  88888   "*8%-    us888u.   .@88u  ^"8888""8888"                 ##
+##              '*888!X8888> X8888  xH8>   .@88 "8888" ''888E`   8888  888R                  ##
+##                `?8 `8888  X888X X888>   9888  9888    888E    8888  888R                  ##
+##                -^  '888"  X888  8888>   9888  9888    888E    8888  888R                  ##
+##                 dx '88~x. !88~  8888>   9888  9888    888E    8888  888R                  ##
+##               .8888Xf.888x:!    X888X.: 9888  9888    888&   "*88*" 8888"                 ##
+##              :""888":~"888"     `888*"  "888*""888"   R888"    ""   'Y"                   ##
+##                  "~'    "~        ""     ^Y"   ^Y'     ""                                 ##
 ####                                                                                       ####
 ###############################################################################################
 ###  ####                                                                             ####  ###
@@ -542,6 +560,7 @@ while(True):
     mode = input("> Choose a mode and press enter...:")
     print('\n\n')
 
+    # COORDINATE SYSTEM CONVERSION
     if(mode == '1'):
         while(True):
             print(">> Coordinate System Conversion")
@@ -555,6 +574,7 @@ while(True):
             print("(Q) Quit to Main Menu\n")
             CoordMode = input("> Choose a number and press enter...:")
 
+            # 1. Horizontal to Equatorial I Coordinate System
             if(CoordMode == '1'):
                 print(">> Conversion from Horizontal to Equatorial I Coordinate System")
                 print(">> Give Parameters: ")
@@ -577,7 +597,7 @@ while(True):
                 Declination, LocalHourAngle, RightAscension = HorToEquI(Latitude, Altitude, Azimuth, LocalSiderealTime)
 
                 # Print Results
-                print("\n> Calculated parameters:")
+                print("\n> Calculated parameters in Equatorial I Coord. Sys.:")
                 
                 declinmsg = "- Declination (δ): {0}°"
                 hourangmsg = "- Local Hour Angle (t): {0} h"
@@ -590,10 +610,44 @@ while(True):
 
                 print('\n')
 
+            # 2. Horizontal to Equatorial II Coordinate System
             elif(CoordMode == '2'):
                 print(">> Conversion from Horizontal to Equatorial II Coordinate System")
                 print(">> Give Parameters: ")
-                Latitude = float(input("> Latitude (φ): "))
+                
+                print(">> Would you like to give Geographical Coordinates by yourself,\n>> or would like just to choose a predefined city's Coordinates?")
+                HorToEquIICityChoose = input("Write \'1\' for User defined Coordinates, and write \'2\' for Predefined Cities's Coordinates: ")
+                
+                while(True):
+                    if(HorToEquIICityChoose == '1'):
+                        Latitude = float(input("> Latitude (φ): "))
+                        break
+                    
+                    elif(HorToEquIICityChoose == '2'):
+                        while(True):
+                            City = input("> City's name: ")
+
+                            if(City == "Help" or City == "help" or City == "H" or City == "h"):
+                                print("Predefined Cities you can choose from:")
+                                for keys in CityDict.items():
+                                    print(keys)
+                            
+                            else:
+                                try:
+                                    Latitude = CityDict[City][0]
+
+                                except KeyError:
+                                    print(">>>> ERROR: The City, named \"" + City + "\" is not in the Database!")
+                                    print(">>>> Type \"Help\" to list Available Cities in Database!")
+                                    
+                                else:
+                                    break
+
+                        break
+                            
+                    else:
+                        print(">>>> ERROR: Invalid option!")
+
                 Altitude = float(input("> Altitude (m): "))
                 Azimuth = float(input("> Azimuth (A): "))
                 LocalSiderealTime = float(input("> Local Sidereal Time (S): "))
@@ -601,34 +655,58 @@ while(True):
                 Declination, LocalSiderealTime = HorToEquII(Latitude, Altitude, Azimuth, LocalSiderealTime)
 
                 # Print Results
-                print("\n> Calculated Parameters:")
-                
+                print("\n> Calculated Parameters in Equatorial II Coord. Sys.:")
+
                 declinmsg = "- Declination (δ): {0}°"
                 sidermsg = "- Local Sidereal Time (S):  {0}°"
                 print(declinmsg.format(Declination))
                 print(sidermsg.format(LocalSiderealTime))
                 print('\n')
-                
+
+            # 3. Equatorial I to Horizontal Coordinate System
             elif(CoordMode == '3'):
                 print(">> Conversion from Equatorial I to Horizontal Coordinate System")
                 print(">> Give Parameters: ")
                 Latitude = float(input("> Latitude (φ): "))
-                RightAscension = float(input("> Right Ascension (α): "))
                 Declination = float(input("> Declination (δ): "))
-                LocalSiderealTime = float(input("> Local Sidereal Time (S): "))
-                LocalHourAngle = float(input("> Local Hour Angle (t): "))
+                RightAscension = float(input("> Right Ascension (α): "))
+
+                print("Is Local Sidereal Time given?")
+                while(True):
+                    HorToEquIChoose1 = input("Write \'Y\' or \'N\' (Yes or No): ")
+                    if(HorToEquIChoose == 'Y' or HorToEquIChoose == 'y' or HorToEquIChoose == 'Yes' or HorToEquIChoose == 'yes' or HorToEquIChoose == 'YEs' or HorToEquIChoose == 'yEs' or HorToEquIChoose == 'yeS' or HorToEquIChoose == 'YeS' or HorToEquIChoose == 'yES'):
+                        LocalSiderealTime = float(input("> Local Sidereal Time (S): "))
+                        break
+                    elif(HorToEquIChoose == 'N' or HorToEquIChoose == 'n' or HorToEquIChoose == 'No' or HorToEquIChoose == 'no' or HorToEquIChoose == 'nO'):
+                        LocalSiderealTime = None
+
+                        print("Is Local Hour Angle given?")
+                        HorToEquIChoose2 = input("Write \'Y\' or \'N\' (Yes or No): ")
+                        
+                        if(HorToEquIChoose == 'Y' or HorToEquIChoose == 'y' or HorToEquIChoose == 'Yes' or HorToEquIChoose == 'yes' or HorToEquIChoose == 'YEs' or HorToEquIChoose == 'yEs' or HorToEquIChoose == 'yeS' or HorToEquIChoose == 'YeS' or HorToEquIChoose == 'yES'):
+                            LocalHourAngle = float(input("> Local Hour Angle in Hours (t): "))
+                            break
+                        elif(HorToEquIChoose == 'N' or HorToEquIChoose == 'n' or HorToEquIChoose == 'No' or HorToEquIChoose == 'no' or HorToEquIChoose == 'nO'):
+                            LocalHourAngle = None
+
+                    else:
+                        print(">>>> ERROR: Invalid option!")
+
+                    if(LocalSiderealTime == None, LocalHourAngle == None):
+                        pass
 
                 Altitude, Azimuth = EquIToHor(Latitude, RightAscension, Declination, LocalSiderealTime, LocalHourAngle)
 
                 # Print Results
-                print("\n> Calculated Parameters:")
-                
+                print("\n> Calculated Parameters in Horizontal Coord. Sys.:")
+
                 altitmsg = "- Altitude (m): {0}°"
                 azimmsg = "- Azimuth (A):  {0}°"
                 print(altitmsg.format(Altitude))
                 print(azimmsg.format(Azimuth))
                 print('\n')
 
+            # 4. Equatorial I to Equatorial II Coordinate System
             elif(CoordMode == '4'):
                 print(">> Conversion from Equatorial I to Equatorial II Coordinate System")
                 print(">> Give Parameters: ")
@@ -641,22 +719,21 @@ while(True):
                 LocalSiderealTime = EquIToEquII(RightAscension, LocalHourAngle)
 
                 # Print Results
-                print("\n> Calculated Parameters:")
-                
-                latmsg = "- Latitude (φ): {0}°"
+                print("\n> Calculated Parameters in Equatorial II Coord. Sys.:")
+
                 declinmsg = "- Declination (δ): {0}°"
-                sidermsg = "- Local Sidereal Time (S):  {0}°"
-                print(latmsg.format(Latitude))
+                sidermsg = "- Local Sidereal Time (S): {0}°"
                 print(declinmsg.format(Declination))
                 print(sidermsg.format(LocalSiderealTime))
                 print('\n')
 
+            # 5. Equatorial II to Equatorial I Coordinate System
             elif(CoordMode == '5'):
-                print(">> Conversion from Equatorial II to Equatorial I")
+                print(">> Conversion from Equatorial II to Equatorial I Coordinate System")
                 print(">> Give Parameters: ")
                 Declination = float(input("> Declination (δ): "))
                 LocalSiderealTime = float(input("> Local Sidereal Time (S): "))
-                
+
                 while(True):
                     print("Which Parameter Is given?")
                     EquIIChoose = input("Rigth Ascension (write \'A\'), or Local Hour Angle in Hours (write \'T\')?: ")
@@ -676,27 +753,25 @@ while(True):
                 LocalHourAngle, RightAscension = EquIIToEquI(LocalSiderealTime, RightAscension, LocalHourAngle)
 
                 # Print Results
-                print("\n> Calculated parameters:")
+                print("\n> Calculated parameters in Equatorial I Coord. Sys.:")
 
                 declinmsg = "- Declination (δ): {0}°"
                 hourangmsg = "- Local Hour Angle (t): {0} h"
+                RAmsg = "- Right Ascension (α):  {0} h"
 
                 print(declinmsg.format(Declination))
                 print(hourangmsg.format(LocalHourAngle))
-
-                if(LocalSiderealTime != None):
-                    RAmsg = "- Right Ascension (α):  {0} h"
-                    print(RAmsg.format(RightAscension))
-
+                print(RAmsg.format(RightAscension))
                 print('\n')
 
+            # 6. Equatorial II to Horizontal Coordinate System
             elif(CoordMode == '6'):
-                print(">> Conversion from Equatorial II to Horizontal")
+                print(">> Conversion from Equatorial II to Horizontal Coordinate System")
                 print(">> Give Parameters: ")
                 Latitude = float(input("> Latitude (φ): "))
                 LocalSiderealTime = float(input("> Local Sidereal Time (S): "))
                 Declination = float(input("> Declination (δ): "))
-                
+
                 while(True):
                     print("Which Parameter Is given?")
                     EquIIChoose = input("Rigth Ascension (write \'A\'), or Local Hour Angle in Hours (write \'T\')?: ")
@@ -716,7 +791,7 @@ while(True):
                 Altitude, Azimuth = EquIIToHor(Latitude, LocalSiderealTime, LocalHourAngle, RightAscension, Declination)
 
                 # Print Results
-                print("> Calculated Parameters:")
+                print("> Calculated Parameters in Horizontal Coord. Sys.:")
 
                 altitmsg = "- Altitude (m): {0}°"
                 azimmsg = "- Azimuth (A):  {0}°"
@@ -730,7 +805,7 @@ while(True):
             else:
                 print("Invalid option! Try again!\n")
 
-
+    # GEOGRAPHICAL DISTANCE CALCULATION
     elif(mode == '2'):
         while(True):
             print(">> Geographical Distance Calculator\n")
@@ -750,40 +825,60 @@ while(True):
                 Longitude2 = float(input("> Longitude #2 (λ2): "))
 
                 Distance = GeogDistCalc(Latitude1, Latitude2, Longitude1, Longitude2)
-
-                distmsg = "\n>>> The Geographical Distance Between\n>>> {0}°,{1}°\n>>> and\n>>> {2}°,{3}°\n>>> is\n>>> {4} m\n"
+                # Convert Distance to Km
+                Distance = float(Distance / 1000)
+                
+                distmsg = "\n>>> The Geographical Distance Between\n>>> {0}°,{1}°\n>>> and\n>>> {2}°,{3}°\n>>> is\n>>> {4:.3f} km\n"
                 print(distmsg.format(Latitude1,Longitude1,Latitude2,Longitude2, Distance))
 
             elif(DistMode == '2'):
                 print(">> Calculate Distance of Choosen Predefined Cities\n")
-                print(">> Write the Names to the Input of Two Choosen Cities!")
+                print(">> Write the Names of Two Choosen Cities to the Input!")
                 while(True):
                     City1 = input("City #1: ")
 
-                    try:
-                        Latitude1 = CityDict[City1][0]
-                        Longitude1 = CityDict[City1][1]
+                    if(City1 == "Help" or City1 == "help" or City1 == "H" or City1 == "h"):
+                        print("Predefined Cities you can choose from:")
+                        for keys in CityDict.items():
+                            print(keys)
+                    
+                    else:
+                        try:
+                            Latitude1 = CityDict[City1][0]
+                            Longitude1 = CityDict[City1][1]
 
-                    except KeyError:
-                        print(">>>> ERROR: The city, named \"" + City1 + "\" is not in the database")
-
-                    break
+                        except KeyError:
+                            print(">>>> ERROR: The City, named \"" + City1 + "\" is not in the Database!")
+                            print(">>>> Type \"Help\" to list Available Cities in Database!")
+                            
+                        else:
+                            break
 
                 while(True):
                     City2 = input("City #2: ")
-                    
-                    try:
-                        Latitude2 = CityDict[City2][0]
-                        Longitude2 = CityDict[City2][1]
 
-                    except KeyError:
-                        print(">>>> ERROR: The city, named \"" + City2 + "\" is not in the database")
+                    if(City2 == "Help" or City2 == "help" or City2 == "H" or City2 == "h"):
+                        print("Predefined Cities you can choose from:")
+                        for keys in CityDict.items():
+                            print(keys)
 
-                    break
+                    else:
+                        try:
+                            Latitude2 = CityDict[City2][0]
+                            Longitude2 = CityDict[City2][1]
+
+                        except KeyError:
+                            print(">>>> ERROR: The City, named \"" + City2 + "\" is not in the Database!")
+                            print(">>>> Type \"Help\" to list Available Cities in Database!")
+                            
+                        else:
+                            break
 
                 Distance = GeogDistCityCalc(Latitude1, Latitude2, Longitude1, Longitude2)
+                # Convert Distance to Km
+                Distance = float(Distance / 1000)
 
-                distmsg = "\n>>> The Geographical Distance Between\n>>> {0} and {1} is\n>>> {2} m\n"
+                distmsg = "\n>>> The Geographical Distance Between\n>>> {0} and {1} is\n>>> {2:.3f} km\n"
                 print(distmsg.format(City1, City2, Distance))
 
             elif(DistMode == 'Q' or DistMode == 'q'):
@@ -792,7 +887,7 @@ while(True):
             else:
                 print("Invalid option! Try again!")
 
-
+    # LOCAL MEAN SIDEREAL TIME CALCULATION
     elif(mode == '3'):
         while(True):
             print(">> Local Sidereal Time Calculator\n")
@@ -802,7 +897,8 @@ while(True):
             print("(Q) Quit to Main Menu")
             DistMode = input("> Choose a mode and press enter...:")
 
-            print()
+            print('\n')
+
             if(DistMode == '1'):
                 print(">> Calculate LST from given Parameters\n")
                 print(">> Give Parameters: ")
@@ -810,7 +906,7 @@ while(True):
                 # Input Positional Parameters
                 Latitude = float(input("> Latitude (φ): "))
                 Longitude = float(input("> Longitude (λ): "))
-                
+
                 # Input Time Parameters
                 while(True):
                     DateYear = int(input("> Year: "))
@@ -818,7 +914,7 @@ while(True):
                         break
                     else:
                         print(">>>> ERROR: Year 0 is not defined! Please write another date!\n")
-                
+
                 while(True):
                     DateMonth = int(input("> Month: "))
                     if(DateMonth > 0 and DateMonth < 13):
@@ -862,18 +958,27 @@ while(True):
 
             elif(DistMode == '2'):
                 print(">> Calculate LST from the Coordinates of a Predefined City\n")
-                print(">> Write the Name to the Input of a Choosen City!")
+                print(">> Write the Name of a Choosen City to the Input!")
 
                 # Input Choosen City's Name
                 while(True):
                     City = input("> City's name: ")
-                    try:
-                        Longitude = CityDict[City][1]
+                    
+                    if(City == "Help" or City == "help" or City == "H" or City == "h"):
+                        print("Predefined Cities you can choose from:")
+                        for keys in CityDict.items():
+                            print(keys)
+                    
+                    else:
+                        try:
+                            Longitude = CityDict[City][1]
 
-                    except KeyError:
-                        print(">>>> ERROR: The city, named \"" + City + "\" is not in the database")
-
-                    break
+                        except KeyError:
+                            print(">>>> ERROR: The City, named \"" + City + "\" is not in the Database!")
+                            print(">>>> Type \"Help\" to list Available Cities in Database!")
+                            
+                        else:
+                            break
 
                 # Input Time Parameters
                 while(True):
@@ -930,11 +1035,22 @@ while(True):
             else:
                 print("Invalid option! Try again!")
 
+    # DATETIME CALCULATION FOR TWILIGHTS
     elif(mode == '4'):
         while(True):
-
             print(">> Calculate Datetimes of Twilights at Specific Location")
-            print(">> Give Parameters")
+            print(">> Please choose a mode you'd like to use!")
+            print("(1) Parameters from User Input")
+            print("(2) Parameters of Predefined Cities")
+            print("(Q) Quit to Main Menu")
+            TwiMode = input("> Choose a mode and press enter...:")
+
+            print('\n')
+            if(TwiMode == '1'):
+                while(True):
+                    # Input Positional Parameters
+                    Latitude = float(input("> Latitude (φ): "))
+                    Longitude = float(input("> Longitude (λ): "))
 
     elif(mode == 'Q' or mode == 'q'):
         print("All Rights Reserved to Balage Paliere Co.!")
