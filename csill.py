@@ -197,9 +197,9 @@ def HorToEquII(Latitude, Altitude, Azimuth, LocalSiderealTime):
 # 3. Equatorial I to Horizontal
 def EquIToHor(Latitude, RightAscension, Declination, LocalSiderealTime, LocalHourAngle):
 
-    # Initial data normalization
+    # Initial Data Normalization
     # Latitude: [-π,+π]
-    # Right Ascension: [0h,24h]
+    # Right Ascension: [0h,24h[
     # Declination: [-π/2,+π/2]
     Latitude = NormalizeSymmetricallyBoundedPI_2(Latitude)
     RightAscension = NormalizeZeroBounded(RightAscension, 24)
@@ -233,7 +233,7 @@ def EquIToEquII(RightAscension, LocalHourAngle):
     return(LocalSiderealTime)
 
 # 5. Equatorial II to Equatorial I
-def EquIIToEquI(RightAscension, LocalSiderealTime):
+def EquIIToEquI(LocalSiderealTime, RightAscension, LocalHourAngle):
 
     # Calculate Right Ascension or Local Sidereal Time
     if(RightAscension != None and LocalSiderealTime == None):
@@ -241,14 +241,47 @@ def EquIIToEquI(RightAscension, LocalSiderealTime):
 
     elif(RightAscension == None and LocalSiderealTime != None):
         RightAscension = LocalSiderealTime - LocalHourAngle
+    
+    else:
+        pass
 
-    return(RightAscension, LocalHourAngle)
+    return(LocalHourAngle, RightAscension)
 
 # 6. Equatorial II to Horizontal
-def EquIIToHor(Latitude, RightAscension, Declination, LocalSiderealTime):
+def EquIIToHor(Latitude, LocalSiderealTime, LocalHourAngle, RightAscension, Declination):
 
-    RightAscension, LocalHourAngle = EquIIToEquI(RightAscension, LocalSiderealTime)
+    # Initial Data Normalization
+    # Latitude: [-π,+π]
+    # Local Sidereal Time: [0h,24h[
+    # Local Hour Angle: [0h,24h[
+    # Right Ascension: [0h,24h[
+    # Declination: [-π/2,+π/2]
+    Latitude = NormalizeSymmetricallyBoundedPI(Latitude)
+    LocalSiderealTime = NormalizeZeroBounded(LocalSiderealTime, 24)
+    
+    if(RightAscension == None and LocalSiderealTime != None):
+        LocalHourAngle = NormalizeZeroBounded(LocalHourAngle, 24)
+
+    elif(RightAscension != None and LocalSiderealTime == None):
+        RightAscension = NormalizeZeroBounded(RightAscension, 24)
+    
+    Declination = NormalizeSymmetricallyBoundedPI_2(Declination)
+
+    # Convert Equatorial II to Equatorial I
+    LocalHourAngle, RightAscension = EquIIToEquI(LocalSiderealTime, RightAscension, LocalHourAngle)
+
+    # Normalization of Output Data
+    LocalHourAngle = NormalizeZeroBounded(LocalHourAngle, 24)
+    RightAscension = NormalizeZeroBounded(RightAscension, 24)
+
+    # Convert Equatorial I to Horizontal
     Altitude, Azimuth = EquIToHor(Latitude, RightAscension, Declination, LocalHourAngle, LocalSiderealTime)
+
+    # Normalization of Output Data
+    # Altitude: [-π/2,+π/2]
+    # Azimuth: [0,2π]
+    Altitude = NormalizeSymmetricallyBoundedPI_2(Altitude)
+    Azimuth = NormalizeZeroBounded(Azimuth, 360)
 
     return(Altitude, Azimuth)
 
@@ -258,7 +291,7 @@ def EquIIToHor(Latitude, RightAscension, Declination, LocalSiderealTime):
 # Calculate distances between coordinates
 def GeogDistCalc(Latitude1, Latitude2, Longitude1, Longitude2):
     
-    # Initial data normalization
+    # Initial Data Normalization
     # Latitude: [-π,+π]
     # Longitude: [0,+2π]
     Latitude1 = NormalizeSymmetricallyBoundedPI(Latitude1)
@@ -287,7 +320,7 @@ def GeogDistCalc(Latitude1, Latitude2, Longitude1, Longitude2):
 # Calculate distances between choosen cities
 def GeogDistCityCalc(Latitude1, Latitude2, Longitude1, Longitude2):
 
-    # Initial data normalization
+    # Initial Data Normalization
     # Latitude: [-π,+π]
     # Longitude: [0,+2π]
     Latitude1 = NormalizeSymmetricallyBoundedPI(Latitude1)
@@ -315,7 +348,7 @@ def GeogDistCityCalc(Latitude1, Latitude2, Longitude1, Longitude2):
 
 ######## 3. CALCULATE LOCAL SIDEREAL TIME (LST) ########
 
-# Calculate Greenwich Mean Sidereal Time (GMST = S_0)
+# Calculate Greenwich Mean Sidereal Time (GMST = S_0) at UT 00:00 on Given Date
 def CalculateGMST(Longitude, UnitedHours, UnitedMinutes, UnitedDateYear, UnitedDateMonth, UnitedDateDay):
 
     # Days = UT days since J2000.0, including parts of a day
@@ -342,7 +375,7 @@ def CalculateGMST(Longitude, UnitedHours, UnitedMinutes, UnitedDateYear, UnitedD
 # Calculate 
 def SiderealFromInput(Longitude, LocalHours, LocalMinutes, DateYear, DateMonth, DateDay):
 
-    # Initial data normalization
+    # Initial Data Normalization
     # Longitude: [0,+2π]
     Longitude = NormalizeZeroBounded(Longitude, 360)
 
@@ -410,7 +443,7 @@ def SiderealFromInput(Longitude, LocalHours, LocalMinutes, DateYear, DateMonth, 
 
 def SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, DateYear, DateMonth, DateDay):
 
-    # Initial data normalization
+    # Initial Data Normalization
     # Longitude: [0,+2π]
     Longitude = NormalizeZeroBounded(Longitude, 360)
 
@@ -528,7 +561,18 @@ while(True):
                 Latitude = float(input("> Latitude (φ): "))
                 Altitude = float(input("> Altitude (m): "))
                 Azimuth = float(input("> Azimuth (A): "))
-                LocalSiderealTime = float(input("> Local Sidereal Time (S): "))
+                
+                print("Is Local Sidereal Time given?")
+                while(True):
+                    HorToEquIChoose = input("Write \'Y\' or \'N\' (Yes or No)")
+                    if(HorToEquIChoose == 'Y' or HorToEquIChoose == 'y' or HorToEquIChoose == 'Yes' or HorToEquIChoose == 'yes' or HorToEquIChoose == 'YEs' or HorToEquIChoose == 'yEs' or HorToEquIChoose == 'yeS' or HorToEquIChoose == 'YeS' or HorToEquIChoose == 'yES'):
+                        LocalSiderealTime = float(input("> Local Sidereal Time (S): "))
+                        break
+                    elif(HorToEquIChoose == 'N' or HorToEquIChoose == 'n' or HorToEquIChoose == 'No' or HorToEquIChoose == 'no' or HorToEquIChoose == 'nO'):
+                        LocalSiderealTime = None
+                        break
+                    else:
+                        print("Invalid option!")
 
                 Declination, LocalHourAngle, RightAscension = HorToEquI(Latitude, Altitude, Azimuth, LocalSiderealTime)
 
@@ -610,16 +654,33 @@ while(True):
             elif(CoordMode == '5'):
                 print(">> Conversion from Equatorial II to Equatorial I")
                 print(">> Give Parameters: ")
-                RightAscension = float(input("> Right Ascension (α): "))
+                Declination = float(input("> Declination (δ): "))
                 LocalSiderealTime = float(input("> Local Sidereal Time (S): "))
+                
+                while(True):
+                    print("Which Parameter Is given?")
+                    EquIIChoose = input("Rigth Ascension (write \'A\'), or Local Hour Angle in Hours (write \'T\')?: ")
+                    if(EquIIChoose == 'A' or EquIIChoose == 'a'):
+                        LocalHourAngle = None
+                        RightAscension = float(input("> Right Ascension (α): "))
+                        break
 
-                EquIIToEquI(RightAscension, LocalSiderealTime)
+                    elif(EquIIChoose == 'T' or EquIIChoose == 't'):
+                        LocalHourAngle = float(input("> Local Hour Angle in Hours (t): "))
+                        RightAscension = None
+                        break
+
+                    else:
+                        print("Invalid option! Write \'A\' or \'T\'!")
+
+                LocalHourAngle, RightAscension = EquIIToEquI(LocalSiderealTime, RightAscension, LocalHourAngle)
 
                 # Print Results
                 print("\n> Calculated parameters:")
 
                 declinmsg = "- Declination (δ): {0}°"
                 hourangmsg = "- Local Hour Angle (t): {0} h"
+
                 print(declinmsg.format(Declination))
                 print(hourangmsg.format(LocalHourAngle))
 
@@ -633,12 +694,26 @@ while(True):
                 print(">> Conversion from Equatorial II to Horizontal")
                 print(">> Give Parameters: ")
                 Latitude = float(input("> Latitude (φ): "))
-                RightAscension = float(input("> Right Ascension (α): "))
-                Declination = float(input("> Declination (δ): "))
-                LocalHourAngle = float(input("> Local Hour Angle (t): "))
                 LocalSiderealTime = float(input("> Local Sidereal Time (S): "))
+                Declination = float(input("> Declination (δ): "))
+                
+                while(True):
+                    print("Which Parameter Is given?")
+                    EquIIChoose = input("Rigth Ascension (write \'A\'), or Local Hour Angle in Hours (write \'T\')?: ")
+                    if(EquIIChoose == 'A' or EquIIChoose == 'a'):
+                        LocalHourAngle = None
+                        RightAscension = float(input("> Right Ascension (α): "))
+                        break
 
-                Altitude, Azimuth = EquIIToHor(Latitude, RightAscension, Declination, LocalSiderealTime)
+                    elif(EquIIChoose == 'T' or EquIIChoose == 't'):
+                        LocalHourAngle = float(input("> Local Hour Angle in Hours (t): "))
+                        RightAscension = None
+                        break
+
+                    else:
+                        print("Invalid option! Write \'A\' or \'T\'!")
+
+                Altitude, Azimuth = EquIIToHor(Latitude, LocalSiderealTime, LocalHourAngle, RightAscension, Declination)
 
                 # Print Results
                 print("> Calculated Parameters:")
@@ -682,23 +757,28 @@ while(True):
             elif(DistMode == '2'):
                 print(">> Calculate Distance of Choosen Predefined Cities\n")
                 print(">> Write the Names to the Input of Two Choosen Cities!")
-                
-                City1 = input("City #1: ")
+                while(True):
+                    City1 = input("City #1: ")
 
-                try:
-                    Latitude1 = CityDict[City1][0]
-                    Longitude1 = CityDict[City1][1]
-                except KeyError:
-                    print(">>>> ERROR: The city, named \"" + City1 + "\" is not in the database")
+                    try:
+                        Latitude1 = CityDict[City1][0]
+                        Longitude1 = CityDict[City1][1]
+
+                    except KeyError:
+                        print(">>>> ERROR: The city, named \"" + City1 + "\" is not in the database")
+
                     break
-                
-                City2 = input("City #2: ")
-                
-                try:
-                    Latitude2 = CityDict[City2][0]
-                    Longitude2 = CityDict[City2][1]
-                except KeyError:
-                    print(">>>> ERROR: The city, named \"" + City2 + "\" is not in the database")
+
+                while(True):
+                    City2 = input("City #2: ")
+                    
+                    try:
+                        Latitude2 = CityDict[City2][0]
+                        Longitude2 = CityDict[City2][1]
+
+                    except KeyError:
+                        print(">>>> ERROR: The city, named \"" + City2 + "\" is not in the database")
+
                     break
 
                 Distance = GeogDistCityCalc(Latitude1, Latitude2, Longitude1, Longitude2)
@@ -785,11 +865,14 @@ while(True):
                 print(">> Write the Name to the Input of a Choosen City!")
 
                 # Input Choosen City's Name
-                City = input("> City's name: ")
-                try:
-                    Longitude = CityDict[City][1]
-                except KeyError:
-                    print(">>>> ERROR: The city, named \"" + City + "\" is not in the database")
+                while(True):
+                    City = input("> City's name: ")
+                    try:
+                        Longitude = CityDict[City][1]
+
+                    except KeyError:
+                        print(">>>> ERROR: The city, named \"" + City + "\" is not in the database")
+
                     break
 
                 # Input Time Parameters
