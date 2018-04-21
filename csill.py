@@ -197,7 +197,11 @@ def NormalizeSymmetricallyBoundedPI_2(Parameter):
     return(Parameter)
 
 
-######## 1. CONVERSION OF COORDINATE SYSTEMS ########
+################################################################
+########                                                ########
+########      1. CONVERSION OF COORDINATE SYSTEMS       ########
+########                                                ########
+################################################################
 
 # 1. Horizontal to Equatorial I
 def HorToEquI(Latitude, Altitude, Azimuth, LocalSiderealTime=None):
@@ -394,8 +398,11 @@ def EquIIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSi
     return(Altitude, Azimuth)
 
 
-######## 2. GEOGRAPHICAL DISTANCE ########
-
+################################################
+########                                ########
+########    2. GEOGRAPHICAL DISTANCE    ########
+########                                ########
+################################################
 # Calculate distances between coordinates
 def GeogDistCalc(Latitude1, Latitude2, Longitude1, Longitude2):
     
@@ -454,7 +461,11 @@ def GeogDistCityCalc(Latitude1, Latitude2, Longitude1, Longitude2):
     return(Distance)
 
 
+########################################################
+########                                        ########
 ######## 3. CALCULATE LOCAL SIDEREAL TIME (LST) ########
+########                                        ########
+########################################################
 
 # Calculate Greenwich Mean Sidereal Time (GMST = S_0) at UT 00:00 on Given Date
 def CalculateGMST(Longitude, UnitedHours, UnitedMinutes, UnitedDateYear, UnitedDateMonth, UnitedDateDay):
@@ -870,7 +881,7 @@ while(True):
                             Declination = None
                             break
 
-                        elif(RAorDecEquIToHorChoose == 'T' or RAorDecEquIToHorChoose == 't'):
+                        elif(RAorDecEquIToHorChoose == 'D' or RAorDecEquIToHorChoose == 'd'):
                             RightAscension = None
                             Declination = float(input("> Declination (δ): "))
                             break
@@ -903,13 +914,10 @@ while(True):
 
                                 else:
                                     print(">> Which Parameter Is given?")
-                                    RAorDecEquIToHorChoose = input(">> Only Right Ascension (write \'A\'), Only Declination (write \'D\'), Or both of them (write \'B\')?: ")
-                                    if(RAorDecEquIToHorChoose == 'A' or RAorDecEquIToHorChoose == 'a'):
-                                        RightAscension = StellarDict[StellarObject][0]
-                                        Declination = None
-                                        break
+                                    print(">> Declination is essential for calculation Horizontal Coordinates!\n>> Right Ascension only isn't enough for calculating these parameters!")
+                                    RAorDecEquIToHorChoose = input(">> Only Declination (write \'D\'), Or both of Right Ascension and Declination (write \'B\')?: ")
 
-                                    elif(RAorDecEquIToHorChoose == 'T' or RAorDecEquIToHorChoose == 't'):
+                                    if(RAorDecEquIToHorChoose == 'D' or RAorDecEquIToHorChoose == 'd'):
                                         RightAscension = None
                                         Declination = StellarDict[StellarObject][1]
                                         break
@@ -920,46 +928,65 @@ while(True):
                                         break
 
                                     else:
-                                        print(">>>> ERROR: Invalid option! Write \'A\', \'D\' or \'B\'!")
+                                        print(">>>> ERROR: Invalid option! Write \'D\' or \'B\'!")
 
                         break
                             
                     else:
                         print(">>>> ERROR: Invalid option!")
 
+                if(RightAscension != None and Declination != None):
 
-                print(">> Is Local Sidereal Time given?")
-                while(True):
-                    EquIToHorChoose1 = input(">> Write \'Y\' or \'N\' (Yes or No): ")
-                    
-                    if(EquIToHorChoose1 == 'Y' or EquIToHorChoose1 == 'y' or EquIToHorChoose1 == 'Yes' or EquIToHorChoose1 == 'yes' or EquIToHorChoose1 == 'YEs' or EquIToHorChoose1 == 'yEs' or EquIToHorChoose1 == 'yeS' or EquIToHorChoose1 == 'YeS' or EquIToHorChoose1 == 'yES'):
-                        LocalSiderealTime = float(input("> Local Sidereal Time (S): "))
-                        break
-                    elif(EquIToHorChoose1 == 'N' or EquIToHorChoose1 == 'n' or EquIToHorChoose1 == 'No' or EquIToHorChoose1 == 'no' or EquIToHorChoose1 == 'nO'):
-                        LocalSiderealTime = None
+                    print(">> Is Local Sidereal Time given?")
+                    while(True):
+                        EquIToHorChoose1 = input(">> Write \'Y\' or \'N\' (Yes or No): ")
 
-                        print("\n>> Is Local Hour Angle given?")
-                        EquIToHorChoose2 = input(">> Write \'Y\' or \'N\' (Yes or No): ")
-
-                        if(EquIToHorChoose2 == 'Y' or EquIToHorChoose2 == 'y' or EquIToHorChoose2 == 'Yes' or EquIToHorChoose2 == 'yes' or EquIToHorChoose2 == 'YEs' or EquIToHorChoose2 == 'yEs' or EquIToHorChoose2 == 'yeS' or EquIToHorChoose2 == 'YeS' or EquIToHorChoose2 == 'yES'):
-                            LocalHourAngle = float(input("> Local Hour Angle in Hours (t): "))
+                        if(EquIToHorChoose1 == 'Y' or EquIToHorChoose1 == 'y' or EquIToHorChoose1 == 'Yes' or EquIToHorChoose1 == 'yes' or EquIToHorChoose1 == 'YEs' or EquIToHorChoose1 == 'yEs' or EquIToHorChoose1 == 'yeS' or EquIToHorChoose1 == 'YeS' or EquIToHorChoose1 == 'yES'):
+                            LocalSiderealTime = float(input("> Local Sidereal Time (S): "))
                             break
 
-                        elif(EquIToHorChoose2 == 'N' or EquIToHorChoose2 == 'n' or EquIToHorChoose2 == 'No' or EquIToHorChoose2 == 'no' or EquIToHorChoose2 == 'nO'):
-                            LocalHourAngle = None
-                            print("\n From the give data, you can calculate Azimuth (A),\n>> Or Altitude (m), if one of them is given.")
-                            print(">> Which one would you like to calculate?")
-                            AltAzEquIToHorChoose = input("(1) or (A) Azimuth, (2) or (m) Altitude: ")
+                        elif(EquIToHorChoose1 == 'N' or EquIToHorChoose1 == 'n' or EquIToHorChoose1 == 'No' or EquIToHorChoose1 == 'no' or EquIToHorChoose1 == 'nO'):
+                            LocalSiderealTime = None
 
-                            if(AltAzEquIToHorChoose == '1' or AltAzEquIToHorChoose == 'A' or AltAzEquIToHorChoose == 'a'):
-                                Azimuth = float(input("> Azimuth (A): "))
-                                Altitude == None
+                            print("\n>> Is Local Hour Angle given?")
+                            EquIToHorChoose2 = input(">> Write \'Y\' or \'N\' (Yes or No): ")
+
+                            if(EquIToHorChoose2 == 'Y' or EquIToHorChoose2 == 'y' or EquIToHorChoose2 == 'Yes' or EquIToHorChoose2 == 'yes' or EquIToHorChoose2 == 'YEs' or EquIToHorChoose2 == 'yEs' or EquIToHorChoose2 == 'yeS' or EquIToHorChoose2 == 'YeS' or EquIToHorChoose2 == 'yES'):
+                                LocalHourAngle = float(input("> Local Hour Angle in Hours (t): "))
                                 break
 
-                            elif(AltAzEquIToHorChoose == '2' or AltAzEquIToHorChoose == 'M' or AltAzEquIToHorChoose == 'm'):
-                                Altitude = float(input("> Altitude (m): "))
-                                Azimuth == None
-                                break
+                            elif(EquIToHorChoose2 == 'N' or EquIToHorChoose2 == 'n' or EquIToHorChoose2 == 'No' or EquIToHorChoose2 == 'no' or EquIToHorChoose2 == 'nO'):
+                                LocalHourAngle = None
+                                print("\n From the give data, you can calculate Azimuth (A),\n>> Or Altitude (m), if one of them is given.")
+                                print(">> Which one would you like to calculate?")
+                                AltAzEquIToHorChoose = input("(1) or (A) Azimuth, (2) or (m) Altitude: ")
+
+                                if(AltAzEquIToHorChoose == '1' or AltAzEquIToHorChoose == 'A' or AltAzEquIToHorChoose == 'a'):
+                                    Azimuth = float(input("> Azimuth (A): "))
+                                    Altitude == None
+                                    break
+
+                                elif(AltAzEquIToHorChoose == '2' or AltAzEquIToHorChoose == 'M' or AltAzEquIToHorChoose == 'm'):
+                                    Azimuth == None
+                                    Altitude = float(input("> Altitude (m): "))
+                                    break
+
+                elif(Declination != None and RightAscension == None):
+                    
+                    print("\n>> Is Local Hour Angle given?")
+                    EquIToHorChooseD = input(">> Write \'Y\' or \'N\' (Yes or No): ")
+
+                    if(EquIToHorChooseD == 'Y' or EquIToHorChooseD == 'y' or EquIToHorChooseD == 'Yes' or EquIToHorChooseD == 'yes' or EquIToHorChooseD == 'YEs' or EquIToHorChooseD == 'yEs' or EquIToHorChooseD == 'yeS' or EquIToHorChooseD == 'YeS' or EquIToHorChooseD == 'yES'):
+                        LocalHourAngle = float(input("> Local Hour Angle in Hours (t): "))
+                        break
+
+                    elif(EquIToHorChooseD == 'N' or EquIToHorChooseD == 'n' or EquIToHorChooseD == 'No' or EquIToHorChooseD == 'no' or EquIToHorChooseD == 'nO'):
+                        LocalHourAngle = None
+                        print("\n From the give data, you can calculate Altitude (m),\n>> If Altitude (m) is given.")
+                        
+                        Azimuth == None
+                        Altitude = float(input("> Altitude (m): "))
+                        break
 
                     else:
                         print(">>>> ERROR: Invalid option!")
@@ -970,21 +997,20 @@ while(True):
                 # Final outputs HERE:
                 # 1. Latitude, RightAscension, Declination, LocalSiderealTime   # φ,α,δ,S:  S,α -> t; t -> H; H,δ,φ -> m; H,δ,m -> A
                 # 2. Latitude, RightAscension, Declination, LocalHourAngle      # φ,α,δ,t:  t -> H; H,δ,φ -> m; H,δ,m -> A
-                # 3. Latitude, RightAscension, Declination, Azimuth             # φ,α,δ,A:  Not Enough Parameters
+                # 3. Latitude, RightAscension, Declination, Azimuth             # φ,α,δ,A:  t -> H; H,δ,φ -> m; H,δ,A -> m
                 # 4. Latitude, RightAscension, Declination, Altitude            # φ,α,δ,m:  m,δ,φ -> H; H,δ,m -> A
-                # 5. Latitude, RightAscension, LocalSiderealTime                # φ,α,S:    S,α -> t; t -> H; 
-                # 6. Latitude, RightAscension, LocalHourAngle                   # φ,α,t:    t -> H;
-                # 7. Latitude, RightAscension, Azimuth                          # φ,α,A:    Not Enough Parameters
-                # 8. Latitude, RightAscension, Altitude                         # φ,α,m:    Not Enough Parameters
-                # 9. Latitude, Declination, LocalSiderealTime                   # φ,δ,S:    Not Enough Parameters
+                # 5. Latitude, RightAscension, LocalSiderealTime                # φ,α,S:    Not Enough Parameters!
+                # 6. Latitude, RightAscension, LocalHourAngle                   # φ,α,t:    Not Enough Parameters!
+                # 7. Latitude, RightAscension, Azimuth                          # φ,α,A:    Not Enough Parameters!
+                # 8. Latitude, RightAscension, Altitude                         # φ,α,m:    Not Enough Parameters!
+                # 9. Latitude, Declination, LocalSiderealTime                   # φ,δ,S:    Not Enough Parameters!
                 # 10. Latitude, Declination, LocalHourAngle                     # φ,δ,t:    t -> H; H,δ,φ -> m; H,δ,m -> A
-                # 11. Latitude, Declination, Azimuth                            # φ,δ,A:    Not Enough Parameters
+                # 11. Latitude, Declination, Azimuth                            # φ,δ,A:    Not Enough Parameters!
                 # 12. Latitude, Declination, Altitude                           # φ,δ,m:    m,δ,φ -> H; H,δ,m -> A
                 
                 # Used formulas:
-                # sin(m) = sin(δ) * sin(φ) + cos(δ) * cos(φ) * cos(H)
+                # sin(m) = sin(δ) * sin(φ) + cos(δ) * cos(φ) * cos(H) ; cos(H) = (sin(m) - sin(δ) * sin(φ)) / cos(δ) * cos(φ)
                 # sin(A) = - sin(H) * cos(δ) / cos(m)
-                # cos(H) = (sin(m) - sin(δ) * sin(φ)) / cos(δ) * cos(φ)
                 # sin(δ) = sin(m) * sin(φ) + cos(m) * cos(φ) * cos(A)
                 Altitude, Azimuth = EquIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSiderealTime, LocalHourAngle)
 
@@ -1638,7 +1664,8 @@ while(True):
                         break
                     else:
                         print(">>>> ERROR: Minutes should be inside [0,59] interval, and should be Integer!\n")
-                pass
+                
+
                     
                 # Input Positional Parameters
 
