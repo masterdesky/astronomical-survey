@@ -57,7 +57,13 @@ import math
 # Current Version of the Csillész II Problem Solver
 ActualVersion = 'v0.9.84'
 
-######## CONSTANTS FOR CALCULATIONS ########
+
+
+################################################################
+########                                                ########
+########         CONSTANTS FOR CALCULATIONS             ########
+########                                                ########
+################################################################
 
 # Earth's Radius
 R = 6378e03
@@ -144,7 +150,12 @@ MonthLengthList = [31,28,31,30,31,30,31,31,30,31,30,31]
 # Months' length int days, with leap day
 MonthLengthListLeapYear = [31,28,31,30,31,30,31,31,30,31,30,31]
 
-######## UTILITY FUNCTIONS ########
+
+################################################################
+########                                                ########
+########               UTILITY FUNCTIONS                ########
+########                                                ########
+################################################################
 
 # Normalization with Bound [0,NonZeroBound]
 def NormalizeZeroBounded(Parameter, NonZeroBound):
@@ -195,6 +206,58 @@ def NormalizeSymmetricallyBoundedPI_2(Parameter):
             Parameter = Parameter - 360
 
     return(Parameter)
+
+# Normalization and Conversion of Local Time to United Time
+def LTtoUT(LocalHours, LocalMinutes, LocalSeconds, DateYear, DateMonth, DateDay):
+    
+    # Calculate United Time
+    LocalTime = LocalHours + LocalMinutes/60 + LocalSeconds/3600
+    # Normalize LT
+    LocalTime = NormalizeZeroBounded(LocalTime, 24)
+
+    # Summer/Winter Saving time
+    # Summer: March 26/31 - October 8/14 LT+1
+    # Winter: October 8/14 - March 26/31 LT+0
+    if((DateMonth > 3 and DateMonth < 10) or ((DateMonth == 3 and DateDay >=25) or (DateMonth == 10 and (DateDay >= 8 and DateDay <=14))
+        )):
+        UnitedTime = LocalTime - (int(Longitude/15) + 1)
+    else:
+        UnitedTime = LocalTime - int(Longitude/15)
+
+    if(UnitedTime < 0):
+        UnitedHours = 24 - int(UnitedTime)
+        UnitedDateDay = DateDay - 1
+        if(UnitedDateDay <= 0):
+            UnitedDateMonth = DateMonth - 1
+            if(UnitedDateMonth == 0):
+                UnitedDateMonth = 12
+                UnitedDateYear = DateYear - 1
+            if(DateYear%4 == 0 and DateYear%400 != 0):
+                UnitedDateDay = MonthLengthListLeapYear[UnitedDateMonth - 1]
+            else:
+                UnitedDateDay = MonthLengthList[UnitedDateMonth - 1]
+
+    elif(UnitedTime >= 24):
+        UnitedHours = int(UnitedTime) - 24
+        UnitedDateDay = DateDay + 1
+        if(DateYear%4 == 0 and DateYear%400 != 0):
+            if(UnitedDateDay >= MonthLengthListLeapYear[DateMonth - 1]):
+                UnitedDateMonth = DateMonth + 1
+        else:
+            if(UnitedDateDay >= MonthLengthList[DateMonth - 1]):
+                UnitedDateMonth = DateMonth + 1
+        if(UnitedDateMonth == 13):
+            UnitedDateMonth = 1
+            UnitedDateYear = DateYear + 1
+    else:
+        UnitedHours = int(UnitedTime)
+        UnitedMinutes = int((UnitedTime - UnitedHours) * 60)
+        UnitedSeconds = int((((UnitedTime - UnitedHours) * 60) - UnitedMinutes) * 60)
+        UnitedDateYear = DateYear
+        UnitedDateMonth = DateMonth
+        UnitedDateDay = DateDay
+
+    return(UnitedTime, UnitedHours, UnitedMinutes, UnitedSeconds, UnitedDateYear, UnitedDateMonth, UnitedDateDay)
 
 
 ################################################################
@@ -472,13 +535,15 @@ def GeogDistCityCalc(Latitude1, Latitude2, Longitude1, Longitude2):
 ################################################################
 
 # Calculate Greenwich Mean Sidereal Time (GMST = S_0) at UT 00:00 on Given Date
-def CalculateGMST(Longitude, UnitedHours, UnitedMinutes, UnitedDateYear, UnitedDateMonth, UnitedDateDay):
+def CalculateGMST(Longitude, UnitedHours, UnitedMinutes, UnitedSeconds, UnitedDateYear, UnitedDateMonth, UnitedDateDay):
 
     # Days = UT days since J2000.0, including parts of a day
     # Could be + or - or 0
     Dwhole = 367 * UnitedDateYear - int(7 * (UnitedDateYear + int((UnitedDateMonth + 9) / 12)) / 4) + int(275 * UnitedDateMonth / 9) + UnitedDateDay - 730531.5
-    # Dfrac = (UnitedHours + UnitedMinutes/60)/24
-    Dfrac = 0 # Now UT = 00:00
+    # Dfrac: Fraction of the day
+    Dfrac = (UnitedHours + UnitedMinutes/60 + UnitedSeconds/3600)/24
+    # But now UT Should be 00:00, so:
+    Dfrac = 0
     Days = Dwhole + Dfrac
 
     # Number of Julian centuries since J2000.0
@@ -495,59 +560,17 @@ def CalculateGMST(Longitude, UnitedHours, UnitedMinutes, UnitedDateYear, UnitedD
 
     return(GMST)
 
-# Calculate 
-def SiderealFromInput(Longitude, LocalHours, LocalMinutes, DateYear, DateMonth, DateDay):
+# Calculate LMST from User-input
+def SiderealFromInput(Longitude, LocalHours, LocalMinutes, LocalSeconds, DateYear, DateMonth, DateDay):
 
     # Initial Data Normalization
     # Longitude: [0,+2π[
     Longitude = NormalizeZeroBounded(Longitude, 360)
-
-    # Calculate United Time
-    LocalTime = LocalHours + LocalMinutes/60
-
-    # Summer/Winter Saving time
-    # Summer: March 26/31 - October 8/14 LT+1
-    # Winter: October 8/14 - March 26/31 LT+0
-    if((DateMonth > 3 and DateMonth < 10) or ((DateMonth == 3 and DateDay >=25) or (DateMonth == 10 and (DateDay >= 8 and DateDay <=14))
-        )):
-        UnitedTime = LocalTime - (int(Longitude/15) + 1)
-    else:
-        UnitedTime = LocalTime - int(Longitude/15)
-
-    if(UnitedTime < 0):
-        UnitedHours = 24 - int(UnitedTime)
-        UnitedDateDay = DateDay - 1
-        if(UnitedDateDay <= 0):
-            UnitedDateMonth = DateMonth - 1
-            if(UnitedDateMonth == 0):
-                UnitedDateMonth = 12
-                UnitedDateYear = DateYear - 1
-            if(DateYear%4 == 0 and DateYear%400 != 0):
-                UnitedDateDay = MonthLengthListLeapYear[UnitedDateMonth - 1]
-            else:
-                UnitedDateDay = MonthLengthList[UnitedDateMonth - 1]
-
-    elif(UnitedTime >= 24):
-        UnitedHours = int(UnitedTime) - 24
-        UnitedDateDay = DateDay + 1
-        if(DateYear%4 == 0 and DateYear%400 != 0):
-            if(UnitedDateDay >= MonthLengthListLeapYear[DateMonth - 1]):
-                UnitedDateMonth = DateMonth + 1
-        else:
-            if(UnitedDateDay >= MonthLengthList[DateMonth - 1]):
-                UnitedDateMonth = DateMonth + 1
-        if(UnitedDateMonth == 13):
-            UnitedDateMonth = 1
-            UnitedDateYear = DateYear + 1
-    else:
-        UnitedHours = int(UnitedTime)
-        UnitedMinutes = int((UnitedTime - UnitedHours) * 60)
-        UnitedDateYear = DateYear
-        UnitedDateMonth = DateMonth
-        UnitedDateDay = DateDay
     
+    UnitedTime, UnitedHours, UnitedMinutes, UnitedSeconds, UnitedDateYear, UnitedDateMonth, UnitedDateDay = LTtoUT(LocalHours, LocalMinutes, LocalSeconds, DateYear, DateMonth, DateDay)
+
     # Calculate Greenwich Mean Sidereal Time (GMST)
-    S_0 = CalculateGMST(Longitude, UnitedHours, UnitedMinutes, UnitedDateYear, UnitedDateMonth, UnitedDateDay)
+    S_0 = CalculateGMST(Longitude, UnitedHours, UnitedMinutes, UnitedSeconds, UnitedDateYear, UnitedDateMonth, UnitedDateDay)
 
     # Greenwich Zero Time for Supervision
     GreenwichHours = int(S_0)
@@ -565,51 +588,17 @@ def SiderealFromInput(Longitude, LocalHours, LocalMinutes, DateYear, DateMonth, 
 
     return(LocalSiderealHours, LocalSiderealMinutes, UnitedHours, UnitedMinutes, GreenwichHours, GreenwichMinutes, GreenwichSeconds)
 
-def SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, DateYear, DateMonth, DateDay):
+# Calculate LMST from Predefined Coordinates
+def SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, LocalSeconds, DateYear, DateMonth, DateDay):
 
     # Initial Data Normalization
     # Longitude: [0,+2π[
     Longitude = NormalizeZeroBounded(Longitude, 360)
 
-    # Calculate United Time
-    LocalTime = LocalHours + LocalMinutes/60
-    UnitedTime = LocalTime - int(Longitude/15)
-
-    # 
-    if(UnitedTime < 0):
-        UnitedHours = 24 - int(UnitedTime)
-        UnitedDateDay = DateDay - 1
-        if(UnitedDateDay <= 0):
-            UnitedDateMonth = DateMonth - 1
-            if(UnitedDateMonth == 0):
-                UnitedDateMonth = 12
-                UnitedDateYear = DateYear - 1
-            if(DateYear%4 == 0 and DateYear%400 != 0):
-                UnitedDateDay = MonthLengthListLeapYear[UnitedDateMonth - 1]
-            else:
-                UnitedDateDay = MonthLengthList[UnitedDateMonth - 1]
-
-    elif(UnitedTime >= 24):
-        UnitedHours = int(UnitedTime) - 24
-        UnitedDateDay = DateDay + 1
-        if(DateYear%4 == 0 and DateYear%400 != 0):
-            if(UnitedDateDay >= MonthLengthListLeapYear[DateMonth - 1]):
-                UnitedDateMonth = DateMonth + 1
-        else:
-            if(UnitedDateDay >= MonthLengthList[DateMonth - 1]):
-                UnitedDateMonth = DateMonth + 1
-        if(UnitedDateMonth == 13):
-            UnitedDateMonth = 1
-            UnitedDateYear = DateYear + 1
-    else:
-        UnitedHours = int(UnitedTime)
-        UnitedMinutes = int((UnitedTime - UnitedHours) * 60)
-        UnitedDateYear = DateYear
-        UnitedDateMonth = DateMonth
-        UnitedDateDay = DateDay
+    UnitedTime, UnitedHours, UnitedMinutes, UnitedSeconds, UnitedDateYear, UnitedDateMonth, UnitedDateDay = LTtoUT(LocalHours, LocalMinutes, LocalSeconds, DateYear, DateMonth, DateDay)
 
     # Calculate Greenwich Mean Sidereal Time (GMST)
-    S_0 = CalculateGMST(Longitude, UnitedHours, UnitedMinutes, UnitedDateYear, UnitedDateMonth, UnitedDateDay)
+    S_0 = CalculateGMST(Longitude, UnitedHours, UnitedMinutes, UnitedSeconds, UnitedDateYear, UnitedDateMonth, UnitedDateDay)
 
     # Greenwich Zero Time for Supervision
     GreenwichHours = int(S_0)
@@ -626,6 +615,77 @@ def SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, DateYear, DateMo
     LocalSiderealMinutes = int((LMSTNorm - LocalSiderealHours) * 60)
 
     return(LocalSiderealHours, LocalSiderealMinutes, UnitedHours, UnitedMinutes, GreenwichHours, GreenwichMinutes, GreenwichSeconds)
+
+
+################################################################
+########                                                ########
+########       4. CALCULATE TWILIGHTS' DATETIME         ########
+########                                                ########
+################################################################
+
+def SunsCoordinatesCalc(Latitude, Longitude, UnitedDateYear, UnitedDateMonth, UnitedDateDay, UnitedTime, UnitedHours, UnitedMinutes, UnitedSeconds):
+
+    # 1. Days = UT days since J2000.0, including parts of a day
+    # Could be + or - or 0
+    Dwhole = 367 * UnitedDateYear - int(7 * (UnitedDateYear + int((UnitedDateMonth + 9) / 12)) / 4) + int(275 * UnitedDateMonth / 9) + UnitedDateDay - 730531.5
+    # Dfrac: Fraction of the day
+    Dfrac = (UnitedHours + UnitedMinutes/60 + UnitedSeconds/3600)/24
+    Days = Dwhole + Dfrac
+
+    # 2. Mean Solar Noon
+    # JAnomaly is an approximation of Mean Solar Time at WLongitude expressed as a Julian day with the day fraction
+    # WLongitude is the longitude west (west is positive, east is negative) of the observer on the Earth;
+    WLongitude = - Longitude
+    JAnomaly = Days - WLongitude/360
+
+    # 3. Solar Mean Anomaly
+    # M is the Solar Mean Anomaly used in a few of next equations
+    M = (357.5291 + 0.98560028 * JAnomaly) % 360
+
+    # 4. Equation of the Center
+    # C is the Equation of the center value needed to calculate lambda (see next equation)
+    # 1.9148 is the coefficient of the Equation of the Center for the planet the observer is on (in this case, Earth)
+    C = 1.9148 * math.sin(math.radians(M))
+
+    # 5. Ecliptic Longitude
+    # λ is the Ecliptic Longitude
+    # 102.9372 is a value for the argument of perihelion
+    EclLongitude = (M + C + 180 + 102.9372) % 360
+
+    # 6. Solar Transit
+    # Jtransit is the Julian date for the local true solar transit (or solar noon)
+    # 2451545.5 is midnight or the beginning of the equivalent Julian year reference
+    # 0.0053 * sin(M) − 0.0069 * sin(2λ)  is a simplified version of the equation of time. The coefficients are fractional day minutes.
+    Jtransit = 2451545.5 + JAnomaly + 0.0053 * math.sin(math.radians(M)) - 0.0069 * math.sin(math.radians(2 * EclLongitude))
+
+    # 7. Declination of the Sun
+    # DeclinationSun (δSun) is the Declination of the Sun
+    # 23.44° is Earth's maximum Axial Tilt toward's the Sun
+    DeclinationSun = math.degrees(math.asin(
+           math.sin(math.radians(EclLongitude)) * math.sin(math.radians(23.44)) ))
+    # Normalize Declination
+    DeclinationSun = NormalizeSymmetricallyBoundedPI_2(DeclinationSun)
+
+    # 8. Local Hour Angle of Sun
+    # LocalHourAngleSun (t_0) is the Local Hour Angle from the Observer's Zenith
+    # Latitude (φ) is the North Latitude of the Observer (north is positive, south is negative) on the Earth
+    LocalHourAngleSun = math.degrees(math.acos(
+                        (math.sin(math.radians(-0.83)) - math.sin(math.radians(Latitude)) * math.sin(math.radians(DeclinationSun))) /
+                        (math.cos(math.radians(Latitude)) * math.cos(math.radians(DeclinationSun))) ))
+
+    return(LocalHourAngle, Jtransit)
+
+def TwilightsDateTime(Latitude, Longitude, DateYear, DateMonth, DateDay, LocalHours, LocalMinutes, LocalSeconds):
+
+    UnitedTime, UnitedHours, UnitedMinutes, UnitedSeconds, UnitedDateYear, UnitedDateMonth, UnitedDateDay = LTtoUT(LocalHours, LocalMinutes, LocalSeconds, DateYear, DateMonth, DateDay)
+
+    LocalHourAngle, Jtransit = SunsCoordinatesCalc(Latitude, Longitude, UnitedDateYear, UnitedDateMonth, UnitedDateDay, UnitedTime, UnitedHours, UnitedMinutes, UnitedSeconds)
+
+    # JSet is the actual Julian date of sunset
+    # JRise is the actual Julian date of sunrise
+    JSet = Jtransit + LocalHourAngle/360
+    JRise = Jtransit - LocalHourAngle/360
+
 
 
 ###############################################################################################
@@ -1533,11 +1593,11 @@ while(True):
                             print(daysmsg.format(MonthLengthList[DateMonth - 1]))
 
                 while(True):
-                    LocalHours = int(input("> Local Hours: "))
-                    if(LocalHours >= 0 and LocalHours <= 23):
+                    LocalHours = float(input("> Local Hours: "))
+                    if(LocalHours >= 0 and LocalHours < 24):
                         break
                     else:
-                        print(">>>> ERROR: Hours should be inside [0,23] interval, and should be Integer!\n")
+                        print(">>>> ERROR: Hours should be inside [0,24[ interval!\n")
 
                 while(True):
                     LocalMinutes = int(input("> Local Minutes: "))
@@ -1546,7 +1606,14 @@ while(True):
                     else:
                         print(">>>> ERROR: Minutes should be inside [0,59] interval, and should be Integer!\n")
 
-                LocalSiderealHours, LocalSiderealMinutes, UnitedHours, UnitedMinutes, GreenwichHours, GreenwichMinutes, GreenwichSeconds = SiderealFromInput(Longitude, LocalHours, LocalMinutes, DateYear, DateMonth, DateDay)
+                while(True):
+                    LocalSeconds = float(input("> Local Seconds: "))
+                    if(LocalSeconds >= 0 and LocalSeconds < 60):
+                        break
+                    else:
+                        print(">>>> ERROR: Seconds should be inside [0,60[ interval!\n")
+
+                LocalSiderealHours, LocalSiderealMinutes, UnitedHours, UnitedMinutes, GreenwichHours, GreenwichMinutes, GreenwichSeconds = SiderealFromInput(Longitude, LocalHours, LocalMinutes, LocalSeconds, DateYear, DateMonth, DateDay)
 
                 sidmsg = "\n>>> The Local Mean Sidereal Time\n>>> at {0}h {1}m UT, at location\n>>> {2}°,{3}° with\n>>> GMST {4}h {5}m {6}s at UT 0h 0m\n>>> is {7}h {8}m\n\n"
                 print(sidmsg.format(UnitedHours, UnitedMinutes, Latitude, Longitude, GreenwichHours, GreenwichMinutes, GreenwichSeconds, LocalSiderealHours, LocalSiderealMinutes))
@@ -1607,11 +1674,11 @@ while(True):
                             print(daysmsg.format(MonthLengthList[DateMonth - 1]))
 
                 while(True):
-                    LocalHours = int(input("> Local Hours: "))
-                    if(LocalHours >= 0 and LocalHours <= 23):
+                    LocalHours = float(input("> Local Hours: "))
+                    if(LocalHours >= 0 and LocalHours < 24):
                         break
                     else:
-                        print(">>>> ERROR: Hours should be inside [0,23] interval, and should be Integer!\n")
+                        print(">>>> ERROR: Hours should be inside [0,24[ interval!\n")
 
                 while(True):
                     LocalMinutes = int(input("> Local Minutes: "))
@@ -1620,7 +1687,14 @@ while(True):
                     else:
                         print(">>>> ERROR: Minutes should be inside [0,59] interval, and should be Integer!\n")
 
-                LocalSiderealHours, LocalSiderealMinutes, UnitedHours, UnitedMinutes, GreenwichHours, GreenwichMinutes, GreenwichSeconds = SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, DateYear, DateMonth, DateDay)
+                while(True):
+                    LocalSeconds = float(input("> Local Seconds: "))
+                    if(LocalSeconds >= 0 and LocalSeconds < 60):
+                        break
+                    else:
+                        print(">>>> ERROR: Seconds should be inside [0,60[ interval!\n")
+
+                LocalSiderealHours, LocalSiderealMinutes, UnitedHours, UnitedMinutes, GreenwichHours, GreenwichMinutes, GreenwichSeconds = SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, LocalSeconds, DateYear, DateMonth, DateDay)
 
                 sidmsg = "\n>>> The Local Mean Sidereal Time at {0}h {1}m UT\n>>> in {2} with\n>>> GMST {3}h {4}m {5}s at UT 0h 0m\n>>> is {6}h {7}m\n\n"
                 print(sidmsg.format(UnitedHours, UnitedMinutes, City, GreenwichHours, GreenwichMinutes, GreenwichSeconds, LocalSiderealHours, LocalSiderealMinutes))
@@ -1674,6 +1748,7 @@ while(True):
                     
                     else:
                         try:
+                            Latitude = CityDict[City][0]
                             Longitude = CityDict[City][1]
 
                         except KeyError:
@@ -1715,11 +1790,11 @@ while(True):
                             print(daysmsg.format(MonthLengthList[DateMonth - 1]))
 
                 while(True):
-                    LocalHours = int(input("> Local Hours: "))
-                    if(LocalHours >= 0 and LocalHours <= 23):
+                    LocalHours = float(input("> Local Hours: "))
+                    if(LocalHours >= 0 and LocalHours < 24):
                         break
                     else:
-                        print(">>>> ERROR: Hours should be inside [0,23] interval, and should be Integer!\n")
+                        print(">>>> ERROR: Hours should be inside [0,24[ interval!\n")
 
                 while(True):
                     LocalMinutes = int(input("> Local Minutes: "))
@@ -1727,6 +1802,13 @@ while(True):
                         break
                     else:
                         print(">>>> ERROR: Minutes should be inside [0,59] interval, and should be Integer!\n")
+
+                while(True):
+                    LocalSeconds = float(input("> Local Seconds: "))
+                    if(LocalSeconds >= 0 and LocalSeconds < 60):
+                        break
+                    else:
+                        print(">>>> ERROR: Seconds should be inside [0,60[ interval!\n")
                 
             elif(TwiMode == 'Q' or TwiMode == 'q'):
                 break
@@ -1735,6 +1817,7 @@ while(True):
                 print(">>>> ERROR: Invalid option! Try Again!")
 
             
+            TwilightsDateTime(Latitude, Longitude, DateYear, DateMonth, DateDay, LocalHours, LocalMinutes, LocalSeconds)
 
 
     elif(mode == 'Q' or mode == 'q'):
