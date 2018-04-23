@@ -1,4 +1,4 @@
 # Csillesz-Calculations
 To run program:
-> python csillesz.py
-> Follow all the Commands inside the program
+1. python csillesz.py
+2. Follow all the Commands inside the program
