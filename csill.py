@@ -54,10 +54,9 @@
 import math
 # import matplotlib.pyplot as plt
 # import numpy as np
-# import datetime
 
 # Current Version of the Csillész II Problem Solver
-ActualVersion = 'v1.01'
+ActualVersion = 'v1.06'
 
 
 
@@ -497,10 +496,26 @@ def EquIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSid
                 ))
         # Normalize Azimuth
         # Azimuth: [0,+2π[
-        Azimuth1 = NormalizeZeroBounded(Azimuth, 360)
-        Azimuth2 = NormalizeZeroBounded(Azimuth, 360)
+        Azimuth1 = NormalizeZeroBounded(Azimuth1, 360)
+        Azimuth2 = NormalizeZeroBounded(Azimuth2, 360)
 
-        return(Altitude, Azimuth1, Azimuth2)
+        # Calculate time between them
+        # sin(H) = - sin(A) * cos(m) / cos(δ)
+        H1 = math.degrees(math.asin(
+            - math.sin(math.radians(Azimuth1)) * math.cos(math.radians(Altitude)) / math.cos(math.radians(Declination)) ))
+
+        H2 = math.degrees(math.asin(
+            - math.sin(math.radians(Azimuth2)) * math.cos(math.radians(Altitude)) / math.cos(math.radians(Declination)) ))
+
+        H1 = NormalizeZeroBounded(H1, 360)
+        H2 = NormalizeZeroBounded(H2, 360)
+
+        if(H2 >= H1):
+            H_dil = H2 - H1
+        else:
+            H_dil = H1 - H2
+
+        return(Altitude, Azimuth1, Azimuth2, H_dil)
 
 # 4. Equatorial I to Equatorial II
 def EquIToEquII(RightAscension, LocalHourAngle):
@@ -708,11 +723,11 @@ def SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, LocalSeconds, Da
 
 ################################################################
 ########                                                ########
-########       4. CALCULATE TWILIGHTS' DATETIME         ########
+########     4. CALCULATE SUNSET AND -RISE'S DATE       ########
 ########                                                ########
 ################################################################
 
-def SunsCoordinatesCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, LocalDateDay):
+def SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateYear, LocalDateMonth, LocalDateDay):
 
     # 1. JulianDays = UT days since J2000.0, including parts of a day
     # Could be + or - or 0
@@ -794,9 +809,8 @@ def SunsCoordinatesCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMon
     # LocalHourAngleSun (t_0) is the Local Hour Angle from the Observer's Zenith
     # Latitude (φ) is the North Latitude of the Observer (north is positive, south is negative) on the Earth
     # m_0 = -0.83 is a compensation of Altitude (m) in degrees, for the Sun's distorted shape, and the atmospherical refraction
-    # Hence sin(m_0) = -0.0146
     LocalHourAngleSun_Orig = math.degrees(math.acos(
-                           ((-0.0146 - math.sin(math.radians(Latitude)) * math.sin(math.radians(DeclinationSun))) /
+                           ((math.sin(math.radians(AltitudeOfSun - 0.83)) - math.sin(math.radians(Latitude)) * math.sin(math.radians(DeclinationSun))) /
                            (math.cos(math.radians(Latitude)) * math.cos(math.radians(DeclinationSun)))) ))
     
     # Normalize result for Hour Angles
@@ -817,9 +831,9 @@ def SunsCoordinatesCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMon
     return(LocalHourAngleSun_Pos, LocalHourAngleSun_Orig, RightAscensionSun, DeclinationSun, Jtransit)
 
 # Calculate Sunrise and Sunset's Datetime
-def TwilightsDateTime(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, LocalDateDay):
+def SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateYear, LocalDateMonth, LocalDateDay):
 
-    LocalHourAngleSun_Pos, LocalHourAngleSun_Orig, RightAscensionSun, DeclinationSun, Jtransit = SunsCoordinatesCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, LocalDateDay)
+    LocalHourAngleSun_Pos, LocalHourAngleSun_Orig, RightAscensionSun, DeclinationSun, Jtransit = SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateYear, LocalDateMonth, LocalDateDay)
 
     # Calulate Rising and Setting Datetimes of the Sun 
     # JSet is the actual Julian date of sunset
@@ -830,12 +844,6 @@ def TwilightsDateTime(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth
     # Calculate Corrections:
     DeclinationSun_Corr_Pos = math.degrees(math.atan(math.cos(math.radians(LocalHourAngleSun_Pos)) / math.tan(math.radians(Latitude)) * (-1)))
     DeclinationSun_Corr_Neg = math.degrees(math.atan(math.cos(math.radians(- LocalHourAngleSun_Pos)) / math.tan(math.radians(Latitude)) * (-1)))
-
-    print("LHA_Pos: ", LocalHourAngleSun_Pos)
-    print("DecSun_Pos: ", DeclinationSun_Corr_Pos)
-    print("DecSun_Neg: ", DeclinationSun_Corr_Neg)
-    print("Set: ", JSet)
-    print("Rise: ", JRise)
 
     # SUNSET
     SunSetUTYearsDecimal = (JSet - 2451545.5) / 365
@@ -903,6 +911,19 @@ def TwilightsDateTime(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth
 
     return(LocalHoursSet, LocalMinutesSet, LocalSecondsSet, LocalDateYearSet, LocalDateMonthSet, LocalDateDaySet, LocalHoursRise, LocalMinutesRise, LocalSecondsRise, LocalDateYearRise, LocalDateMonthRise, LocalDateDayRise)
 
+
+################################################################
+########                                                ########
+########      5. CALCULATE DATETIME OF TWILIGHTS        ########
+########                                                ########
+################################################################
+
+def TwilightCalc(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateYear, LocalDateMonth, LocalDateDay):
+    
+    SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateYear, LocalDateMonth, LocalDateDay)
+
+
+
 ###############################################################################################
 ####                ...     ..      ..                                                     ####
 ##                x*8888x.:*8888: -"888:                 @88>                                ##
@@ -925,7 +946,7 @@ def TwilightsDateTime(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth
    ####                                                                                 ####
 
 # Print version info
-STARTMSG = "\n#### Csillész II Problem Solver Program {0} ####\n####     Developed by Balage Paliére and Co.    ####\n\n"
+STARTMSG = "\n#### Csillész II Problem Solver Program {0} ####\n####    Developed by Balage Paliére and Co.    ####\n\n"
 print(STARTMSG.format(ActualVersion))
 
 while(True):
@@ -934,7 +955,9 @@ while(True):
     print("(1) Coordinate System Conversion")
     print("(2) Geographical Distances")
     print("(3) Local Mean Sidereal Time")
-    print("(4) Datetimes of Twilights")
+    print("(4) Datetimes of Sunsets and Sunrises")
+    print("(5) Datetimes of Twilights")
+    print("(H) Solve End-Semester Homework")
     print("(Q) Quit Program\n")
 
     # Choose mode by user input
@@ -1328,7 +1351,7 @@ while(True):
                 # cos(H) = (sin(m) - sin(δ) * sin(φ)) / cos(δ) * cos(φ)
                 # sin(A) = - sin(H) * cos(δ) / cos(m)
                 elif(Altitude != None):
-                    Altitude, Azimuth1, Azimuth2 = EquIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSiderealTime, LocalHourAngle)
+                    Altitude, Azimuth1, Azimuth2, H_dil = EquIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSiderealTime, LocalHourAngle)
 
                     # Print Results
                     print(">> Available Data are only suited for Calculating Rising/Setting Altitudes!")
@@ -1920,6 +1943,115 @@ while(True):
             else:
                 print(">>>> ERROR: Invalid option! Try Again!")
 
+
+
+    #   _____                      _           _______ _               
+    #  /  ___|                    | |         / / ___ (_)              
+    #  \ `--. _   _ _ __  ___  ___| |_ ___   / /| |_/ /_ ___  ___  ___ 
+    #   `--. \ | | | '_ \/ __|/ _ \ __/ __| / / |    /| / __|/ _ \/ __|
+    #  /\__/ / |_| | | | \__ \  __/ |_\__ \/ /  | |\ \| \__ \  __/\__ \
+    #  \____/ \__,_|_| |_|___/\___|\__|___/_/   \_| \_|_|___/\___||___/
+    # DATETIME CALCULATION FOR SURISES AND SUNSET
+    elif(mode == '4'):
+        while(True):
+            print(">> Calculate Datetimes of Sunset/Rises at Specific Location")
+            print(">> Please choose a mode you'd like to use!")
+            print("(1) Parameters from User Input")
+            print("(2) Parameters of Predefined Cities")
+            print("(Q) Quit to Main Menu")
+            SunMode = input("> Choose a mode and press enter...:")
+
+            print('\n')
+            if(SunMode == '1'):
+                while(True):
+                    print(">> Calculate Sunset/Rises from given Parameters\n")
+                    print(">> Give Parameters!")
+
+                    # Input Positional Parameters
+                    Latitude = float(input("> Latitude (φ): "))
+                    Longitude = float(input("> Longitude (λ): "))
+                    break
+
+            elif(SunMode == '2'):
+                print(">> Calculate Datetimes of Sunset/Rises from the Coordinates of a Predefined City")
+                print(">> Write the Name of a Choosen City to the Input!")
+
+                # Input Choosen City's Name
+                while(True):
+                    City = input("> City's name (type \'H\' for Help): ")
+                    
+                    if(City == "Help" or City == "help" or City == "H" or City == "h"):
+                        print(">> Predefined Cities you can choose from:")
+                        for keys in CityDict.items():
+                            print(keys)
+                    
+                    else:
+                        try:
+                            Latitude = CityDict[City][0]
+                            Longitude = CityDict[City][1]
+
+                        except KeyError:
+                            print(">>>> ERROR: The City, named \"" + City + "\" is not in the Database!")
+                            print(">>>> Type \"Help\" to list Available Cities in Database!")
+                            
+                        else:
+                            break
+
+            elif(SunMode == 'Q' or SunMode == 'q'):
+                break
+
+            else:
+                print(">>>> ERROR: Invalid option! Try Again!")
+
+            # Input Time Parameters
+            while(True):
+                LocalDateYear = int(input("> Year: "))
+                if(LocalDateYear != 0):
+                    break
+                else:
+                    print(">>>> ERROR: Year 0 is not defined! Please write another date!\n")
+
+            while(True):
+                LocalDateMonth = int(input("> Month: "))
+                if(LocalDateMonth > 0 and LocalDateMonth < 13):
+                    break
+                else:
+                    print(">>>> ERROR: Months should be inside [1,12] interval, and should be Integer!\n")
+
+            # Leap Year	Handling
+            while(True):
+                LocalDateDay = int(input("> Day: "))
+                if(LocalDateYear%4 == 0 and (LocalDateYear%100 != 0 or LocalDateYear%400 == 0)):
+                    if(MonthLengthListLeapYear[LocalDateMonth - 1] >= LocalDateDay and LocalDateDay > 0):
+                        break
+                    else:
+                        daysmsg = ">>>> ERROR: Days should be inside [1,{0}] interval, and should be Integer!\n"
+                        print(daysmsg.format(MonthLengthListLeapYear[LocalDateMonth - 1]))
+                else:
+                    if(MonthLengthList[LocalDateMonth - 1] >= LocalDateDay and LocalDateDay > 0):
+                        break
+                    else:
+                        daysmsg = ">>>> ERROR: Days should be inside [1,{0}] interval, and should be Integer!\n"
+                        print(daysmsg.format(MonthLengthList[LocalDateMonth - 1]))
+
+            Planet = "Earth"
+            AltitudeOfSun = 0
+
+            LocalHoursSet, LocalMinutesSet, LocalSecondsSet, LocalDateYearSet, LocalDateMonthSet, LocalDateDaySet, LocalHoursRise, LocalMinutesRise, LocalSecondsRise, LocalDateYearRise, LocalDateMonthRise, LocalDateDayRise = SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateYear, LocalDateMonth, LocalDateDay)
+
+            if(SunMode == '1'):
+                suncoordmsg = ">>> Calculated Datetimes of Sunset/Rise for Coordinates: \n>>> {0}, {1}"
+                print(suncoordmsg.format(Latitude, Longitude))
+
+            elif(SunMode == '2'):
+                print("\n>>> Calculated Datetimes of Sunset/Rise for " + City + ":")
+
+            sunrisemsg = "\n>> The Sunrise will occur on {0}.{1}.{2}.,\n>> At {3}:{4}:{5} LT"
+            sunsetmsg = "\n>> The Sunset will occur on {0}.{1}.{2}.,\n>> At {3}:{4}:{5} LT\n"
+            print(sunrisemsg.format(LocalDateYearRise, LocalDateMonthRise, LocalDateDayRise, LocalHoursRise, LocalMinutesRise, LocalSecondsRise))
+            print(sunsetmsg.format(LocalDateYearSet, LocalDateMonthSet, LocalDateDaySet, LocalHoursSet, LocalMinutesSet, LocalSecondsSet))
+
+
     #   _______       _ _ _       _     _      _____      _      
     #  |__   __|     (_) (_)     | |   | |    / ____|    | |     
     #     | |_      ___| |_  __ _| |__ | |_  | |     __ _| | ___ 
@@ -1929,7 +2061,7 @@ while(True):
     #                        __/ |                               
     #                       |___/                                
     # DATETIME CALCULATION FOR TWILIGHTS
-    elif(mode == '4'):
+    elif(mode == '5'):
         while(True):
             print(">> Calculate Datetimes of Twilights at Specific Location")
             print(">> Please choose a mode you'd like to use!")
@@ -1941,7 +2073,7 @@ while(True):
             print('\n')
             if(TwiMode == '1'):
                 while(True):
-                    print(">> Calculate LMST from given Parameters\n")
+                    print(">> Calculate Twilights from given Parameters\n")
                     print(">> Give Parameters!")
 
                     # Input Positional Parameters
@@ -1950,7 +2082,7 @@ while(True):
                     break
 
             elif(TwiMode == '2'):
-                print(">> Calculate Datetime of Twilights from the Coordinates of a Predefined City")
+                print(">> Calculate Datetimes of Twilights from the Coordinates of a Predefined City")
                 print(">> Write the Name of a Choosen City to the Input!")
 
                 # Input Choosen City's Name
@@ -2013,19 +2145,44 @@ while(True):
 
             Planet = "Earth"
 
-            LocalHoursSet, LocalMinutesSet, LocalSecondsSet, LocalDateYearSet, LocalDateMonthSet, LocalDateDaySet, LocalHoursRise, LocalMinutesRise, LocalSecondsRise, LocalDateYearRise, LocalDateMonthRise, LocalDateDayRise = TwilightsDateTime(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, LocalDateDay)
+            TwilightCalc(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateYear, LocalDateMonth, LocalDateDay)
 
-            if(TwiMode == '1'):
-                twicoordmsg = ">>> Calculated Datetimes of Twilights for Coordinates: \n>>> {0}, {1}"
-                print(twicoordmsg.format(Latitude, Longitude))
+    # HOMEWORK MODE
+    elif(mode == 'Home' or mode == 'home' or mode == 'H' or mode == 'h'):
 
-            elif(TwiMode == '2'):
-                print("\n>>> Calculated Datetimes of Twilights for " + City + ":")
+        print("###     Csillesz II big-homework results, solved by the program     ###")
+        print("1.1/1:")
 
-            twirisemsg = "\n>> The Sunrise will occur on {0}.{1}.{2}.,\n>> At {3}:{4}:{5} LT"
-            twisetmsg = "\n>> The Sunset will occur on {0}.{1}.{2}.,\n>> At {3}:{4}:{5} LT\n"
-            print(twirisemsg.format(LocalDateYearRise, LocalDateMonthRise, LocalDateDayRise, LocalHoursRise, LocalMinutesRise, LocalSecondsRise))
-            print(twisetmsg.format(LocalDateYearSet, LocalDateMonthSet, LocalDateDaySet, LocalHoursSet, LocalMinutesSet, LocalSecondsSet))
+        City = "Szombathely"
+        Longitude = CityDict[City][1]
+        LocalDateYear = 2017
+        LocalDateMonth = 12
+        LocalDateDay = 27
+        LocalHours = 14
+        LocalMinutes = 0
+        LocalSeconds = 0
+        LocalSiderealHours, LocalSiderealMinutes, UnitedHours, UnitedMinutes, GreenwichHours, GreenwichMinutes, GreenwichSeconds = SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, LocalSeconds, LocalDateYear, LocalDateMonth, LocalDateDay)
+        
+        sidmsg = "\n>>> The Local Mean Sidereal Time at {0}h {1}m UT\n>>> in {2} with\n>>> GMST {3}h {4}m {5}s at UT 0h 0m\n>>> is {6}h {7}m\n\n"
+        print(sidmsg.format(UnitedHours, UnitedMinutes, City, GreenwichHours, GreenwichMinutes, GreenwichSeconds, LocalSiderealHours, LocalSiderealMinutes))
+        print("_________________________________________")
+
+        print("1.1/2:")
+
+        Latitude = CityDict["Szeged"][0]
+        RightAscensionVenus = 18 + 41/60 + 54/3600
+        DeclinationVenus = -(24 + 4/60 + 9/3600)
+        Altitude, Azimuth1, Azimuth2, H_dil = EquIToHor(Latitude, RightAscensionVenus, DeclinationVenus, 0, None, None, None)
+
+        # Print Results
+        print(">> Available Data are only suited for Calculating Rising/Setting Altitudes!")
+        print("\n> Calculated Parameter of Rising/Setting Object in Horizontal Coord. Sys.:")
+
+        azimmsg = "- Rising and Setting Azimuths (A) are:\n- {0}° and {1}°"
+        timemsg = "- Elapsed time between them: is {0}h\n"
+        print(azimmsg.format(Azimuth2, Azimuth1))
+        print(timemsg.format(H_dil/15))
+        print("_________________________________________")
 
     # MAIN MENU MODE
     # QUIT PROGRAM
