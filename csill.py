@@ -26,7 +26,13 @@
 ##        > Conversion Between Coordinate Systems                                            ##
 ##        > Calculate Geographical Distances                                                 ##
 ##        > Convert Sidereal Time/Local Mean Sidereal Time (S, LMST)                         ##
+##        > Calculate Datetimes of Sunrises and Sunsets                                      ##
 ##        > Calculate Twilights' Correct Datetimes at Specific Locations                     ##
+##        > Solve Csillész II End-Semester Homework with One Click                           ##
+##       Future:                                                                             ##
+##        > Draw Sun Analemma for a Choosen Year                                             ##
+##        > Draw Sun's Path on Earth during a Choosen Year                                   ##
+##        > Better Optimalization and Greater Precision                                      ##
 ####                                                                                       ####
 ###############################################################################################
 ####                                                                                       ####
@@ -56,7 +62,7 @@ import math
 # import numpy as np
 
 # Current Version of the Csillész II Problem Solver
-ActualVersion = 'v1.10'
+ActualVersion = 'v1.13'
 
 
 
@@ -82,6 +88,7 @@ dS = 1.002737909350795
 CityDict = {
     "Amsterdam": [52.3702, 4.8952],
     "Athen": [37.9838, 23.7275],
+    "Baja": [46.1803, 19.0111],
     "Beijing": [39.9042, 116.4074],
     "Berlin": [52.5200, 13.4050],
     "Budapest": [47.4979, 19.0402],
@@ -428,7 +435,7 @@ def HorToEquII(Latitude, Altitude, Azimuth, LocalSiderealTime):
     # LMST: [0,24h[
     LocalSiderealTime = NormalizeZeroBounded(LocalSiderealTime, 24)
 
-    return(Declination, LocalSiderealTime)
+    return(Declination, RightAscension, LocalSiderealTime)
 
 
 # 3. Equatorial I to Horizontal
@@ -453,7 +460,7 @@ def EquIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSid
         # LHA: [0h,24h[
         LocalHourAngle = NormalizeZeroBounded(LocalHourAngle, 24)
 
-    if(LocalHourAngle != None):
+    if(LocalHourAngle != None and Azimuth == None):
         # Convert to angles from hours (t -> H)
         LocalHourAngleDegrees = LocalHourAngle * 15
 
@@ -466,6 +473,17 @@ def EquIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSid
         # Normalize Altitude
         # Altitude: # Declination: [-π/2,+π/2]
         Altitude = NormalizeSymmetricallyBoundedPI_2(Altitude)
+
+        # Calculate Azimuth (A)
+        # sin(A) = - sin(H) * cos(δ) / cos(m)
+
+        # Setting Azimuth
+        Azimuth = math.degrees(math.asin(
+                - math.sin(math.radians(LocalHourAngleDegrees)) * math.cos(math.radians(Declination)) / math.cos(math.radians(Altitude))
+                ))
+        # Normalize Azimuth
+        # Azimuth: [0,+2π[
+        Azimuth1 = NormalizeZeroBounded(Azimuth, 360)
 
         return(Altitude, Azimuth)
 
@@ -532,13 +550,13 @@ def EquIToEquII(RightAscension, LocalHourAngle):
 def EquIIToEquI(LocalSiderealTime, RightAscension, LocalHourAngle):
 
     # Calculate Right Ascension or Local Mean Sidereal Time
-    if(RightAscension != None and LocalSiderealTime == None):
+    if(RightAscension != None and LocalHourAngle == None):
         LocalHourAngle = LocalSiderealTime - RightAscension
         # Normalize LHA
         # LHA: [0,24h[
         LocalHourAngle = NormalizeZeroBounded(LocalHourAngle, 24)
 
-    elif(RightAscension == None and LocalSiderealTime != None):
+    elif(RightAscension == None and LocalHourAngle != None):
         RightAscension = LocalSiderealTime - LocalHourAngle
         # Normalize Right Ascension
         # Right Ascension: [0,24h[
@@ -561,10 +579,10 @@ def EquIIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSi
     Latitude = NormalizeSymmetricallyBoundedPI(Latitude)
     LocalSiderealTime = NormalizeZeroBounded(LocalSiderealTime, 24)
     
-    if(RightAscension == None and LocalSiderealTime != None):
+    if(RightAscension == None and LocalHourAngle != None):
         LocalHourAngle = NormalizeZeroBounded(LocalHourAngle, 24)
 
-    elif(RightAscension != None and LocalSiderealTime == None):
+    elif(RightAscension != None and LocalHourAngle == None):
         RightAscension = NormalizeZeroBounded(RightAscension, 24)
     
     Declination = NormalizeSymmetricallyBoundedPI_2(Declination)
@@ -1179,20 +1197,23 @@ while(True):
 
                 Altitude = float(input("> Altitude (m): "))
                 Azimuth = float(input("> Azimuth (A): "))
+                
                 print(">> HINT: You can write LMST as a Decimal Fraction. For this you need\n>> To write Hours as a float-type value, and type 0 for both\n>> Minutes and Seconds.")
                 LocalSiderealTimeHours = float(input("> Local Mean Sidereal Time (S) Hours: "))
                 LocalSiderealTimeMinutes = float(input("> Local Mean Sidereal Time (S) Minutes: "))
                 LocalSiderealTimeSeconds = float(input("> Local Mean Sidereal Time (S) Seconds: "))
                 LocalSiderealTime = LocalSiderealTimeHours + LocalSiderealTimeMinutes/60 + LocalSiderealTimeSeconds/3600
 
-                Declination, LocalSiderealTime = HorToEquII(Latitude, Altitude, Azimuth, LocalSiderealTime)
+                Declination, RightAscension, LocalSiderealTime = HorToEquII(Latitude, Altitude, Azimuth, LocalSiderealTime)
 
                 # Print Results
                 print("\n> Calculated Parameters in Equatorial II Coord. Sys.:")
 
                 declinmsg = "- Declination (δ): {0}°"
-                sidermsg = "- Local Mean Sidereal Time (S):  {0}°"
+                RAmsg = "- Right Ascension (α): {0}h"
+                sidermsg = "- Local Mean Sidereal Time (S): {0}h"
                 print(declinmsg.format(Declination))
+                print(RAmsg.format(RightAscension))
                 print(sidermsg.format(LocalSiderealTime))
                 print('\n')
 
@@ -1728,10 +1749,10 @@ while(True):
                 # Print Results
                 print("> Calculated Parameters in Horizontal Coord. Sys.:")
 
-                altitmsg = "- Altitude (m): {0}°"
-                azimmsg = "- Azimuth (A):  {0}°"
-                print(altitmsg.format(Altitude))
+                azimmsg = ">>> Azimuth (A):  {0}°"
+                altitmsg = ">>> Altitude (m): {0}°"
                 print(azimmsg.format(Azimuth))
+                print(altitmsg.format(Altitude))
                 print('\n')
 
             elif(CoordMode == 'Q' or CoordMode == 'q'):
@@ -2243,8 +2264,8 @@ while(True):
     # HOMEWORK MODE
     elif(mode == 'Home' or mode == 'home' or mode == 'H' or mode == 'h'):
 
-        print("###     Csillesz II big-homework results, solved by the program     ###")
-        print("_______________________________________________________________________")
+        print("###  Csillesz II end-semesterhomework results, solved by the program  ###")
+        print("_________________________________________________________________________")
 
         print("1.1/1:")
 
@@ -2260,7 +2281,7 @@ while(True):
 
         sidmsg = "\n>>> The Local Mean Sidereal Time at {0}:{1}:{2} UT\n>>> in {3} with\n>>> {4}:{5}:{6} GMST at 00:00:00 UT\n>>> is {7}:{8}:{9}\n\n"
         print(sidmsg.format(UnitedHours, UnitedMinutes, UnitedSeconds, City, GreenwichHours, GreenwichMinutes, GreenwichSeconds, LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeonds))
-        print("_______________________________________________________________________")
+        print("_________________________________________________________________________")
 
         print("1.1/2:")
 
@@ -2277,7 +2298,7 @@ while(True):
         timemsg = ">>> Elapsed time between them: is {0:.2f}h\n"
         print(azimmsg.format(Azimuth2, Azimuth1))
         print(timemsg.format(H_dil/15))
-        print("_______________________________________________________________________")
+        print("_________________________________________________________________________")
 
         print("1.1/3:")
 
@@ -2319,21 +2340,99 @@ while(True):
 
         astrotimemsg = ">>> The astronomical night's lenght at " + City + " is\n>>> {0}:{1}:{2} long\n>>> On between {3}.{4}.{5}, and {6} evening.\n"
         print(astrotimemsg.format(AstroNightHours, AstroNightMinutes, AstroNightSeconds, LocalDateYear, LocalDateMonth, LocalDateDay1, LocalDateDay2))
-        print("_______________________________________________________________________")
+        print("_________________________________________________________________________")
 
         print("1.2/1.")
 
-        print("_______________________________________________________________________")
+        print("_________________________________________________________________________")
 
         print("1.2/2.")
 
-
         City = "Baja"
+        Star = "Altair"
+        Latitude = CityDict[City][0]
+        Longitude = CityDict[City][1]
+        RightAscension = StellarDict[Star][0]
+        Declination = StellarDict[Star][1]
+        Altitude = None
+        Azimuth = None
+        LocalHourAngle = None
+        LocalHours = 20
+        LocalMinutes = 45
+        LocalSeconds = 0
+        LocalDateYear = 2013
+        LocalDateMonth = 6
+        LocalDateDay = 21
 
+        LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeonds, UnitedHours, UnitedMinutes, UnitedSeconds, GreenwichHours, GreenwichMinutes, GreenwichSeconds = SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, LocalSeconds, LocalDateYear, LocalDateMonth, LocalDateDay)
+        
+        # Convert to decimal
+        LocalSiderealTime = LocalSiderealHours + LocalSiderealMinutes/60 + LocalSiderealSeonds/3600
+        
+        # Normalize result
+        LocalSiderealTime = NormalizeZeroBounded(LocalSiderealTime, 24)
 
-        EquIIToHor()
+        Altitude, Azimuth = EquIIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSiderealTime, LocalHourAngle)
 
-        print("_______________________________________________________________________")
+        # Print Results
+        timemsg = ">>> Altitude and Azimuth of Altair from Baja On {0}.{1}.{2}"
+        grwmsg = ">>> GMST: {0}:{1}:{2}"
+        print(timemsg.format(LocalDateYear, LocalDateMonth, LocalDateDay))
+        print(grwmsg.format(GreenwichHours, GreenwichMinutes, GreenwichSeconds))
+        print(">>> Calculated Parameters in Horizontal Coord. Sys.:")
+
+        azimmsg = ">>> Azimuth (A):  {0}°"
+        altitmsg = ">>> Altitude (m): {0}°\n"
+        print(azimmsg.format(Azimuth))
+        print(altitmsg.format(Altitude))
+
+        print("_________________________________________________________________________")
+
+        print("1.2/3.")
+
+        City = "Rio"
+        Latitude = CityDict[City][0]
+        Longitude = CityDict[City][1]
+
+        Altitude = 55.656388
+        Azimuth = 208.113611
+
+        LocalHours = 20
+        LocalMinutes = 34
+        LocalSeconds = 53
+        LocalDateYear = 2018
+        LocalDateMonth = 4
+        LocalDateDay = 17
+
+        LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeonds, UnitedHours, UnitedMinutes, UnitedSeconds, GreenwichHours, GreenwichMinutes, GreenwichSeconds = SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, LocalSeconds, LocalDateYear, LocalDateMonth, LocalDateDay)
+        
+        # Convert to decimal
+        LocalSiderealTime = LocalSiderealHours + LocalSiderealMinutes/60 + LocalSiderealSeonds/3600
+        
+        # Normalize result
+        LocalSiderealTime = NormalizeZeroBounded(LocalSiderealTime, 24)
+
+        Declination, RightAscension, LocalSiderealTime = HorToEquII(Latitude, Altitude, Azimuth, LocalSiderealTime)
+
+        RightAscensionHours = int(RightAscension)
+        RightAscensionMinutes = int((RightAscension - RightAscensionHours) * 60)
+        RightAscensionSeconds = int((((RightAscension - RightAscensionHours) * 60) - RightAscensionMinutes) * 60)
+
+        LocalSiderealTimeHours = int(LocalSiderealTime)
+        LocalSiderealTimeMinutes = int((LocalSiderealTime - LocalSiderealTimeHours) * 60)
+        LocalSiderealTimeSeconds = int((((LocalSiderealTime - LocalSiderealTimeHours) * 60) - LocalSiderealTimeMinutes) * 60)
+
+        equIImsg = ">>> Calculated Parameters of the Star in Equatorial II Coord. Sys. from {0}:"
+        print(equIImsg.format(City))
+
+        declinmsg = ">>> Declination (δ): {0}°"
+        RAmsg = ">>> Right Ascension (α): {0}h {1}m {2}s"
+        sidermsg = ">>> Local Mean Sidereal Time (S): {0}:{1}:{2}\n"
+        print(declinmsg.format(Declination))
+        print(RAmsg.format(RightAscensionHours, RightAscensionMinutes, RightAscensionSeconds))
+        print(sidermsg.format(LocalSiderealTimeHours, LocalSiderealTimeMinutes, LocalSiderealTimeSeconds))
+
+        print("_________________________________________________________________________")
 
     # MAIN MENU MODE
     # QUIT PROGRAM
