@@ -62,7 +62,7 @@ import math
 # import numpy as np
 
 # Current Version of the Csillész II Problem Solver
-ActualVersion = 'v1.13'
+ActualVersion = 'v1.15'
 
 
 
@@ -344,6 +344,9 @@ def UTtoLT(Latitude, UnitedHours, UnitedMinutes, UnitedSeconds, UnitedDateYear, 
         # Correction for Julian Date
         LocalHours += 12
         LocalHours = NormalizeZeroBounded(LocalHours, 24)
+
+    # Apply Correction for Local Time
+    LocalTime = LocalHours + LocalMinutes/60 + LocalSeconds/3600
 
     return(LocalTime, LocalHours, LocalMinutes, LocalSeconds, LocalDateYear, LocalDateMonth, LocalDateDay)
 
@@ -744,7 +747,7 @@ def SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, LocalSeconds, Da
 
 ################################################################
 ########                                                ########
-########      4. CALCULATE DATETIME OF TWILIGHTS        ########
+########  4. CALCULATE DATETIMES OF SUNSETS AND RISES   ########
 ########                                                ########
 ################################################################
 
@@ -923,39 +926,20 @@ def SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateY
     SunRiseUTSecondsDecimal = (SunRiseUTMinutesDecimal - SunRiseUTMinutes) * 60
     SunRiseUTSeconds = int(SunRiseUTSecondsDecimal)
 
-
     # Convert results to Local Time
     LocalTimeSet, LocalHoursSet, LocalMinutesSet, LocalSecondsSet, LocalDateYearSet, LocalDateMonthSet, LocalDateDaySet = UTtoLT(Latitude, SunSetUTHours, SunSetUTMinutes, SunSetUTSeconds, SunSetUTYears, SunSetUTMonths, SunSetUTDays)
-
     LocalTimeRise, LocalHoursRise, LocalMinutesRise, LocalSecondsRise, LocalDateYearRise, LocalDateMonthRise, LocalDateDayRise = UTtoLT(Latitude, SunRiseUTHours, SunRiseUTMinutes, SunRiseUTSeconds, SunRiseUTYears, SunRiseUTMonths, SunRiseUTDays)
 
+    return(LocalTimeSet, LocalHoursSet, LocalMinutesSet, LocalSecondsSet, LocalDateYearSet, LocalDateMonthSet, LocalDateDaySet, LocalTimeRise, LocalHoursRise, LocalMinutesRise, LocalSecondsRise, LocalDateYearRise, LocalDateMonthRise, LocalDateDayRise)
 
-    return(LocalHoursSet, LocalMinutesSet, LocalSecondsSet, LocalDateYearSet, LocalDateMonthSet, LocalDateDaySet, LocalHoursRise, LocalMinutesRise, LocalSecondsRise, LocalDateYearRise, LocalDateMonthRise, LocalDateDayRise)
-
-
-def TwilightHourAngleCalc(Latitude, AltitudeSun, DeclinationSun):
-
-    TwilightLocalHourAngle = math.degrees(math.acos(
-                             (math.sin(math.radians(AltitudeSun)) - math.sin(math.radians(DeclinationSun)) * math.sin(math.radians(Latitude))) /
-                             (math.cos(math.radians(DeclinationSun)) * math.cos(math.radians(Latitude)))
-    ))
-
-    # Normalize result
-    TwilightLocalHourAngle = NormalizeZeroBounded(TwilightLocalHourAngle, 360)
-
-    if(TwilightLocalHourAngle >= 0):
-        TwilightLHARise = TwilightLocalHourAngle
-        TwilightLHASet = 360 - TwilightLocalHourAngle
-
-    else:
-        TwilightLHARise = 360 - TwilightLocalHourAngle
-        TwilightLHASet = TwilightLocalHourAngle
-
-    return(TwilightLHARise, TwilightLHASet)
-
+################################################################
+########                                                ########
+########      5. CALCULATE DATETIMES OF TWILIGHTS       ########
+########                                                ########
+################################################################
 
 def TwilightCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, LocalDateDay):
-    
+
     # Definition of differenc Twilights
     # Begin of Civil Twilight:          m = -6°
     # Begin of Nautical Twilight:       m = -12°
@@ -964,31 +948,111 @@ def TwilightCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, Loc
     AltitudeCivil = -6
     AltitudeNaval = -12
     AltitudeAstro = -18
-    '''
-    # We need now only Right Ascension and Declination of the Sun
-    LocalHourAngleSun_PosCivil, LocalHourAngleSun_OrigCivil, RightAscensionSunCivil, DeclinationSunCivil, JtransitCivil = SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeCivil, LocalDateYear, LocalDateMonth, LocalDateDay)
-    LocalHourAngleSun_PosNaval, LocalHourAngleSun_OrigNaval, RightAscensionSunNaval, DeclinationSunNaval, JtransitNaval = SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeNaval, LocalDateYear, LocalDateMonth, LocalDateDay)
-    LocalHourAngleSun_PosAstro, LocalHourAngleSun_OrigAstro, RightAscensionSunAstro, DeclinationSunAstro, JtransitAstro = SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeAstro, LocalDateYear, LocalDateMonth, LocalDateDay)
-    '''
 
     #Daylight
-    (LocalHoursSetDaylight, LocalMinutesSetDaylight, LocalSecondsSetDaylight, LocalDateYearSetDaylight, LocalDateMonthSetDaylight, LocalDateDaySetDaylight, 
-    LocalHoursRiseDaylight, LocalMinutesRiseDaylight, LocalSecondsRiseDaylight, LocalDateYearRiseDaylight, LocalDateMonthRiseDaylight, LocalDateDayRiseDaylight) = SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeDaylight, LocalDateYear, LocalDateMonth, LocalDateDay)
+    (LocalTimeSetDaylight, LocalHoursSetDaylight, LocalMinutesSetDaylight, LocalSecondsSetDaylight, LocalDateYearSetDaylight, LocalDateMonthSetDaylight, LocalDateDaySetDaylight, 
+    LocalTimeRiseDaylight, LocalHoursRiseDaylight, LocalMinutesRiseDaylight, LocalSecondsRiseDaylight, LocalDateYearRiseDaylight, LocalDateMonthRiseDaylight, LocalDateDayRiseDaylight) = SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeDaylight, LocalDateYear, LocalDateMonth, LocalDateDay)
 
     # Civil Twilight
-    (LocalHoursSetCivil, LocalMinutesSetCivil, LocalSecondsSetCivil, LocalDateYearSetCivil, LocalDateMonthSetCivil, LocalDateDaySetCivil, 
-    LocalHoursRiseCivil, LocalMinutesRiseCivil, LocalSecondsRiseCivil, LocalDateYearRiseCivil, LocalDateMonthRiseCivil, LocalDateDayRiseCivil) = SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeCivil, LocalDateYear, LocalDateMonth, LocalDateDay)
+    (LocalTimeSetCivil, LocalHoursSetCivil, LocalMinutesSetCivil, LocalSecondsSetCivil, LocalDateYearSetCivil, LocalDateMonthSetCivil, LocalDateDaySetCivil, 
+    LocalTimeRiseCivil, LocalHoursRiseCivil, LocalMinutesRiseCivil, LocalSecondsRiseCivil, LocalDateYearRiseCivil, LocalDateMonthRiseCivil, LocalDateDayRiseCivil) = SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeCivil, LocalDateYear, LocalDateMonth, LocalDateDay)
 
     # Nautical Twilight
-    (LocalHoursSetNaval, LocalMinutesSetNaval, LocalSecondsSetNaval, LocalDateYearSetNaval, LocalDateMonthSetNaval, LocalDateDaySetNaval, 
-    LocalHoursRiseNaval, LocalMinutesRiseNaval, LocalSecondsRiseNaval, LocalDateYearRiseNaval, LocalDateMonthRiseNaval, LocalDateDayRiseNaval) = SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeNaval, LocalDateYear, LocalDateMonth, LocalDateDay)
+    (LocalTimeSetNaval, LocalHoursSetNaval, LocalMinutesSetNaval, LocalSecondsSetNaval, LocalDateYearSetNaval, LocalDateMonthSetNaval, LocalDateDaySetNaval, 
+    LocalTimeRiseNaval, LocalHoursRiseNaval, LocalMinutesRiseNaval, LocalSecondsRiseNaval, LocalDateYearRiseNaval, LocalDateMonthRiseNaval, LocalDateDayRiseNaval) = SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeNaval, LocalDateYear, LocalDateMonth, LocalDateDay)
 
     # Astronomical Twilight
-    (LocalHoursSetAstro, LocalMinutesSetAstro, LocalSecondsSetAstro, LocalDateYearSetAstro, LocalDateMonthSetAstro, LocalDateDaySetAstro, 
-    LocalHoursRiseAstro, LocalMinutesRiseAstro, LocalSecondsRiseAstro, LocalDateYearRiseAstro, LocalDateMonthRiseAstro, LocalDateDayRiseAstro) = SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeAstro, LocalDateYear, LocalDateMonth, LocalDateDay)
+    (LocalTimeSetAstro, LocalHoursSetAstro, LocalMinutesSetAstro, LocalSecondsSetAstro, LocalDateYearSetAstro, LocalDateMonthSetAstro, LocalDateDaySetAstro, 
+    LocalTimeRiseAstro, LocalHoursRiseAstro, LocalMinutesRiseAstro, LocalSecondsRiseAstro, LocalDateYearRiseAstro, LocalDateMonthRiseAstro, LocalDateDayRiseAstro) = SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeAstro, LocalDateYear, LocalDateMonth, LocalDateDay)
+
+    # Step 1 day
+    LocalDateNextDay = LocalDateDay + 1
+
+    if(LocalDateYear%4 == 0 and (LocalDateYear%100 != 0 or LocalDateYear%400 == 0)):
+        if(LocalDateNextDay > MonthLengthListLeapYear[LocalDateMonth - 1]):
+            LocalDateNextDay = 1
+            LocalDateNextMonth = LocalDateMonth + 1
+        else:
+            LocalDateNextDay = LocalDateDay + 1
+            LocalDateNextMonth = LocalDateMonth
+    
+    else:
+        if(LocalDateNextDay > MonthLengthList[LocalDateMonth - 1]):
+            LocalDateNextDay = 1
+            LocalDateNextMonth = LocalDateMonth + 1
+        else:
+            LocalDateNextDay = LocalDateDay + 1
+            LocalDateNextMonth = LocalDateMonth
+
+    if(LocalDateNextMonth > 12):
+        LocalDateNextMonth = 1
+        LocalDateNextYear = LocalDateYear + 1
+
+    else:
+        LocalDateNextYear = LocalDateYear
+
+    # Astronomical Twilight Next Day
+    (LocalTimeSetAstro2, LocalHoursSetAstro2, LocalMinutesSetAstro2, LocalSecondsSetAstro2, LocalDateYearSetAstro2, LocalDateMonthSetAstro2, LocalDateDaySetAstro2, 
+    LocalTimeRiseAstro2, LocalHoursRiseAstro2, LocalMinutesRiseAstro2, LocalSecondsRiseAstro2, LocalDateYearRiseAstro2, LocalDateMonthRiseAstro2, LocalDateDayRiseAstro2) = SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeAstro, LocalDateNextYear, LocalDateNextMonth, LocalDateNextDay)
 
 
-    return(LocalHoursRiseDaylight, LocalMinutesRiseDaylight, LocalSecondsRiseDaylight, LocalDateYearRiseDaylight, LocalDateMonthRiseDaylight, LocalDateDayRiseDaylight,
+    # Noon and Midnight
+    LocalTimeNoon = LocalTimeRiseDaylight + (LocalTimeSetDaylight - LocalTimeRiseDaylight) / 2
+    LocalTimeMidnight = LocalTimeSetAstro + (((24 - LocalTimeSetAstro) + LocalTimeRiseAstro2) / 2)
+
+    # Calc Midnight Date
+    if(LocalTimeMidnight > 24):
+        LocalDateDayMidnight = LocalDateDayRiseAstro2
+
+        if(LocalDateYear%4 == 0 and (LocalDateYear%100 != 0 or LocalDateYear%400 == 0)):
+            if(LocalDateDayMidnight > MonthLengthListLeapYear[LocalDateMonthSetAstro - 1]):
+                LocalDateDayMidnight = 1
+                LocalDateMonthMidnight = LocalDateMonthSetAstro + 1
+            else:
+                LocalDateDayMidnight = LocalDateDaySetAstro + 1
+                LocalDateMonthMidnight = LocalDateMonthSetAstro
+
+        else:
+            if(LocalDateDayMidnight > MonthLengthList[LocalDateMonthSetAstro - 1]):
+                LocalDateDayMidnight = 1
+                LocalDateMonthMidnight = LocalDateMonthSetAstro + 1
+            else:
+                LocalDateDayMidnight = LocalDateDaySetAstro + 1
+                LocalDateMonthMidnight = LocalDateMonthSetAstro
+        
+        if(LocalDateMonthMidnight > 12):
+            LocalDateMonthMidnight = 1
+            LocalDateYearMidnight = LocalDateYearSetAstro + 1
+
+        else:
+            LocalDateYearMidnight = LocalDateYearSetAstro
+
+    else:
+        LocalDateDayMidnight = LocalDateDaySetAstro
+        LocalDateMonthMidnight = LocalDateMonthSetAstro
+        LocalDateYearMidnight = LocalDateYearSetAstro
+
+    # Calc Noon Date
+    LocalDateDayNoon = LocalDateDayRiseAstro
+    LocalDateMonthNoon = LocalDateMonthRiseAstro
+    LocalDateYearNoon = LocalDateYearRiseAstro
+
+    # Normalize results
+    LocalTimeNoon = NormalizeZeroBounded(LocalTimeNoon, 24)
+    LocalTimeMidnight = NormalizeZeroBounded(LocalTimeMidnight, 24)
+
+    # LT of Noon and Midnight
+    LocalHoursNoon = int(LocalTimeNoon)
+    LocalMinutesNoon = int((LocalTimeNoon - LocalHoursNoon) * 60)
+    LocalSecondsNoon = int((((LocalTimeNoon - LocalHoursNoon) * 60) - LocalMinutesNoon) * 60)
+
+    LocalHoursMidnight = int(LocalTimeMidnight)
+    LocalMinutesMidnight = int((LocalTimeMidnight - LocalHoursMidnight) * 60)
+    LocalSecondsMidnight = int((((LocalTimeMidnight - LocalHoursMidnight) * 60) - LocalMinutesMidnight) * 60)
+
+    return(LocalHoursNoon, LocalMinutesNoon, LocalSecondsNoon, LocalDateYearNoon, LocalDateMonthNoon, LocalDateDayNoon,
+            LocalHoursMidnight, LocalMinutesMidnight, LocalSecondsMidnight, LocalDateYearMidnight, LocalDateMonthMidnight, LocalDateDayMidnight,
+            LocalHoursRiseDaylight, LocalMinutesRiseDaylight, LocalSecondsRiseDaylight, LocalDateYearRiseDaylight, LocalDateMonthRiseDaylight, LocalDateDayRiseDaylight,
             LocalHoursSetDaylight, LocalMinutesSetDaylight, LocalSecondsSetDaylight, LocalDateYearSetDaylight, LocalDateMonthSetDaylight, LocalDateDaySetDaylight,
             LocalHoursRiseCivil, LocalMinutesRiseCivil, LocalSecondsRiseCivil, LocalDateYearRiseCivil, LocalDateMonthRiseCivil, LocalDateDayRiseCivil,
             LocalHoursSetCivil, LocalMinutesSetCivil, LocalSecondsSetCivil, LocalDateYearSetCivil, LocalDateMonthSetCivil, LocalDateDaySetCivil,
@@ -2114,7 +2178,8 @@ while(True):
             Planet = "Earth"
             AltitudeOfSun = 0
 
-            LocalHoursSet, LocalMinutesSet, LocalSecondsSet, LocalDateYearSet, LocalDateMonthSet, LocalDateDaySet, LocalHoursRise, LocalMinutesRise, LocalSecondsRise, LocalDateYearRise, LocalDateMonthRise, LocalDateDayRise = SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateYear, LocalDateMonth, LocalDateDay)
+            (LocalTimeSet, LocalHoursSet, LocalMinutesSet, LocalSecondsSet, LocalDateYearSet, LocalDateMonthSet, LocalDateDaySet, 
+            LocalTimeRise, LocalHoursRise, LocalMinutesRise, LocalSecondsRise, LocalDateYearRise, LocalDateMonthRise, LocalDateDayRise) = SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateYear, LocalDateMonth, LocalDateDay)
 
             if(SunMode == '1'):
                 suncoordmsg = ">>> Calculated Datetimes of Sunset/Rise for Coordinates: \n>>> {0}, {1}"
@@ -2222,7 +2287,9 @@ while(True):
 
             Planet = "Earth"
 
-            (LocalHoursRiseDaylight, LocalMinutesRiseDaylight, LocalSecondsRiseDaylight, LocalDateYearRiseDaylight, LocalDateMonthRiseDaylight, LocalDateDayRiseDaylight,
+            (LocalHoursNoon, LocalMinutesNoon, LocalSecondsNoon, LocalDateYearNoon, LocalDateMonthNoon, LocalDateDayNoon,
+            LocalHoursMidnight, LocalMinutesMidnight, LocalSecondsMidnight, LocalDateYearMidnight, LocalDateMonthMidnight, LocalDateDayMidnight,
+            LocalHoursRiseDaylight, LocalMinutesRiseDaylight, LocalSecondsRiseDaylight, LocalDateYearRiseDaylight, LocalDateMonthRiseDaylight, LocalDateDayRiseDaylight,
             LocalHoursSetDaylight, LocalMinutesSetDaylight, LocalSecondsSetDaylight, LocalDateYearSetDaylight, LocalDateMonthSetDaylight, LocalDateDaySetDaylight,
             LocalHoursRiseCivil, LocalMinutesRiseCivil, LocalSecondsRiseCivil, LocalDateYearRiseCivil, LocalDateMonthRiseCivil, LocalDateDayRiseCivil,
             LocalHoursSetCivil, LocalMinutesSetCivil, LocalSecondsSetCivil, LocalDateYearSetCivil, LocalDateMonthSetCivil, LocalDateDaySetCivil,
@@ -2232,33 +2299,37 @@ while(True):
             LocalHoursSetAstro, LocalMinutesSetAstro, LocalSecondsSetAstro, LocalDateYearRiseAstro, LocalDateMonthRiseAstro, LocalDateDayRiseAstro) = TwilightCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, LocalDateDay)
 
 
-            msgdaylightrise = "\nRising Daylight's time: {0}:{1}:{2}\n On {3}.{4}.{5}"
-            msgdaylightset = "Setting Daylight's time: {0}:{1}:{2}\n On {3}.{4}.{5}\n"
+            msgdaylightrise = "\n>> Rising Daylight's time: {0}:{1}:{2} on {3}.{4}.{5}"
+            msgdaylightset = ">> Setting Daylight's time: {0}:{1}:{2} on {3}.{4}.{5}\n"
 
-            msgcivilrise = "\nRising Civil Twilight's time: {0}:{1}:{2}\n On {3}.{4}.{5}"
-            msgcivilset = "Setting Civil Twilight's time: {0}:{1}:{2}\n On {3}.{4}.{5}\n"
+            msgcivilrise = "\n>> Rising Civil Twilight's time is between\n>> {0}:{1}:{2} and {3}:{4}:{5} on {6}.{7}.{8}"
+            msgcivilset = ">> Setting Civil Twilight's time is between\n>> {0}:{1}:{2} and {3}:{4}:{5} on {6}.{7}.{8}\n"
 
-            msgnavalrise = "\nRising Nautical Twilight's time: {0}:{1}:{2}\n On {3}.{4}.{5}"
-            msgnavalset = "Setting Nautical Twilight's time: {0}:{1}:{2}\n On {3}.{4}.{5}\n"
+            msgnavalrise = "\n>> Rising Nautical Twilight's time is between\n>> {0}:{1}:{2} and {3}:{4}:{5} on {6}.{7}.{8}"
+            msgnavalset = ">> Setting Nautical Twilight's time is between\n>> {0}:{1}:{2} and {3}:{4}:{5} on {6}.{7}.{8}\n"
 
-            msgastrorise = "\nRising Astronomical Twilight's time: {0}:{1}:{2}\n On {3}.{4}.{5}"
-            msgastroset = "Setting Astronomical Twilight's time: {0}:{1}:{2}\n On {3}.{4}.{5}\n"
+            msgastrorise = "\n>> Rising Astronomical Twilight's time is between\n>> {0}:{1}:{2} and {3}:{4}:{5} on {6}.{7}.{8}"
+            msgastroset = ">> Setting Astronomical Twilight's time is between\n>> {0}:{1}:{2} and {3}:{4}:{5} on {6}.{7}.{8}\n"
 
+            msgnoon = "\n>> Noon occurs at {0}:{1}:{2} on {3}.{4}.{5}"
+            msgmidnight = ">> Midnight occurs at {0}:{1}:{2} on {3}.{4}.{5}\n"
 
             # +4 and -6 are Corrections for more accurate times
 
             print(msgdaylightrise.format(LocalHoursRiseDaylight, LocalMinutesRiseDaylight, LocalSecondsRiseDaylight, LocalDateYearRiseDaylight, LocalDateMonthRiseDaylight, LocalDateDayRiseDaylight))
             print(msgdaylightset.format(LocalHoursSetDaylight, LocalMinutesSetDaylight, LocalSecondsSetDaylight, LocalDateYearSetDaylight, LocalDateMonthSetDaylight, LocalDateDaySetDaylight))
         
-            print(msgcivilrise.format(LocalHoursRiseCivil, LocalMinutesRiseCivil + 4, LocalSecondsRiseCivil, LocalDateYearRiseCivil, LocalDateMonthRiseCivil, LocalDateDayRiseCivil))
-            print(msgcivilset.format(LocalHoursSetCivil, LocalMinutesSetCivil - 6, LocalSecondsSetCivil, LocalDateYearSetCivil, LocalDateMonthSetCivil, LocalDateDaySetCivil))
+            print(msgcivilrise.format(LocalHoursRiseCivil, LocalMinutesRiseCivil + 4, LocalSecondsRiseCivil, LocalHoursRiseDaylight, LocalMinutesRiseDaylight, LocalSecondsRiseDaylight, LocalDateYearRiseCivil, LocalDateMonthRiseCivil, LocalDateDayRiseCivil))
+            print(msgcivilset.format(LocalHoursSetDaylight, LocalMinutesSetDaylight, LocalSecondsSetDaylight, LocalHoursSetCivil, LocalMinutesSetCivil - 6, LocalSecondsSetCivil, LocalDateYearSetCivil, LocalDateMonthSetCivil, LocalDateDaySetCivil))
 
-            print(msgnavalrise.format(LocalHoursRiseNaval, LocalMinutesRiseNaval + 4, LocalSecondsRiseNaval, LocalDateYearRiseNaval, LocalDateMonthRiseNaval, LocalDateDayRiseNaval))
-            print(msgnavalset.format(LocalHoursSetNaval, LocalMinutesSetNaval - 6, LocalSecondsSetNaval, LocalDateYearSetNaval, LocalDateMonthSetNaval, LocalDateDaySetNaval))
+            print(msgnavalrise.format(LocalHoursRiseNaval, LocalMinutesRiseNaval + 4, LocalSecondsRiseNaval, LocalHoursRiseCivil, LocalMinutesRiseCivil + 4, LocalSecondsRiseCivil, LocalDateYearRiseNaval, LocalDateMonthRiseNaval, LocalDateDayRiseNaval))
+            print(msgnavalset.format(LocalHoursSetCivil, LocalMinutesSetCivil - 6, LocalSecondsSetCivil, LocalHoursSetNaval, LocalMinutesSetNaval - 6, LocalSecondsSetNaval, LocalDateYearSetNaval, LocalDateMonthSetNaval, LocalDateDaySetNaval))
 
-            print(msgastrorise.format(LocalHoursRiseAstro, LocalMinutesRiseAstro + 4, LocalSecondsRiseAstro, LocalDateYearSetAstro, LocalDateMonthSetAstro, LocalDateDaySetAstro))
-            print(msgastroset.format(LocalHoursSetAstro, LocalMinutesSetAstro - 6, LocalSecondsSetAstro, LocalDateYearRiseAstro, LocalDateMonthRiseAstro, LocalDateDayRiseAstro))
+            print(msgastrorise.format(LocalHoursRiseAstro, LocalMinutesRiseAstro + 4, LocalSecondsRiseAstro, LocalHoursRiseNaval, LocalMinutesRiseNaval + 4, LocalSecondsRiseNaval, LocalDateYearSetAstro, LocalDateMonthSetAstro, LocalDateDaySetAstro))
+            print(msgastroset.format(LocalHoursSetNaval, LocalMinutesSetNaval - 6, LocalSecondsSetNaval, LocalHoursSetAstro, LocalMinutesSetAstro - 6, LocalSecondsSetAstro, LocalDateYearRiseAstro, LocalDateMonthRiseAstro, LocalDateDayRiseAstro))
 
+            print(msgnoon.format(LocalHoursNoon, LocalMinutesNoon, LocalSecondsNoon, LocalDateYearNoon, LocalDateMonthNoon, LocalDateDayNoon))
+            print(msgmidnight.format(LocalHoursMidnight, LocalMinutesMidnight, LocalSecondsMidnight, LocalDateYearMidnight, LocalDateMonthMidnight, LocalDateDayMidnight))
 
 
     # HOMEWORK MODE
@@ -2311,7 +2382,9 @@ while(True):
         LocalDateDay1 = 21
         LocalDateDay2 = 22
 
-        (LocalHoursRiseDaylight1, LocalMinutesRiseDaylight1, LocalSecondsRiseDaylight1, LocalDateYearRiseDaylight1, LocalDateMonthRiseDaylight1, LocalDateDayRiseDaylight1,
+        (LocalHoursNoon1, LocalMinutesNoon1, LocalSecondsNoon1, LocalDateYearNoon1, LocalDateMonthNoon1, LocalDateDayNoon1,
+            LocalHoursMidnight1, LocalMinutesMidnight1, LocalSecondsMidnight1, LocalDateYearMidnight1, LocalDateMonthMidnight1, LocalDateDayMidnight1,
+            LocalHoursRiseDaylight1, LocalMinutesRiseDaylight1, LocalSecondsRiseDaylight1, LocalDateYearRiseDaylight1, LocalDateMonthRiseDaylight1, LocalDateDayRiseDaylight1,
             LocalHoursSetDaylight1, LocalMinutesSetDaylight1, LocalSecondsSetDaylight1, LocalDateYearSetDaylight1, LocalDateMonthSetDaylight1, LocalDateDaySetDaylight1,
             LocalHoursRiseCivil1, LocalMinutesRiseCivil1, LocalSecondsRiseCivil1, LocalDateYearRiseCivil1, LocalDateMonthRiseCivil1, LocalDateDayRiseCivil1,
             LocalHoursSetCivil1, LocalMinutesSetCivil1, LocalSecondsSetCivil1, LocalDateYearSetCivil1, LocalDateMonthSetCivil1, LocalDateDaySetCivil1,
@@ -2320,7 +2393,9 @@ while(True):
             LocalHoursRiseAstro1, LocalMinutesRiseAstro1, LocalSecondsRiseAstro1, LocalDateYearSetAstro1, LocalDateMonthSetAstro1, LocalDateDaySetAstro1,
             LocalHoursSetAstro1, LocalMinutesSetAstro1, LocalSecondsSetAstro1, LocalDateYearRiseAstro1, LocalDateMonthRiseAstro1, LocalDateDayRiseAstro1) = TwilightCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, LocalDateDay1)
 
-        (LocalHoursRiseDaylight2, LocalMinutesRiseDaylight2, LocalSecondsRiseDaylight2, LocalDateYearRiseDaylight2, LocalDateMonthRiseDaylight2, LocalDateDayRiseDaylight2,
+        (LocalHoursNoon2, LocalMinutesNoon2, LocalSecondsNoon2, LocalDateYearNoon2, LocalDateMonthNoon2, LocalDateDayNoon2,
+            LocalHoursMidnight2, LocalMinutesMidnight2, LocalSecondsMidnight2, LocalDateYearMidnight2, LocalDateMonthMidnight2, LocalDateDayMidnight2,
+            LocalHoursRiseDaylight2, LocalMinutesRiseDaylight2, LocalSecondsRiseDaylight2, LocalDateYearRiseDaylight2, LocalDateMonthRiseDaylight2, LocalDateDayRiseDaylight2,
             LocalHoursSetDaylight2, LocalMinutesSetDaylight2, LocalSecondsSetDaylight2, LocalDateYearSetDaylight2, LocalDateMonthSetDaylight2, LocalDateDaySetDaylight2,
             LocalHoursRiseCivil2, LocalMinutesRiseCivil2, LocalSecondsRiseCivil2, LocalDateYearRiseCivil2, LocalDateMonthRiseCivil2, LocalDateDayRiseCivil2,
             LocalHoursSetCivil2, LocalMinutesSetCivil2, LocalSecondsSetCivil2, LocalDateYearSetCivil2, LocalDateMonthSetCivil2, LocalDateDaySetCivil2,
