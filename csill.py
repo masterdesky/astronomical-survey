@@ -56,7 +56,7 @@ import math
 # import numpy as np
 
 # Current Version of the Csillész II Problem Solver
-ActualVersion = 'v1.06'
+ActualVersion = 'v1.10'
 
 
 
@@ -80,69 +80,70 @@ dS = 1.002737909350795
 # Latitude: + if N, - if S
 # Longitude: + if E, - if W
 CityDict = {
-    "Amsterdam": [52.3702,4.8952],
-    "Athen": [37.9838,23.7275],
-    "Beijing": [39.9042,116.4074],
-    "Berlin": [52.5200,13.4050],
-    "Budapest": [47.4979,19.0402],
-    "Budakeszi": [47.5136,18.9278],
-    "Budaors": [47.4621,18.9530],
-    "Brussels": [50.8503,4.3517],
-    "Debrecen": [47.5316,21.6273],
-    "Dunaujvaros": [46.9619,18.9355],
-    "Gyor": [47.6875,17.6504],
-    "Jerusalem": [31.7683,35.2137],
-    "Kecskemet": [46.8964,19.6897],
-    "London": [51.5074,-0.1278],
-    "Mako": [46.2219,20.4809],
-    "Miskolc": [48.1035,20.7784],
-    "Nagykanizsa": [46.4590,16.9897],
-    "NewYork": [40.7128,-74.0060],
-    "Paris": [48.8566,2.3522],
-    "Pecs": [46.0727,18.2323],
-    "Rio": [-22.9068,-43.1729],
-    "Rome": [41.9028,12.4964],
-    "Szeged": [46.2530,20.1414],
-    "Szeghalom": [47.0239,21.1667],
-    "Szekesfehervar": [47.1860,18.4221],
-    "Szombathely": [47.2307,16.6218],
-    "Tokyo": [35.6895,139.6917],
-    "Washington": [47.7511,-120.7401],
-    "Zalaegerszeg": [46.8417,16.8416]
+    "Amsterdam": [52.3702, 4.8952],
+    "Athen": [37.9838, 23.7275],
+    "Beijing": [39.9042, 116.4074],
+    "Berlin": [52.5200, 13.4050],
+    "Budapest": [47.4979, 19.0402],
+    "Budakeszi": [47.5136, 18.9278],
+    "Budaors": [47.4621, 18.9530],
+    "Brussels": [50.8503, 4.3517],
+    "Debrecen": [47.5316, 21.6273],
+    "Dunaujvaros": [46.9619, 18.9355],
+    "Gyor": [47.6875, 17.6504],
+    "Jerusalem": [31.7683, 35.2137],
+    "Kecskemet": [46.8964, 19.6897],
+    "London": [51.5074, -0.1278],
+    "Mako": [46.2219, 20.4809],
+    "Miskolc": [48.1035, 20.7784],
+    "Nagykanizsa": [46.4590, 16.9897],
+    "NewYork": [40.7128, -74.0060],
+    "Paris": [48.8566, 2.3522],
+    "Piszkesteto": [47.91806, 19.8942],
+    "Pecs": [46.0727, 18.2323],
+    "Rio": [-22.9068, -43.1729],
+    "Rome": [41.9028, 12.4964],
+    "Szeged": [46.2530, 20.1414],
+    "Szeghalom": [47.0239, 21.1667],
+    "Szekesfehervar": [47.1860, 18.4221],
+    "Szombathely": [47.2307, 16.6218],
+    "Tokyo": [35.6895, 139.6917],
+    "Washington": [47.7511, -120.7401],
+    "Zalaegerszeg": [46.8417, 16.8416]
 }
 
 # Predefined Equatorial I Coordinates of Some Notable Stars
 # Format:
 # "StarName": [Right Ascension (RA), Declination (δ)]
 StellarDict = {
-    "Achernar": [1.62857,-57.23675],
-    "Aldebaran": [4.59868,16.50930],
-    "Algol": [3.13614,40.95565],
-    "AlphaAndromedae": [0.13979,29.09043],
-    "AlphaCentauri": [14.66014,-60.83399],
-    "AlphaPersei": [3.40538,49.86118],
-    "Alphard": [9.45979,-8.65860],
-    "Altair": [19.84639,8.86832],
-    "Antares": [16.49013,-26.43200],
-    "Arcturus": [14.26103,19.18222],
-    "BetaCeti": [0.72649,-17.986605],
-    "BetaUrsaeMajoris": [11.03069,56.38243],
-    "BetaUrsaeMinoris": [14.84509,74.15550],
-    "Betelgeuse": [5.91953,7.407064],
-    "Canopus": [6.39920,-52.69566],
-    "Capella": [5.278155,45.99799],
-    "Deneb": [20.69053,45.28028],
-    "Fomalhaut": [22.960845,-29.62223],
-    "GammaDraconis": [17.94344,51.4889],
-    "GammaVelorum": [8.15888,-47.33658],
+    "Achernar": [1.62857, -57.23675],
+    "Aldebaran": [4.59868, 16.50930],
+    "Algol": [3.13614, 40.95565],
+    "AlphaAndromedae": [0.13979, 29.09043],
+    "AlphaCentauri": [14.66014, -60.83399],
+    "AlphaPersei": [3.40538, 49.86118],
+    "Alphard": [9.45979, -8.65860],
+    "Altair": [19.84639, 8.86832],
+    "Antares": [16.49013, -26.43200],
+    "Arcturus": [14.26103, 19.18222],
+    "BetaCeti": [0.72649, -17.986605],
+    "BetaUrsaeMajoris": [11.03069, 56.38243],
+    "BetaUrsaeMinoris": [14.84509, 74.15550],
+    "Betelgeuse": [5.91953, 7.407064],
+    "Canopus": [6.39920, -52.69566],
+    "Capella": [5.278155, 45.99799],
+    "Deneb": [20.69053, 45.28028],
+    "Fomalhaut": [22.960845, -29.62223],
+    "GammaDraconis": [17.94344, 51.4889],
+    "GammaVelorum": [8.15888, -47.33658],
     "M31": [0.712305,],
-    "Polaris": [2.53030,89.26411],
-    "Pollux": [7.75526,28.02620],
-    "ProximaCentauri": [14.49526,-62.67949],
-    "Rigel": [5.24230,-8.20164],
-    "Sirius": [6.75248,-16.716116],
-    "Vega": [18.61565,38.78369],
-    "VYCanisMajoris": [7.38287,-25.767565]
+    "Polaris": [2.53030, 89.26411],
+    "Pollux": [7.75526, 28.02620],
+    "ProximaCentauri": [14.49526, -62.67949],
+    "Rigel": [5.24230, -8.20164],
+    "Sirius": [6.75248, -16.716116],
+    "Vega": [18.61565, 38.78369],
+    "VYCanisMajoris": [7.38287, -25.767565]
 }
 
 # Months' length int days, without leap day
@@ -340,7 +341,7 @@ def UTtoLT(Latitude, UnitedHours, UnitedMinutes, UnitedSeconds, UnitedDateYear, 
     return(LocalTime, LocalHours, LocalMinutes, LocalSeconds, LocalDateYear, LocalDateMonth, LocalDateDay)
 
 # Calculate Greenwich Mean Sidereal Time (GMST = S_0) at UT 00:00 on Given Date
-def CalculateGMST(Longitude, UnitedHours, UnitedMinutes, UnitedSeconds, UnitedDateYear, UnitedDateMonth, UnitedDateDay):
+def CalculateGMST(Longitude, UnitedHoursForGMST, UnitedMinutesForGMST, UnitedSecondsForGMST, UnitedDateYear, UnitedDateMonth, UnitedDateDay):
 
     # JulianDays = UT days since J2000.0, including parts of a day
     # Could be + or - or 0
@@ -349,7 +350,7 @@ def CalculateGMST(Longitude, UnitedHours, UnitedMinutes, UnitedSeconds, UnitedDa
     Dwhole = 367 * LocalDateYear - int(7 * (LocalDateYear + int((LocalDateMonth + 9) / 12)) / 4) + int(275 * LocalDateMonth / 9) + LocalDateDay - 730531.5
     # Dfrac: Fraction of the day
     # If UT = 00:00:00, then Dfrac = 0
-    Dfrac = (UnitedHours + UnitedMinutes/60 + UnitedSeconds/3600)/24
+    Dfrac = (UnitedHoursForGMST + UnitedMinutesForGMST/60 + UnitedSecondsForGMST/3600)/24
     JulianDays = Dwhole + Dfrac
 
     # Number of Julian centuries since J2000.0
@@ -685,8 +686,9 @@ def SiderealFromInput(Longitude, LocalHours, LocalMinutes, LocalSeconds, DateYea
 
     LocalSiderealHours = int(LMSTNorm)
     LocalSiderealMinutes = int((LMSTNorm - LocalSiderealHours) * 60)
+    LocalSiderealSeonds = int((((LMSTNorm - LocalSiderealHours) * 60) - LocalSiderealMinutes) * 60)
 
-    return(LocalSiderealHours, LocalSiderealMinutes, UnitedHours, UnitedMinutes, GreenwichHours, GreenwichMinutes, GreenwichSeconds)
+    return(LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeonds, UnitedHours, UnitedMinutes, UnitedSeconds, GreenwichHours, GreenwichMinutes, GreenwichSeconds)
 
 # Calculate LMST from Predefined Coordinates
 def SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, LocalSeconds, DateYear, DateMonth, DateDay):
@@ -699,10 +701,10 @@ def SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, LocalSeconds, Da
 
     # Calculate Greenwich Mean Sidereal Time (GMST)
     # Now UT = 00:00:00
-    UnitedHours = 0
-    UnitedMinutes = 0
-    UnitedSeconds = 0
-    S_0 = CalculateGMST(Longitude, UnitedHours, UnitedMinutes, UnitedSeconds, UnitedDateYear, UnitedDateMonth, UnitedDateDay)
+    UnitedHoursForGMST = 0
+    UnitedMinutesForGMST = 0
+    UnitedSecondsForGMST = 0
+    S_0 = CalculateGMST(Longitude, UnitedHoursForGMST, UnitedMinutesForGMST, UnitedSecondsForGMST, UnitedDateYear, UnitedDateMonth, UnitedDateDay)
 
     # Greenwich Zero Time for Supervision
     GreenwichHours = int(S_0)
@@ -717,13 +719,14 @@ def SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, LocalSeconds, Da
 
     LocalSiderealHours = int(LMSTNorm)
     LocalSiderealMinutes = int((LMSTNorm - LocalSiderealHours) * 60)
+    LocalSiderealSeonds = int((((LMSTNorm - LocalSiderealHours) * 60) - LocalSiderealMinutes) * 60)
 
-    return(LocalSiderealHours, LocalSiderealMinutes, UnitedHours, UnitedMinutes, GreenwichHours, GreenwichMinutes, GreenwichSeconds)
+    return(LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeonds, UnitedHours, UnitedMinutes, UnitedSeconds, GreenwichHours, GreenwichMinutes, GreenwichSeconds)
 
 
 ################################################################
 ########                                                ########
-########     4. CALCULATE SUNSET AND -RISE'S DATE       ########
+########      4. CALCULATE DATETIME OF TWILIGHTS        ########
 ########                                                ########
 ################################################################
 
@@ -842,8 +845,8 @@ def SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateY
     JRise = Jtransit - LocalHourAngleSun_Orig / 360
 
     # Calculate Corrections:
-    DeclinationSun_Corr_Pos = math.degrees(math.atan(math.cos(math.radians(LocalHourAngleSun_Pos)) / math.tan(math.radians(Latitude)) * (-1)))
-    DeclinationSun_Corr_Neg = math.degrees(math.atan(math.cos(math.radians(- LocalHourAngleSun_Pos)) / math.tan(math.radians(Latitude)) * (-1)))
+    #DeclinationSun_Corr_Pos = math.degrees(math.atan(math.cos(math.radians(LocalHourAngleSun_Pos)) / math.tan(math.radians(Latitude)) * (-1)))
+    #DeclinationSun_Corr_Neg = math.degrees(math.atan(math.cos(math.radians(- LocalHourAngleSun_Pos)) / math.tan(math.radians(Latitude)) * (-1)))
 
     # SUNSET
     SunSetUTYearsDecimal = (JSet - 2451545.5) / 365
@@ -912,16 +915,69 @@ def SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateY
     return(LocalHoursSet, LocalMinutesSet, LocalSecondsSet, LocalDateYearSet, LocalDateMonthSet, LocalDateDaySet, LocalHoursRise, LocalMinutesRise, LocalSecondsRise, LocalDateYearRise, LocalDateMonthRise, LocalDateDayRise)
 
 
-################################################################
-########                                                ########
-########      5. CALCULATE DATETIME OF TWILIGHTS        ########
-########                                                ########
-################################################################
+def TwilightHourAngleCalc(Latitude, AltitudeSun, DeclinationSun):
 
-def TwilightCalc(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateYear, LocalDateMonth, LocalDateDay):
+    TwilightLocalHourAngle = math.degrees(math.acos(
+                             (math.sin(math.radians(AltitudeSun)) - math.sin(math.radians(DeclinationSun)) * math.sin(math.radians(Latitude))) /
+                             (math.cos(math.radians(DeclinationSun)) * math.cos(math.radians(Latitude)))
+    ))
+
+    # Normalize result
+    TwilightLocalHourAngle = NormalizeZeroBounded(TwilightLocalHourAngle, 360)
+
+    if(TwilightLocalHourAngle >= 0):
+        TwilightLHARise = TwilightLocalHourAngle
+        TwilightLHASet = 360 - TwilightLocalHourAngle
+
+    else:
+        TwilightLHARise = 360 - TwilightLocalHourAngle
+        TwilightLHASet = TwilightLocalHourAngle
+
+    return(TwilightLHARise, TwilightLHASet)
+
+
+def TwilightCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, LocalDateDay):
     
-    SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateYear, LocalDateMonth, LocalDateDay)
+    # Definition of differenc Twilights
+    # Begin of Civil Twilight:          m = -6°
+    # Begin of Nautical Twilight:       m = -12°
+    # Begin of Astronomical Twilight:   m = -18°
+    AltitudeDaylight = 0
+    AltitudeCivil = -6
+    AltitudeNaval = -12
+    AltitudeAstro = -18
+    '''
+    # We need now only Right Ascension and Declination of the Sun
+    LocalHourAngleSun_PosCivil, LocalHourAngleSun_OrigCivil, RightAscensionSunCivil, DeclinationSunCivil, JtransitCivil = SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeCivil, LocalDateYear, LocalDateMonth, LocalDateDay)
+    LocalHourAngleSun_PosNaval, LocalHourAngleSun_OrigNaval, RightAscensionSunNaval, DeclinationSunNaval, JtransitNaval = SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeNaval, LocalDateYear, LocalDateMonth, LocalDateDay)
+    LocalHourAngleSun_PosAstro, LocalHourAngleSun_OrigAstro, RightAscensionSunAstro, DeclinationSunAstro, JtransitAstro = SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeAstro, LocalDateYear, LocalDateMonth, LocalDateDay)
+    '''
 
+    #Daylight
+    (LocalHoursSetDaylight, LocalMinutesSetDaylight, LocalSecondsSetDaylight, LocalDateYearSetDaylight, LocalDateMonthSetDaylight, LocalDateDaySetDaylight, 
+    LocalHoursRiseDaylight, LocalMinutesRiseDaylight, LocalSecondsRiseDaylight, LocalDateYearRiseDaylight, LocalDateMonthRiseDaylight, LocalDateDayRiseDaylight) = SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeDaylight, LocalDateYear, LocalDateMonth, LocalDateDay)
+
+    # Civil Twilight
+    (LocalHoursSetCivil, LocalMinutesSetCivil, LocalSecondsSetCivil, LocalDateYearSetCivil, LocalDateMonthSetCivil, LocalDateDaySetCivil, 
+    LocalHoursRiseCivil, LocalMinutesRiseCivil, LocalSecondsRiseCivil, LocalDateYearRiseCivil, LocalDateMonthRiseCivil, LocalDateDayRiseCivil) = SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeCivil, LocalDateYear, LocalDateMonth, LocalDateDay)
+
+    # Nautical Twilight
+    (LocalHoursSetNaval, LocalMinutesSetNaval, LocalSecondsSetNaval, LocalDateYearSetNaval, LocalDateMonthSetNaval, LocalDateDaySetNaval, 
+    LocalHoursRiseNaval, LocalMinutesRiseNaval, LocalSecondsRiseNaval, LocalDateYearRiseNaval, LocalDateMonthRiseNaval, LocalDateDayRiseNaval) = SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeNaval, LocalDateYear, LocalDateMonth, LocalDateDay)
+
+    # Astronomical Twilight
+    (LocalHoursSetAstro, LocalMinutesSetAstro, LocalSecondsSetAstro, LocalDateYearSetAstro, LocalDateMonthSetAstro, LocalDateDaySetAstro, 
+    LocalHoursRiseAstro, LocalMinutesRiseAstro, LocalSecondsRiseAstro, LocalDateYearRiseAstro, LocalDateMonthRiseAstro, LocalDateDayRiseAstro) = SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeAstro, LocalDateYear, LocalDateMonth, LocalDateDay)
+
+
+    return(LocalHoursRiseDaylight, LocalMinutesRiseDaylight, LocalSecondsRiseDaylight, LocalDateYearRiseDaylight, LocalDateMonthRiseDaylight, LocalDateDayRiseDaylight,
+            LocalHoursSetDaylight, LocalMinutesSetDaylight, LocalSecondsSetDaylight, LocalDateYearSetDaylight, LocalDateMonthSetDaylight, LocalDateDaySetDaylight,
+            LocalHoursRiseCivil, LocalMinutesRiseCivil, LocalSecondsRiseCivil, LocalDateYearRiseCivil, LocalDateMonthRiseCivil, LocalDateDayRiseCivil,
+            LocalHoursSetCivil, LocalMinutesSetCivil, LocalSecondsSetCivil, LocalDateYearSetCivil, LocalDateMonthSetCivil, LocalDateDaySetCivil,
+            LocalHoursRiseNaval, LocalMinutesRiseNaval, LocalSecondsRiseNaval, LocalDateYearRiseNaval, LocalDateMonthRiseNaval, LocalDateDayRiseNaval,
+            LocalHoursSetNaval, LocalMinutesSetNaval, LocalSecondsSetNaval, LocalDateYearSetNaval, LocalDateMonthSetNaval, LocalDateDaySetNaval,
+            LocalHoursRiseAstro, LocalMinutesRiseAstro, LocalSecondsRiseAstro, LocalDateYearSetAstro, LocalDateMonthSetAstro, LocalDateDaySetAstro,
+            LocalHoursSetAstro, LocalMinutesSetAstro, LocalSecondsSetAstro, LocalDateYearRiseAstro, LocalDateMonthRiseAstro, LocalDateDayRiseAstro)
 
 
 ###############################################################################################
@@ -1851,10 +1907,10 @@ while(True):
                     else:
                         print(">>>> ERROR: Seconds should be inside [0,60[ interval!\n")
 
-                LocalSiderealHours, LocalSiderealMinutes, UnitedHours, UnitedMinutes, GreenwichHours, GreenwichMinutes, GreenwichSeconds = SiderealFromInput(Longitude, LocalHours, LocalMinutes, LocalSeconds, DateYear, DateMonth, DateDay)
+                LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeonds, UnitedHours, UnitedMinutes, UnitedSeconds, GreenwichHours, GreenwichMinutes, GreenwichSeconds = SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, LocalSeconds, DateYear, DateMonth, DateDay)
 
-                sidmsg = "\n>>> The Local Mean Sidereal Time\n>>> at {0}h {1}m UT, at location\n>>> {2}°,{3}° with\n>>> GMST {4}h {5}m {6}s at UT 0h 0m\n>>> is {7}h {8}m\n\n"
-                print(sidmsg.format(UnitedHours, UnitedMinutes, Latitude, Longitude, GreenwichHours, GreenwichMinutes, GreenwichSeconds, LocalSiderealHours, LocalSiderealMinutes))
+                sidmsg = "\n>>> The Local Mean Sidereal Time\n>>> at {0}:{1}:{2} UT, at location\n>>> {3}°,{4}° with\n>>> {5}:{6}:{7} GMST at 00:00:00 UT\n>>> is {8}:{9}:{10}\n\n"
+                print(sidmsg.format(UnitedHours, UnitedMinutes, UnitedSeconds, Latitude, Longitude, GreenwichHours, GreenwichMinutes, GreenwichSeconds, LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeonds))
 
             elif(DistMode == '2'):
                 print(">> Calculate LMST from the Coordinates of a Predefined City\n")
@@ -1932,10 +1988,10 @@ while(True):
                     else:
                         print(">>>> ERROR: Seconds should be inside [0,60[ interval!\n")
 
-                LocalSiderealHours, LocalSiderealMinutes, UnitedHours, UnitedMinutes, GreenwichHours, GreenwichMinutes, GreenwichSeconds = SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, LocalSeconds, DateYear, DateMonth, DateDay)
+                LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeonds, UnitedHours, UnitedMinutes, UnitedSeconds, GreenwichHours, GreenwichMinutes, GreenwichSeconds = SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, LocalSeconds, DateYear, DateMonth, DateDay)
 
-                sidmsg = "\n>>> The Local Mean Sidereal Time at {0}h {1}m UT\n>>> in {2} with\n>>> GMST {3}h {4}m {5}s at UT 0h 0m\n>>> is {6}h {7}m\n\n"
-                print(sidmsg.format(UnitedHours, UnitedMinutes, City, GreenwichHours, GreenwichMinutes, GreenwichSeconds, LocalSiderealHours, LocalSiderealMinutes))
+                sidmsg = "\n>>> The Local Mean Sidereal Time at {0}:{1}:{2} UT\n>>> in {3} with\n>>> {4}:{5}:{6} GMST at 00:00:00 UT\n>>> is {7}:{8}:{9}\n\n"
+                print(sidmsg.format(UnitedHours, UnitedMinutes, UnitedSeconds, City, GreenwichHours, GreenwichMinutes, GreenwichSeconds, LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeonds))
 
             elif(DistMode == 'Q' or DistMode == 'q'):
                 break
@@ -2145,12 +2201,51 @@ while(True):
 
             Planet = "Earth"
 
-            TwilightCalc(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateYear, LocalDateMonth, LocalDateDay)
+            (LocalHoursRiseDaylight, LocalMinutesRiseDaylight, LocalSecondsRiseDaylight, LocalDateYearRiseDaylight, LocalDateMonthRiseDaylight, LocalDateDayRiseDaylight,
+            LocalHoursSetDaylight, LocalMinutesSetDaylight, LocalSecondsSetDaylight, LocalDateYearSetDaylight, LocalDateMonthSetDaylight, LocalDateDaySetDaylight,
+            LocalHoursRiseCivil, LocalMinutesRiseCivil, LocalSecondsRiseCivil, LocalDateYearRiseCivil, LocalDateMonthRiseCivil, LocalDateDayRiseCivil,
+            LocalHoursSetCivil, LocalMinutesSetCivil, LocalSecondsSetCivil, LocalDateYearSetCivil, LocalDateMonthSetCivil, LocalDateDaySetCivil,
+            LocalHoursRiseNaval, LocalMinutesRiseNaval, LocalSecondsRiseNaval, LocalDateYearRiseNaval, LocalDateMonthRiseNaval, LocalDateDayRiseNaval,
+            LocalHoursSetNaval, LocalMinutesSetNaval, LocalSecondsSetNaval, LocalDateYearSetNaval, LocalDateMonthSetNaval, LocalDateDaySetNaval,
+            LocalHoursRiseAstro, LocalMinutesRiseAstro, LocalSecondsRiseAstro, LocalDateYearSetAstro, LocalDateMonthSetAstro, LocalDateDaySetAstro,
+            LocalHoursSetAstro, LocalMinutesSetAstro, LocalSecondsSetAstro, LocalDateYearRiseAstro, LocalDateMonthRiseAstro, LocalDateDayRiseAstro) = TwilightCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, LocalDateDay)
+
+
+            msgdaylightrise = "\nRising Daylight's time: {0}:{1}:{2}\n On {3}.{4}.{5}"
+            msgdaylightset = "Setting Daylight's time: {0}:{1}:{2}\n On {3}.{4}.{5}\n"
+
+            msgcivilrise = "\nRising Civil Twilight's time: {0}:{1}:{2}\n On {3}.{4}.{5}"
+            msgcivilset = "Setting Civil Twilight's time: {0}:{1}:{2}\n On {3}.{4}.{5}\n"
+
+            msgnavalrise = "\nRising Nautical Twilight's time: {0}:{1}:{2}\n On {3}.{4}.{5}"
+            msgnavalset = "Setting Nautical Twilight's time: {0}:{1}:{2}\n On {3}.{4}.{5}\n"
+
+            msgastrorise = "\nRising Astronomical Twilight's time: {0}:{1}:{2}\n On {3}.{4}.{5}"
+            msgastroset = "Setting Astronomical Twilight's time: {0}:{1}:{2}\n On {3}.{4}.{5}\n"
+
+
+            # +4 and -6 are Corrections for more accurate times
+
+            print(msgdaylightrise.format(LocalHoursRiseDaylight, LocalMinutesRiseDaylight, LocalSecondsRiseDaylight, LocalDateYearRiseDaylight, LocalDateMonthRiseDaylight, LocalDateDayRiseDaylight))
+            print(msgdaylightset.format(LocalHoursSetDaylight, LocalMinutesSetDaylight, LocalSecondsSetDaylight, LocalDateYearSetDaylight, LocalDateMonthSetDaylight, LocalDateDaySetDaylight))
+        
+            print(msgcivilrise.format(LocalHoursRiseCivil, LocalMinutesRiseCivil + 4, LocalSecondsRiseCivil, LocalDateYearRiseCivil, LocalDateMonthRiseCivil, LocalDateDayRiseCivil))
+            print(msgcivilset.format(LocalHoursSetCivil, LocalMinutesSetCivil - 6, LocalSecondsSetCivil, LocalDateYearSetCivil, LocalDateMonthSetCivil, LocalDateDaySetCivil))
+
+            print(msgnavalrise.format(LocalHoursRiseNaval, LocalMinutesRiseNaval + 4, LocalSecondsRiseNaval, LocalDateYearRiseNaval, LocalDateMonthRiseNaval, LocalDateDayRiseNaval))
+            print(msgnavalset.format(LocalHoursSetNaval, LocalMinutesSetNaval - 6, LocalSecondsSetNaval, LocalDateYearSetNaval, LocalDateMonthSetNaval, LocalDateDaySetNaval))
+
+            print(msgastrorise.format(LocalHoursRiseAstro, LocalMinutesRiseAstro + 4, LocalSecondsRiseAstro, LocalDateYearSetAstro, LocalDateMonthSetAstro, LocalDateDaySetAstro))
+            print(msgastroset.format(LocalHoursSetAstro, LocalMinutesSetAstro - 6, LocalSecondsSetAstro, LocalDateYearRiseAstro, LocalDateMonthRiseAstro, LocalDateDayRiseAstro))
+
+
 
     # HOMEWORK MODE
     elif(mode == 'Home' or mode == 'home' or mode == 'H' or mode == 'h'):
 
         print("###     Csillesz II big-homework results, solved by the program     ###")
+        print("_______________________________________________________________________")
+
         print("1.1/1:")
 
         City = "Szombathely"
@@ -2161,11 +2256,11 @@ while(True):
         LocalHours = 14
         LocalMinutes = 0
         LocalSeconds = 0
-        LocalSiderealHours, LocalSiderealMinutes, UnitedHours, UnitedMinutes, GreenwichHours, GreenwichMinutes, GreenwichSeconds = SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, LocalSeconds, LocalDateYear, LocalDateMonth, LocalDateDay)
-        
-        sidmsg = "\n>>> The Local Mean Sidereal Time at {0}h {1}m UT\n>>> in {2} with\n>>> GMST {3}h {4}m {5}s at UT 0h 0m\n>>> is {6}h {7}m\n\n"
-        print(sidmsg.format(UnitedHours, UnitedMinutes, City, GreenwichHours, GreenwichMinutes, GreenwichSeconds, LocalSiderealHours, LocalSiderealMinutes))
-        print("_________________________________________")
+        LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeonds, UnitedHours, UnitedMinutes, UnitedSeconds, GreenwichHours, GreenwichMinutes, GreenwichSeconds = SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, LocalSeconds, LocalDateYear, LocalDateMonth, LocalDateDay)
+
+        sidmsg = "\n>>> The Local Mean Sidereal Time at {0}:{1}:{2} UT\n>>> in {3} with\n>>> {4}:{5}:{6} GMST at 00:00:00 UT\n>>> is {7}:{8}:{9}\n\n"
+        print(sidmsg.format(UnitedHours, UnitedMinutes, UnitedSeconds, City, GreenwichHours, GreenwichMinutes, GreenwichSeconds, LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeonds))
+        print("_______________________________________________________________________")
 
         print("1.1/2:")
 
@@ -2175,14 +2270,70 @@ while(True):
         Altitude, Azimuth1, Azimuth2, H_dil = EquIToHor(Latitude, RightAscensionVenus, DeclinationVenus, 0, None, None, None)
 
         # Print Results
-        print(">> Available Data are only suited for Calculating Rising/Setting Altitudes!")
-        print("\n> Calculated Parameter of Rising/Setting Object in Horizontal Coord. Sys.:")
+        print(">>> INFO: Available Data are only suited for Calculating Rising or\n>>> Setting Altitudes!")
+        print("\n>>> Calculated Parameter of Rising/Setting Object in Horizontal Coord. Sys.:")
 
-        azimmsg = "- Rising and Setting Azimuths (A) are:\n- {0}° and {1}°"
-        timemsg = "- Elapsed time between them: is {0}h\n"
+        azimmsg = ">>> Rising and Setting Azimuths (A) are:\n>>> {0:.4f}° and {1:.4f}°"
+        timemsg = ">>> Elapsed time between them: is {0:.2f}h\n"
         print(azimmsg.format(Azimuth2, Azimuth1))
         print(timemsg.format(H_dil/15))
-        print("_________________________________________")
+        print("_______________________________________________________________________")
+
+        print("1.1/3:")
+
+        Planet = "Earth"
+        City = "Piszkesteto"
+        Latitude = CityDict[City][0]
+        Longitude = CityDict[City][1]
+        LocalDateYear = 2018
+        LocalDateMonth = 12
+        LocalDateDay1 = 21
+        LocalDateDay2 = 22
+
+        (LocalHoursRiseDaylight1, LocalMinutesRiseDaylight1, LocalSecondsRiseDaylight1, LocalDateYearRiseDaylight1, LocalDateMonthRiseDaylight1, LocalDateDayRiseDaylight1,
+            LocalHoursSetDaylight1, LocalMinutesSetDaylight1, LocalSecondsSetDaylight1, LocalDateYearSetDaylight1, LocalDateMonthSetDaylight1, LocalDateDaySetDaylight1,
+            LocalHoursRiseCivil1, LocalMinutesRiseCivil1, LocalSecondsRiseCivil1, LocalDateYearRiseCivil1, LocalDateMonthRiseCivil1, LocalDateDayRiseCivil1,
+            LocalHoursSetCivil1, LocalMinutesSetCivil1, LocalSecondsSetCivil1, LocalDateYearSetCivil1, LocalDateMonthSetCivil1, LocalDateDaySetCivil1,
+            LocalHoursRiseNaval1, LocalMinutesRiseNaval1, LocalSecondsRiseNaval1, LocalDateYearRiseNaval1, LocalDateMonthRiseNaval1, LocalDateDayRiseNaval1,
+            LocalHoursSetNaval1, LocalMinutesSetNaval1, LocalSecondsSetNaval1, LocalDateYearSetNaval1, LocalDateMonthSetNaval1, LocalDateDaySetNaval1,
+            LocalHoursRiseAstro1, LocalMinutesRiseAstro1, LocalSecondsRiseAstro1, LocalDateYearSetAstro1, LocalDateMonthSetAstro1, LocalDateDaySetAstro1,
+            LocalHoursSetAstro1, LocalMinutesSetAstro1, LocalSecondsSetAstro1, LocalDateYearRiseAstro1, LocalDateMonthRiseAstro1, LocalDateDayRiseAstro1) = TwilightCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, LocalDateDay1)
+
+        (LocalHoursRiseDaylight2, LocalMinutesRiseDaylight2, LocalSecondsRiseDaylight2, LocalDateYearRiseDaylight2, LocalDateMonthRiseDaylight2, LocalDateDayRiseDaylight2,
+            LocalHoursSetDaylight2, LocalMinutesSetDaylight2, LocalSecondsSetDaylight2, LocalDateYearSetDaylight2, LocalDateMonthSetDaylight2, LocalDateDaySetDaylight2,
+            LocalHoursRiseCivil2, LocalMinutesRiseCivil2, LocalSecondsRiseCivil2, LocalDateYearRiseCivil2, LocalDateMonthRiseCivil2, LocalDateDayRiseCivil2,
+            LocalHoursSetCivil2, LocalMinutesSetCivil2, LocalSecondsSetCivil2, LocalDateYearSetCivil2, LocalDateMonthSetCivil2, LocalDateDaySetCivil2,
+            LocalHoursRiseNaval2, LocalMinutesRiseNaval2, LocalSecondsRiseNaval2, LocalDateYearRiseNaval2, LocalDateMonthRiseNaval2, LocalDateDayRiseNaval2,
+            LocalHoursSetNaval2, LocalMinutesSetNaval2, LocalSecondsSetNaval2, LocalDateYearSetNaval2, LocalDateMonthSetNaval2, LocalDateDaySetNaval2,
+            LocalHoursRiseAstro2, LocalMinutesRiseAstro2, LocalSecondsRiseAstro2, LocalDateYearSetAstro2, LocalDateMonthSetAstro2, LocalDateDaySetAstro2,
+            LocalHoursSetAstro2, LocalMinutesSetAstro2, LocalSecondsSetAstro2, LocalDateYearRiseAstro2, LocalDateMonthRiseAstro2, LocalDateDayRiseAstro2) = TwilightCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, LocalDateDay2)
+
+        LocalDateDaySetAstroTime1 = LocalHoursSetAstro1 + LocalMinutesSetAstro1/60 + LocalSecondsSetAstro1/3600
+        LocalDateDayRiseAstroTime2 = LocalHoursRiseAstro2 + LocalMinutesRiseAstro2/60 + LocalSecondsRiseAstro2/3600
+
+        # Length of the astronomical night
+        AstroNightLength = 24 - (LocalDateDaySetAstroTime1 - LocalDateDayRiseAstroTime2)
+        AstroNightHours = int(AstroNightLength)
+        AstroNightMinutes = int((AstroNightLength - AstroNightHours) * 60)
+        AstroNightSeconds = int((((AstroNightLength - AstroNightHours) * 60) - AstroNightMinutes) * 60)
+
+        astrotimemsg = ">>> The astronomical night's lenght at " + City + " is\n>>> {0}:{1}:{2} long\n>>> On between {3}.{4}.{5}, and {6} evening.\n"
+        print(astrotimemsg.format(AstroNightHours, AstroNightMinutes, AstroNightSeconds, LocalDateYear, LocalDateMonth, LocalDateDay1, LocalDateDay2))
+        print("_______________________________________________________________________")
+
+        print("1.2/1.")
+
+        print("_______________________________________________________________________")
+
+        print("1.2/2.")
+
+
+        City = "Baja"
+
+
+        EquIIToHor()
+
+        print("_______________________________________________________________________")
 
     # MAIN MENU MODE
     # QUIT PROGRAM
