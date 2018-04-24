@@ -2332,6 +2332,13 @@ while(True):
             print(msgmidnight.format(LocalHoursMidnight, LocalMinutesMidnight, LocalSecondsMidnight, LocalDateYearMidnight, LocalDateMonthMidnight, LocalDateDayMidnight))
 
 
+
+    #   _   _                                         _    
+    #  | | | |                                       | |   
+    #  | |_| | ___  _ __ ___   _____      _____  _ __| | __
+    #  |  _  |/ _ \| '_ ` _ \ / _ \ \ /\ / / _ \| '__| |/ /
+    #  | | | | (_) | | | | | |  __/\ V  V / (_) | |  |   < 
+    #  \_| |_/\___/|_| |_| |_|\___| \_/\_/ \___/|_|  |_|\_\
     # HOMEWORK MODE
     elif(mode == 'Home' or mode == 'home' or mode == 'H' or mode == 'h'):
 
