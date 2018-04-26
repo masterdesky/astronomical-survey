@@ -941,8 +941,6 @@ def SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateY
 
     UTFracDayRise = JRise - int(JRise)
 
-
-
     UTFracDayRise *= 24
 
     SunRiseUT, SunRiseUTHours, SunRiseUTMinutes, SunRiseUTSeconds, SunRiseUTDateYear, SunRiseUTDateMonth, SunRiseUTDateDay = NormalizeTimeParameters(UTFracDayRise, SunRiseUTDateYear, SunRiseUTDateMonth, SunRiseUTDateDay)
@@ -966,7 +964,7 @@ def SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateY
     SunSetUTDateDay = LocalDateDay
 
     UTFracDaySet = JSet - int(JSet)
-    print(JSet)
+
     UTFracDaySet *= 24
 
     SunSetUT, SunSetUTHours, SunSetUTMinutes, SunSetUTSeconds, SunSetUTDateYear, SunSetUTDateMonth, SunSetUTDateDay = NormalizeTimeParameters(UTFracDaySet, SunSetUTDateYear, SunSetUTDateMonth, SunSetUTDateDay)
@@ -2919,6 +2917,15 @@ while(True):
 
         Altitude, Azimuth = EquIIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSiderealTime, LocalHourAngle)
 
+        # For printing this step too
+        LocalHourAngle = LocalSiderealTime - RightAscension
+        # Normalize Result
+        LocalHourAngle = NormalizeZeroBounded(LocalHourAngle, 24)
+
+        LocalHourAngleHours = int(LocalHourAngle)
+        LocalHourAngleMinutes = int((LocalHourAngle - LocalHourAngleHours) * 60)
+        LocalHourAngleSeconds = int((((LocalHourAngle - LocalHourAngleHours) * 60) - LocalHourAngleMinutes) * 60)
+
         print(">>> Used formulas:\n>>> 1. S_0 (Greenwich Mean Sidereal Time) at 00:00 UT was calculated\n>>> 2. S (Local Mean Sidereal Time) = S_0 + Longitude/15 + dS * UnitedTime\n>>> 3. S - α = t; H = 15*t")
         print(">>> 4. sin(m) = sin(δ) * sin(φ) + cos(δ) * cos(φ) * cos(H); Altitude (m) should been between [-π/2,+π/2]\n>>> 5. sin(A) = - sin(H) * cos(δ) / cos(m), Azimuth at given H hour angle\n")
 
@@ -2927,10 +2934,14 @@ while(True):
         grwmsg = ">>> GMST: {0}:{1}:{2}"
         print(timemsg.format(LocalDateYear, LocalDateMonth, LocalDateDay))
         print(grwmsg.format(GreenwichHours, GreenwichMinutes, GreenwichSeconds))
-        print(">>> Calculated Parameters in Horizontal Coord. Sys.:")
 
+        print(">>> Calculated Parameters in Horizontal Coord. Sys.:")
+        locsidmsg = ">>> Local Mean Siderel Time (S): {0}:{1}:{2}"
+        lhamsg = ">>> Local Hour Angle (t): {0}h {1}m {2}s"
         azimmsg = ">>> Azimuth (A):  {0}°"
         altitmsg = ">>> Altitude (m): {0}°\n"
+        print(locsidmsg.format(LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeconds))
+        print(lhamsg.format(LocalHourAngleHours, LocalHourAngleMinutes, LocalHourAngleSeconds))
         print(azimmsg.format(Azimuth))
         print(altitmsg.format(Altitude))
 
@@ -2962,6 +2973,11 @@ while(True):
 
         Declination, RightAscension, LocalSiderealTime = HorToEquII(Latitude, Altitude, Azimuth, LocalSiderealTime)
 
+        # Normalize Parameters
+        DeclinationHours = int(Declination)
+        DeclinationMinutes = int((Declination - DeclinationHours) * 60)
+        DeclinationSeconds = int((((Declination - DeclinationHours) * 60) - DeclinationMinutes) * 60)
+
         RightAscensionHours = int(RightAscension)
         RightAscensionMinutes = int((RightAscension - RightAscensionHours) * 60)
         RightAscensionSeconds = int((((RightAscension - RightAscensionHours) * 60) - RightAscensionMinutes) * 60)
@@ -2976,7 +2992,7 @@ while(True):
         declinmsg = ">>> Declination (δ): {0}° {1}\' {2}\""
         RAmsg = ">>> Right Ascension (α): {0}h {1}m {2}s"
         sidermsg = ">>> Local Mean Sidereal Time (S): {0}:{1}:{2}\n"
-        print(declinmsg.format(Declination))
+        print(declinmsg.format(DeclinationHours, DeclinationMinutes, DeclinationSeconds))
         print(RAmsg.format(RightAscensionHours, RightAscensionMinutes, RightAscensionSeconds))
         print(sidermsg.format(LocalSiderealTimeHours, LocalSiderealTimeMinutes, LocalSiderealTimeSeconds))
 
