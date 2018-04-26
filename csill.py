@@ -62,7 +62,7 @@ import math
 # import numpy as np
 
 # Current Version of the Csillész II Problem Solver
-ActualVersion = 'v1.15'
+ActualVersion = 'v1.17'
 
 
 
@@ -82,10 +82,10 @@ dS = 1.002737909350795
 
 # Predefined Coordinates of Some Notable Cities
 # Format:
-# "CityName": [N Latitude (φ), E Longitude(λ)]
+# "LocationName": [N Latitude (φ), E Longitude(λ)]
 # Latitude: + if N, - if S
 # Longitude: + if E, - if W
-CityDict = {
+LocationDict = {
     "Amsterdam": [52.3702, 4.8952],
     "Athen": [37.9838, 23.7275],
     "Baja": [46.1803, 19.0111],
@@ -119,7 +119,7 @@ CityDict = {
     "Zalaegerszeg": [46.8417, 16.8416]
 }
 
-# Predefined Equatorial I Coordinates of Some Notable Stars
+# Predefined Equatorial I Coordinates of Some Notable Stellar Objects
 # Format:
 # "StarName": [Right Ascension (RA), Declination (δ)]
 StellarDict = {
@@ -163,7 +163,7 @@ MonthLengthListLeapYear = [31,28,31,30,31,30,31,31,30,31,30,31]
 # Format:
 # "PlanetNameX": [X_0, X_1, X_2 ...] or [X_1, X_3, ..., X_E] etc.
 # "PlanetNameOrbit": [Π, ε]
-OrbitDicts = {
+OrbitDict = {
     "Mercury": [],
     "Venus": [],
     "EarthJ": [0.0009, 0.0053, -0.0068, 1.0000000],
@@ -193,12 +193,13 @@ def NormalizeZeroBounded(Parameter, NonZeroBound):
 
     if(Parameter >= 0):
         Parameter = Parameter - (int(Parameter / NonZeroBound)) * NonZeroBound
+
     else:
         Parameter = Parameter + (abs(int(Parameter / NonZeroBound)) + 1) * NonZeroBound
 
     return(Parameter)
 
-# Normalization Between to [-π,+π]
+# Normalization Between to [-π,+π[
 def NormalizeSymmetricallyBoundedPI(Parameter):
 
     if(Parameter <= -360 or Parameter >= 360):
@@ -227,16 +228,60 @@ def NormalizeSymmetricallyBoundedPI_2(Parameter):
     if(Parameter < 0):
         if(Parameter < -90 and Parameter >= -270):
             Parameter = - (Parameter + 180)
+
         elif(Parameter < -270 and Parameter >= -360):
             Parameter = Parameter + 360
 
     elif(Parameter > 0):
         if(Parameter > 90 and Parameter <= 270):
             Parameter = - (Parameter - 180)
+
         elif(Parameter > 270 and Parameter <= 360):
             Parameter = Parameter - 360
 
     return(Parameter)
+
+def NormalizeTimeParameters(Time, Year, Month, Day):
+
+    Hours = int(Time)
+    Minutes = int((Time - Hours) * 60)
+    if(Minutes >= 60):
+        NormalizeZeroBounded(Minutes, 60)
+        Hours += 1
+    if(Hours >= 24):
+        NormalizeZeroBounded(Hours, 24)
+        Day += 1
+    if(Year%4 == 0 and (Year%100 != 0 or Year%400 == 0)):
+        if(Day > MonthLengthListLeapYear[Month - 1]):
+            Month =+ 1
+    else:
+        if(Day > MonthLengthList[Month - 1]):
+            Month += 1
+    if(Month > 12):
+        Month = 1
+        Year =+ 1
+
+    Seconds = int((((Time - Hours) * 60) - Minutes) * 60)
+    if(Seconds >= 60):
+        Seconds = NormalizeZeroBounded(Seconds, 60)
+        Minutes += 1
+    if(Minutes >= 60):
+        NormalizeZeroBounded(Minutes, 60)
+        Hours += 1
+    if(Hours >= 24):
+        NormalizeZeroBounded(Hours, 24)
+        Day += 1
+    if(Year%4 == 0 and (Year%100 != 0 or Year%400 == 0)):
+        if(Day > MonthLengthListLeapYear[Month - 1]):
+            Month =+ 1
+    else:
+        if(Day > MonthLengthList[Month - 1]):
+            Month += 1
+    if(Month > 12):
+        Month = 1
+        Year =+ 1
+
+    return(Time, Hours, Minutes, Seconds, Year, Month, Day)
 
 # Normalization and Conversion of Local Time to United Time
 def LTtoUT(LocalHours, LocalMinutes, LocalSeconds, DateYear, DateMonth, DateDay):
@@ -251,6 +296,7 @@ def LTtoUT(LocalHours, LocalMinutes, LocalSeconds, DateYear, DateMonth, DateDay)
     # Winter: October 8/14 - March 26/31 LT+0
     if((DateMonth > 3 and DateMonth < 10) or ((DateMonth == 3 and DateDay >=25) or (DateMonth == 10 and (DateDay >= 8 and DateDay <=14)))):
         UnitedTime = LocalTime - (int(Longitude/15) + 1)
+
     else:
         UnitedTime = LocalTime - int(Longitude/15)
 
@@ -265,6 +311,7 @@ def LTtoUT(LocalHours, LocalMinutes, LocalSeconds, DateYear, DateMonth, DateDay)
             # Leap year handling
             if(DateYear%4 == 0 and (DateYear%100 != 0 or DateYear%400 == 0)):
                 UnitedDateDay = MonthLengthListLeapYear[UnitedDateMonth - 1]
+
             else:
                 UnitedDateDay = MonthLengthList[UnitedDateMonth - 1]
 
@@ -274,19 +321,28 @@ def LTtoUT(LocalHours, LocalMinutes, LocalSeconds, DateYear, DateMonth, DateDay)
         if(DateYear%4 == 0 and (DateYear%100 != 0 or DateYear%400 == 0)):
             if(UnitedDateDay > MonthLengthListLeapYear[DateMonth - 1]):
                 UnitedDateMonth = DateMonth + 1
+            else:
+                UnitedDateMonth = DateMonth
+
         else:
             if(UnitedDateDay > MonthLengthList[DateMonth - 1]):
                 UnitedDateMonth = DateMonth + 1
+            else:
+                UnitedDateMonth = DateMonth
+
         if(UnitedDateMonth > 12):
             UnitedDateMonth = 1
             UnitedDateYear = DateYear + 1
+        else:
+            UnitedDateYear = DateYear
+
     else:
-        UnitedHours = int(UnitedTime)
-        UnitedMinutes = int((UnitedTime - UnitedHours) * 60)
-        UnitedSeconds = int((((UnitedTime - UnitedHours) * 60) - UnitedMinutes) * 60)
         UnitedDateYear = DateYear
         UnitedDateMonth = DateMonth
         UnitedDateDay = DateDay
+        
+        UnitedTime, UnitedHours, UnitedMinutes, UnitedSeconds, UnitedDateYear, UnitedDateMonth, UnitedDateDay = NormalizeTimeParameters(UnitedTime, UnitedDateYear, UnitedDateMonth, UnitedDateDay)
+
 
     return(UnitedTime, UnitedHours, UnitedMinutes, UnitedSeconds, UnitedDateYear, UnitedDateMonth, UnitedDateDay)
 
@@ -302,6 +358,7 @@ def UTtoLT(Latitude, UnitedHours, UnitedMinutes, UnitedSeconds, UnitedDateYear, 
     # Winter: October 8/14 - March 26/31 LT+0
     if((UnitedDateMonth > 3 and UnitedDateMonth < 10) or ((UnitedDateMonth == 3 and UnitedDateDay >=25) or (UnitedDateMonth == 10 and (UnitedDateDay >= 8 and UnitedDateDay <=14)))):
         LocalTime = UnitedTime + (int(Longitude/15) + 1)
+
     else:
         LocalTime = UnitedTime + int(Longitude/15)
 
@@ -316,6 +373,7 @@ def UTtoLT(Latitude, UnitedHours, UnitedMinutes, UnitedSeconds, UnitedDateYear, 
             # Leap year handling
             if(UnitedDateYear%4 == 0 and (UnitedDateYear%100 != 0 or UnitedDateYear%400 == 0)):
                 LocalDateDay = MonthLengthListLeapYear[LocalDateMonth - 1]
+
             else:
                 LocalDateDay = MonthLengthList[LocalDateMonth - 1]
 
@@ -325,25 +383,32 @@ def UTtoLT(Latitude, UnitedHours, UnitedMinutes, UnitedSeconds, UnitedDateYear, 
         if(UnitedDateYear%4 == 0 and (UnitedDateYear%100 != 0 or UnitedDateYear%400 == 0)):
             if(UnitedDateDay > MonthLengthListLeapYear[UnitedDateMonth - 1]):
                 LocalDateMonth = UnitedDateMonth + 1
+            else:
+                LocalDateMonth = UnitedDateMonth
+
         else:
             if(LocalDateDay >= MonthLengthList[UnitedDateMonth - 1]):
                 LocalDateMonth = UnitedDateMonth + 1
+            else:
+                LocalDateMonth = UnitedDateMonth
 
         if(LocalDateMonth > 12):
             LocalDateMonth = 1
             LocalDateYear = UnitedDateYear + 1
 
+        else:
+            LocalDateYear = UnitedDateYear
+
     else:
-        LocalHours = int(LocalTime)
-        LocalMinutes = int((LocalTime - LocalHours) * 60)
-        LocalSeconds = int((((LocalTime - LocalHours) * 60) - LocalMinutes) * 60)
         LocalDateYear = UnitedDateYear
         LocalDateMonth = UnitedDateMonth
         LocalDateDay = UnitedDateDay
 
-        # Correction for Julian Date
-        LocalHours += 12
-        LocalHours = NormalizeZeroBounded(LocalHours, 24)
+    LocalTime, LocalHours, LocalMinutes, LocalSeconds, LocalDateYear, LocalDateMonth, LocalDateDay = NormalizeTimeParameters(LocalTime, LocalDateYear, LocalDateMonth, LocalDateDay)
+
+    # Correction for Julian Date
+    #LocalHours += 12
+    #LocalHours = NormalizeZeroBounded(LocalHours, 24)
 
     # Apply Correction for Local Time
     LocalTime = LocalHours + LocalMinutes/60 + LocalSeconds/3600
@@ -355,9 +420,9 @@ def CalculateGMST(Longitude, UnitedHoursForGMST, UnitedMinutesForGMST, UnitedSec
 
     # JulianDays = UT days since J2000.0, including parts of a day
     # Could be + or - or 0
-    #Dwhole = int(int(1461 * int(LocalDateYear + 4800 + (LocalDateMonth - 14) / 12)) / 4) + int((367 * (LocalDateMonth - 2 - 12 * int((LocalDateMonth - 14) / 12))) / 12) - int((3 * int((LocalDateYear + 4900 + (LocalDateMonth - 14)/12) / 100)) / 4) + LocalDateDay - 32075
-    #Dwhole = 367 * LocalDateYear - int(int(7 * (LocalDateYear + 5001 + (LocalDateMonth - 9) / 7)) / 4) + int((275 * LocalDateMonth) / 9) + LocalDateDay + 1729777
-    Dwhole = 367 * LocalDateYear - int(7 * (LocalDateYear + int((LocalDateMonth + 9) / 12)) / 4) + int(275 * LocalDateMonth / 9) + LocalDateDay - 730531.5
+    #Dwhole = int(int(1461 * int(UnitedDateYear + 4800 + (UnitedDateMonth - 14) / 12)) / 4) + int((367 * (UnitedDateMonth - 2 - 12 * int((UnitedDateMonth - 14) / 12))) / 12) - int((3 * int((UnitedDateYear + 4900 + (UnitedDateMonth - 14)/12) / 100)) / 4) + UnitedDateDay - 32075
+    #Dwhole = 367 * UnitedDateYear - int(int(7 * (UnitedDateYear + 5001 + (UnitedDateMonth - 9) / 7)) / 4) + int((275 * UnitedDateMonth) / 9) + UnitedDateDay + 1729777
+    Dwhole = 367 * UnitedDateYear - int(7 * (UnitedDateYear + int((UnitedDateMonth + 9) / 12)) / 4) + int(275 * UnitedDateMonth / 9) + UnitedDateDay - 730531.5
     # Dfrac: Fraction of the day
     # If UT = 00:00:00, then Dfrac = 0
     Dfrac = (UnitedHoursForGMST + UnitedMinutesForGMST/60 + UnitedSecondsForGMST/3600)/24
@@ -479,14 +544,13 @@ def EquIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSid
 
         # Calculate Azimuth (A)
         # sin(A) = - sin(H) * cos(δ) / cos(m)
-
-        # Setting Azimuth
+        # Azimuth at given H Local Hour Angle
         Azimuth = math.degrees(math.asin(
                 - math.sin(math.radians(LocalHourAngleDegrees)) * math.cos(math.radians(Declination)) / math.cos(math.radians(Altitude))
                 ))
         # Normalize Azimuth
         # Azimuth: [0,+2π[
-        Azimuth1 = NormalizeZeroBounded(Azimuth, 360)
+        Azimuth = NormalizeZeroBounded(Azimuth, 360)
 
         return(Altitude, Azimuth)
 
@@ -644,7 +708,7 @@ def GeogDistCalc(Latitude1, Latitude2, Longitude1, Longitude2):
 
 
 # Calculate distances between choosen cities
-def GeogDistCityCalc(Latitude1, Latitude2, Longitude1, Longitude2):
+def GeogDistLocationCalc(Latitude1, Latitude2, Longitude1, Longitude2):
 
     # Initial Data Normalization
     # Latitude: [-π,+π]
@@ -678,41 +742,8 @@ def GeogDistCityCalc(Latitude1, Latitude2, Longitude1, Longitude2):
 ########                                                ########
 ################################################################
 
-# Calculate LMST from User-input
-def SiderealFromInput(Longitude, LocalHours, LocalMinutes, LocalSeconds, DateYear, DateMonth, DateDay):
-
-    # Initial Data Normalization
-    # Longitude: [0,+2π[
-    Longitude = NormalizeZeroBounded(Longitude, 360)
-    
-    UnitedTime, UnitedHours, UnitedMinutes, UnitedSeconds, UnitedDateYear, UnitedDateMonth, UnitedDateDay = LTtoUT(LocalHours, LocalMinutes, LocalSeconds, DateYear, DateMonth, DateDay)
-
-    # Calculate Greenwich Mean Sidereal Time (GMST)
-    # Now UT = 00:00:00
-    UnitedHours = 0
-    UnitedMinutes = 0
-    UnitedSeconds = 0
-    S_0 = CalculateGMST(Longitude, UnitedHours, UnitedMinutes, UnitedSeconds, UnitedDateYear, UnitedDateMonth, UnitedDateDay)
-
-    # Greenwich Zero Time for Supervision
-    GreenwichHours = int(S_0)
-    GreenwichMinutes = int((S_0 - GreenwichHours) * 60)
-    GreenwichSeconds = int(((S_0 - GreenwichHours) - GreenwichMinutes) * 60)
-
-    # Calculate LMST
-    LMST = S_0 + Longitude/15 + dS * UnitedTime
-
-    # Norm LMST
-    LMSTNorm = NormalizeZeroBounded(LMST, 24)
-
-    LocalSiderealHours = int(LMSTNorm)
-    LocalSiderealMinutes = int((LMSTNorm - LocalSiderealHours) * 60)
-    LocalSiderealSeonds = int((((LMSTNorm - LocalSiderealHours) * 60) - LocalSiderealMinutes) * 60)
-
-    return(LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeonds, UnitedHours, UnitedMinutes, UnitedSeconds, GreenwichHours, GreenwichMinutes, GreenwichSeconds)
-
 # Calculate LMST from Predefined Coordinates
-def SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, LocalSeconds, DateYear, DateMonth, DateDay):
+def LocalSiderealTimeCalc(Longitude, LocalHours, LocalMinutes, LocalSeconds, DateYear, DateMonth, DateDay):
 
     # Initial Data Normalization
     # Longitude: [0,+2π[
@@ -728,9 +759,7 @@ def SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, LocalSeconds, Da
     S_0 = CalculateGMST(Longitude, UnitedHoursForGMST, UnitedMinutesForGMST, UnitedSecondsForGMST, UnitedDateYear, UnitedDateMonth, UnitedDateDay)
 
     # Greenwich Zero Time for Supervision
-    GreenwichHours = int(S_0)
-    GreenwichMinutes = int((S_0 - GreenwichHours) * 60)
-    GreenwichSeconds = int(((S_0 - GreenwichHours) * 60 - GreenwichMinutes) * 60)
+    GreenwichSiderealTime, GreenwichHours, GreenwichMinutes, GreenwichSeconds, SiderealDateYear, SiderealDateMonth, SiderealDateDay = NormalizeTimeParameters(S_0, DateYear, DateMonth, DateDay)
 
     # Calculate LMST
     LMST = S_0 + Longitude/15 + dS * UnitedTime
@@ -738,11 +767,9 @@ def SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, LocalSeconds, Da
     # Norm LMST
     LMSTNorm = NormalizeZeroBounded(LMST, 24)
 
-    LocalSiderealHours = int(LMSTNorm)
-    LocalSiderealMinutes = int((LMSTNorm - LocalSiderealHours) * 60)
-    LocalSiderealSeonds = int((((LMSTNorm - LocalSiderealHours) * 60) - LocalSiderealMinutes) * 60)
+    LocalSiderealTime, LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeconds, LocalDateYear, LocalDateMonth, LocalDateDay = NormalizeTimeParameters(LMSTNorm, DateYear, DateMonth, DateDay)
 
-    return(LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeonds, UnitedHours, UnitedMinutes, UnitedSeconds, GreenwichHours, GreenwichMinutes, GreenwichSeconds)
+    return(LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeconds, UnitedHours, UnitedMinutes, UnitedSeconds, GreenwichHours, GreenwichMinutes, GreenwichSeconds)
 
 
 ################################################################
@@ -751,47 +778,44 @@ def SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, LocalSeconds, Da
 ########                                                ########
 ################################################################
 
-def SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateYear, LocalDateMonth, LocalDateDay):
+def CalculateJulianDate(LocalDateYear, LocalDateMonth, LocalDateDay, UnitedHours, UnitedMinutes, UnitedSeconds):
 
-    # 1. JulianDays = UT days since J2000.0, including parts of a day
+    # JulianDays = UT days since J2000.0, including parts of a day
     # Could be + or - or 0
     #Dwhole = int(int(1461 * int(LocalDateYear + 4800 + (LocalDateMonth - 14) / 12)) / 4) + int((367 * (LocalDateMonth - 2 - 12 * int((LocalDateMonth - 14) / 12))) / 12) - int((3 * int((LocalDateYear + 4900 + (LocalDateMonth - 14)/12) / 100)) / 4) + LocalDateDay - 32075
     #Dwhole = 367 * LocalDateYear - int(int(7 * (LocalDateYear + 5001 + (LocalDateMonth - 9) / 7)) / 4) + int((275 * LocalDateMonth) / 9) + LocalDateDay + 1729777
     Dwhole = 367 * LocalDateYear - int(7 * (LocalDateYear + int((LocalDateMonth + 9) / 12)) / 4) + int(275 * LocalDateMonth / 9) + LocalDateDay - 730531.5
-    Dwhole = round(Dwhole, 0)
+    #Dwhole = round(Dwhole, 0)
     # Dfrac: Fraction of the day
-    # Now UT = 0
-    UnitedHours = 0
-    UnitedMinutes = 0
-    UnitedSeconds = 0
-    # Fraction of the Day
     Dfrac = (UnitedHours + UnitedMinutes/60 + UnitedSeconds/3600)/24
     # Julian days
-    JulianDays = int(Dwhole + Dfrac)
-    # Jukian Date
-    JulianDate = JulianDays + 2451545
+    JulianDays = Dwhole + Dfrac
 
-    # 2. Mean Solar Noon
+    return(JulianDays)
+
+def SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeOfSun, JulianDays):
+
+    # 1. Mean Solar Noon
     # JAnomaly is an approximation of Mean Solar Time at WLongitude expressed as a Julian day with the day fraction
     # WLongitude is the longitude west (west is positive, east is negative) of the observer on the Earth
     WLongitude = - Longitude
-    JAnomaly = (JulianDays - OrbitDicts[Planet + "J"][0]) / OrbitDicts[Planet + "J"][3] - WLongitude/360
+    JAnomaly = (JulianDays - OrbitDict[Planet + "J"][0]) / OrbitDict[Planet + "J"][3] - WLongitude/360
 
-    # 3. Solar Mean Anomaly
+    # 2. Solar Mean Anomaly
     # MeanAnomaly (M) is the Solar Mean Anomaly used in a few of next equations
     # MeanAnomaly = (M_0 + M_1 * (JulianDays-J2000)) and Norm to 360
-    MeanAnomaly = (OrbitDicts[Planet + "M"][0] + OrbitDicts[Planet + "M"][1] * JulianDays)
+    MeanAnomaly = (OrbitDict[Planet + "M"][0] + OrbitDict[Planet + "M"][1] * JulianDays)
     # Normalize Result
     MeanAnomaly = NormalizeZeroBounded(MeanAnomaly, 360)
 
-    # 4. Equation of the Center
+    # 3. Equation of the Center
     # EquationOfCenter (C) is the Equation of the center value needed to calculate Lambda (see next equation)
     # EquationOfCenter = C_1 * sin(M) + C_2 * sin(2M) + C_3 * sin(3M) + C_4 * sin(4M) + C_5 * sin(5M) + C_6 * sin(6M)
-    EquationOfCenter = (OrbitDicts[Planet + "C"][0] * math.sin(math.radians(MeanAnomaly)) + OrbitDicts[Planet + "C"][1] * math.sin(math.radians(2 * MeanAnomaly)) + 
-                       OrbitDicts[Planet + "C"][2] * math.sin(math.radians(3 * MeanAnomaly)) + OrbitDicts[Planet + "C"][3] * math.sin(math.radians(4 * MeanAnomaly)) + 
-                       OrbitDicts[Planet + "C"][4] * math.sin(math.radians(5 * MeanAnomaly)) + OrbitDicts[Planet + "C"][5] * math.sin(math.radians(6 * MeanAnomaly)))
+    EquationOfCenter = (OrbitDict[Planet + "C"][0] * math.sin(math.radians(MeanAnomaly)) + OrbitDict[Planet + "C"][1] * math.sin(math.radians(2 * MeanAnomaly)) + 
+                       OrbitDict[Planet + "C"][2] * math.sin(math.radians(3 * MeanAnomaly)) + OrbitDict[Planet + "C"][3] * math.sin(math.radians(4 * MeanAnomaly)) + 
+                       OrbitDict[Planet + "C"][4] * math.sin(math.radians(5 * MeanAnomaly)) + OrbitDict[Planet + "C"][5] * math.sin(math.radians(6 * MeanAnomaly)))
 
-    # 5. Ecliptic Longitude
+    # 4. Ecliptic Longitude
     # MeanEclLongitudeSun (L_sun) in the Mean Ecliptic Longitude
     # EclLongitudeSun (λ) is the Ecliptic Longitude
     # 102.9372 is a value for the argument of perihelion
@@ -800,14 +824,14 @@ def SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateYea
     MeanEclLongitudeSun = NormalizeZeroBounded(MeanEclLongitudeSun, 360)
     EclLongitudeSun = NormalizeZeroBounded(EclLongitudeSun, 360)
 
-    # 6. Right Ascension of Sun (α)
+    # 5. Right Ascension of Sun (α)
     # EarthA_2, EarthA_4 and EarthA_6 (measured in degrees) are coefficients in the series expansion of the Sun's Right Ascension
     # They varie for different planets in the Solar System
     # RightAscensionSun = EclLongitudeSun + S ≈ EclLongitudeSun + EarthA_2 * sin(2 * EclLongitudeSun) + EarthA_4 * sin(4 * EclLongitudeSun) + EarthA_6 * sin(6 * EclLongitudeSun)
-    RightAscensionSun = (EclLongitudeSun + OrbitDicts[Planet + "A"][0] * math.sin(math.radians(2 * EclLongitudeSun)) + OrbitDicts[Planet + "A"][1] * 
-                        math.sin(math.radians(4 * EclLongitudeSun)) + OrbitDicts[Planet + "A"][2] * math.sin(math.radians(6 * EclLongitudeSun)))
+    RightAscensionSun = (EclLongitudeSun + OrbitDict[Planet + "A"][0] * math.sin(math.radians(2 * EclLongitudeSun)) + OrbitDict[Planet + "A"][1] * 
+                        math.sin(math.radians(4 * EclLongitudeSun)) + OrbitDict[Planet + "A"][2] * math.sin(math.radians(6 * EclLongitudeSun)))
 
-    # 7./a Declination of the Sun (δ) (Wikipedia)
+    # 6./a Declination of the Sun (δ) (Wikipedia)
     # DeclinationSun (δSun) is the Declination of the Sun
     # 23.44° is Earth's maximum Axial Tilt toward's the Sun
     #DeclinationSun = math.degrees(math.asin(
@@ -815,20 +839,20 @@ def SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateYea
     # Normalize Declination
     #DeclinationSun = NormalizeSymmetricallyBoundedPI_2(DeclinationSun)
 
-    # 7./b Declination of the Sun (δ) (Astronomy Answers)
+    # 6./b Declination of the Sun (δ) (Astronomy Answers)
     # EarthD_1, EarthD_3 and EarthD_5 (measured in degrees) are coefficients in the series expansion of the Sun's Declination.
     # They varie for different planets in the Solar System.
     # DeclinationSun = EarthD_1 * sin(EclLongitudeSun) + EarthD_3 * (sin(EclLongitudeSun))^3 + EarthD_5 * (sin(EclLongitudeSun))^5
-    DeclinationSun = (OrbitDicts[Planet + "D"][0] * math.sin(math.radians(EclLongitudeSun)) + OrbitDicts[Planet + "D"][1] * 
-                     (math.sin(math.radians(EclLongitudeSun)))**3 + OrbitDicts[Planet + "D"][2] * (math.sin(math.radians(EclLongitudeSun)))**5)
+    DeclinationSun = (OrbitDict[Planet + "D"][0] * math.sin(math.radians(EclLongitudeSun)) + OrbitDict[Planet + "D"][1] * 
+                     (math.sin(math.radians(EclLongitudeSun)))**3 + OrbitDict[Planet + "D"][2] * (math.sin(math.radians(EclLongitudeSun)))**5)
 
-    # 8./a Local Hour Angle of Sun (H)
+    # 7./a Local Hour Angle of Sun (H)
     # H+ ≈ 90° + H_1 * sin(EclLongitudeSun) * tan(φ) + H_3 * sin(EclLongitudeSun)^3 * tan(φ) * (3 + tan(φ)^2) + H_5 * sin(EclLongitudeSun)^5 * tan(φ) * (15 + 10*tan(φ)^2 + 3 * tan(φ)^4))
-    LocalHourAngleSun_Pos = (90 + OrbitDicts[Planet + "H"][0] * math.sin(math.radians(EclLongitudeSun)) * math.tan(math.radians(Latitude)) + OrbitDicts[Planet + "H"][1] * 
-                            math.sin(math.radians((EclLongitudeSun))**3 * math.tan(math.radians(Latitude)) * (3 + math.tan(math.radians(Latitude))**2) + OrbitDicts[Planet + "H"][2] * 
+    LocalHourAngleSun_Pos = (90 + OrbitDict[Planet + "H"][0] * math.sin(math.radians(EclLongitudeSun)) * math.tan(math.radians(Latitude)) + OrbitDict[Planet + "H"][1] * 
+                            math.sin(math.radians((EclLongitudeSun))**3 * math.tan(math.radians(Latitude)) * (3 + math.tan(math.radians(Latitude))**2) + OrbitDict[Planet + "H"][2] * 
                             math.sin(math.radians(EclLongitudeSun))**5 * math.tan(math.radians(Latitude)) * (15 + 10 * math.tan(math.radians(Latitude))**2 + 3 * math.tan(math.radians(Latitude))**4)))
 
-    # 8./b Local Hour Angle of Sun (H)
+    # 7./b Local Hour Angle of Sun (H)
     # cos(H) = (sin(m_0) - sin(φ) * sin(δ)) / (cos(φ) * cos(δ))
     # LocalHourAngleSun (t_0) is the Local Hour Angle from the Observer's Zenith
     # Latitude (φ) is the North Latitude of the Observer (north is positive, south is negative) on the Earth
@@ -841,94 +865,115 @@ def SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateYea
     LocalHourAngleSun_Pos = NormalizeZeroBounded(LocalHourAngleSun_Pos, 360)
     LocalHourAngleSun_Orig = NormalizeZeroBounded(LocalHourAngleSun_Orig, 360)
 
-    # 9. Solar Transit
+    # 8. Solar Transit
     # Jtransit is the Julian date for the Local True Solar Transit (or Solar Noon)
+    # JulianDate = JulianDays + 2451545
     # 2451545.5 is midnight or the beginning of the equivalent Julian year reference
     # Jtransit = J_x + 0.0053 * sin(MeanANomaly) - 0.0068 * sin(2 * L_sun)
     # "0.0053 * sin(MeanAnomaly) - 0.0069 * sin(2 * EclLongitudeSun)"  is a simplified version of the equation of time
-    J_x = JulianDate + OrbitDicts[Planet + "J"][3] * (JulianDays - JAnomaly)
-    Jtransit = J_x + OrbitDicts[Planet + "J"][1] * math.sin(math.radians(MeanAnomaly)) + OrbitDicts[Planet + "J"][2] * math.sin(math.radians(2 * MeanEclLongitudeSun))
-    # Apply Corrections two times
-    #Jtransit -= LocalHourAngleSun_Orig/360 * OrbitDicts[Planet + "J"][3]
-    #Jtransit -= LocalHourAngleSun_Orig/360 * OrbitDicts[Planet + "J"][3]
+    J_x = (JulianDays + 2451545) + OrbitDict[Planet + "J"][3] * (JulianDays - JAnomaly)
+    Jtransit = J_x + OrbitDict[Planet + "J"][1] * math.sin(math.radians(MeanAnomaly)) + OrbitDict[Planet + "J"][2] * math.sin(math.radians(2 * MeanEclLongitudeSun))
 
     return(LocalHourAngleSun_Pos, LocalHourAngleSun_Orig, RightAscensionSun, DeclinationSun, Jtransit)
+
+def CalculateCorrectionsForJ(Planet, Latitude, Longitude, AltitudeOfSun, JAlt_0):
+
+    # Calculate Corrections for LHA of Sun
+    LocalHourAngleSun_PosCorr, LocalHourAngleSun_OrigCorr, RightAscensionSunCorr, DeclinationSunCorr, JtransitCorr = SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeOfSun, JAlt_0)
+
+    return(LocalHourAngleSun_PosCorr, LocalHourAngleSun_OrigCorr, RightAscensionSunCorr, DeclinationSunCorr, JtransitCorr)
+
+def CalculateRiseAndSetTime(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateYear, LocalDateMonth, LocalDateDay):
+
+    # Calculate Actual Julian Date
+    # Now UT = 0
+    UnitedHours = 0
+    UnitedMinutes = 0
+    UnitedSeconds = 0
+    JulianDays = CalculateJulianDate(LocalDateYear, LocalDateMonth, LocalDateDay, UnitedHours, UnitedMinutes, UnitedSeconds)
+
+    # Calulate Sun's coordinates on sky
+    LocalHourAngleSun_Pos, LocalHourAngleSun_Orig, RightAscensionSun, DeclinationSun, Jtransit = SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeOfSun, JulianDays)
+    
+    '''print("LocalHourAngleSun_Pos: ", LocalHourAngleSun_Pos)
+    print("LocalHourAngleSun_Orig: ", LocalHourAngleSun_Orig)'''
+
+    # Calulate Rising and Setting Datetimes of the Sun
+    # JRise is the actual Julian date of sunrise
+    # JSet is the actual Julian date of sunset
+    JRise = Jtransit - LocalHourAngleSun_Orig / 360
+    JSet = Jtransit + LocalHourAngleSun_Orig / 360
+
+    LocalHourAngleSun_PosCorrRise, LocalHourAngleSun_OrigCorrRise, RightAscensionSunCorrRise, DeclinationSunCorrRise, JtransitCorrRise =  CalculateCorrectionsForJ(Planet, Latitude, Longitude, AltitudeOfSun, JRise)
+    LocalHourAngleSun_PosCorrSet, LocalHourAngleSun_OrigCorrSet, RightAscensionSunCorrSet, DeclinationSunCorrSet, JtransitCorrSet = CalculateCorrectionsForJ(Planet, Latitude, Longitude, AltitudeOfSun, JSet)
+        
+    '''print("LocalHourAngleSun_PosCorrRise: ", LocalHourAngleSun_PosCorrRise)
+    print("LocalHourAngleSun_OrigCorrRise: ", LocalHourAngleSun_OrigCorrRise)
+    print("LocalHourAngleSun_PosCorrSet: ", LocalHourAngleSun_PosCorrSet)
+    print("LocalHourAngleSun_OrigCorrSet: ", LocalHourAngleSun_OrigCorrSet)'''
+    
+    # Apply Corrections
+    #JRise -= (LocalHourAngleSun_Orig + LocalHourAngleSun_OrigCorrRise) / 360
+    #JSet -= (LocalHourAngleSun_Orig - LocalHourAngleSun_OrigCorrSet) / 360
+
+    return(JRise, JSet)
+
 
 # Calculate Sunrise and Sunset's Datetime
 def SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateYear, LocalDateMonth, LocalDateDay):
 
-    LocalHourAngleSun_Pos, LocalHourAngleSun_Orig, RightAscensionSun, DeclinationSun, Jtransit = SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateYear, LocalDateMonth, LocalDateDay)
-
-    # Calulate Rising and Setting Datetimes of the Sun 
-    # JSet is the actual Julian date of sunset
-    # JRise is the actual Julian date of sunrise
-    JSet = Jtransit + LocalHourAngleSun_Orig / 360 
-    JRise = Jtransit - LocalHourAngleSun_Orig / 360
-
-    # Calculate Corrections:
-    #DeclinationSun_Corr_Pos = math.degrees(math.atan(math.cos(math.radians(LocalHourAngleSun_Pos)) / math.tan(math.radians(Latitude)) * (-1)))
-    #DeclinationSun_Corr_Neg = math.degrees(math.atan(math.cos(math.radians(- LocalHourAngleSun_Pos)) / math.tan(math.radians(Latitude)) * (-1)))
-
-    # SUNSET
-    SunSetUTYearsDecimal = (JSet - 2451545.5) / 365
-    SunSetUTYears = LocalDateYear
-
-    SunSetUTMonthsDecimal = (SunSetUTYearsDecimal - SunSetUTYears + 2000) * 12 + 1
-    SunSetUTMonths = LocalDateMonth
-    
-    # Leap year handling for Days
-    if(SunSetUTYears%4 == 0 and (SunSetUTYears%100 != 0 or SunSetUTYears%400 == 0)):
-        SunSetUTDaysDecimal = (SunSetUTMonthsDecimal - SunSetUTMonths) * MonthLengthListLeapYear[SunSetUTMonths - 1] - 1
-        SunSetUTDays = int(SunSetUTDaysDecimal)
-    else:
-        SunSetUTDaysDecimal = (SunSetUTMonthsDecimal - SunSetUTMonths) * MonthLengthList[SunSetUTMonths - 1] - 1
-        SunSetUTDays = int(SunSetUTDaysDecimal)
-
-    SunSetUTDays = LocalDateDay
-
-    UTFracDaySet = JSet - int(JSet)
-
-    # Calculate Hours
-    SunSetUTHoursDecimal = UTFracDaySet * 24
-    SunSetUTHours = int(SunSetUTHoursDecimal)
-
-    SunSetUTMinutesDecimal = (SunSetUTHoursDecimal - SunSetUTHours) * 60
-    SunSetUTMinutes = int(SunSetUTMinutesDecimal)
-
-    SunSetUTSecondsDecimal = (SunSetUTMinutesDecimal - SunSetUTMinutes) * 60
-    SunSetUTSeconds = int(SunSetUTSecondsDecimal)
-
+    JRise, JSet = CalculateRiseAndSetTime(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateYear, LocalDateMonth, LocalDateDay)
 
     # SUNRISE
-    SunRiseUTYearsDecimal = (JRise - 2451545.5) / 365
-    SunRiseUTYears = LocalDateYear
+    #SunRiseUTYearsDecimal = (JRise - 2451545.5) / 365
+    SunRiseUTDateYear = LocalDateYear
 
-    SunRiseUTMonthsDecimal = (SunRiseUTYearsDecimal - SunRiseUTYears + 2000) * 12 + 1
-    SunRiseUTMonths = LocalDateMonth
+    #SunRiseUTDateMonthDecimal = (SunRiseUTDateYearDecimal - SunRiseUTDateYear + 2000) * 12 + 1
+    SunRiseUTDateMonth = LocalDateMonth
     # Leap year handling
-    if(SunRiseUTYears%4 == 0 and (SunRiseUTYears%100 != 0 or SunRiseUTYears%400 == 0)):
-        SunRiseUTDaysDecimal = (SunRiseUTMonthsDecimal - SunRiseUTMonths) * MonthLengthListLeapYear[SunRiseUTMonths - 1] - 1
-        SunRiseUTDays = int(SunRiseUTDaysDecimal)
-    else:
-        SunRiseUTDaysDecimal = (SunRiseUTMonthsDecimal - SunRiseUTMonths) * MonthLengthList[SunRiseUTMonths - 1] - 1
-        SunRiseUTDays = int(SunRiseUTDaysDecimal)
-
-    SunRiseUTDays = LocalDateDay
+    #if(SunRiseUTDateYear%4 == 0 and (SunRiseUTDateYear%100 != 0 or SunRiseUTDateYear%400 == 0)):
+    #    SunRiseUTDateDayDecimal = (SunRiseUTDateMonthDecimal - SunRiseUTDateMonth) * MonthLengthListLeapYear[SunRiseUTDateMonth - 1] - 1
+    #    SunRiseUTDateDay = int(SunRiseUTDateDayDecimal)
+    #else:
+    #    SunRiseUTDateDayDecimal = (SunRiseUTDateMonthDecimal - SunRiseUTDateMonth) * MonthLengthList[SunRiseUTDateMonth - 1] - 1
+    #    SunRiseUTDateDay = int(SunRiseUTDateDayDecimal)
+    SunRiseUTDateDay = LocalDateDay
 
     UTFracDayRise = JRise - int(JRise)
+
+
+
+    UTFracDayRise *= 24
+
+    SunRiseUT, SunRiseUTHours, SunRiseUTMinutes, SunRiseUTSeconds, SunRiseUTDateYear, SunRiseUTDateMonth, SunRiseUTDateDay = NormalizeTimeParameters(UTFracDayRise, SunRiseUTDateYear, SunRiseUTDateMonth, SunRiseUTDateDay)
+
+
+    # SUNSET
+    #SunSetUTDateYearDecimal = (JSet - 2451545) / 365.2422
+    SunSetUTDateYear = LocalDateYear
+
+    #SunSetUTDateMonthDecimal = (SunSetUTDateYearDecimal - SunSetUTDateYear + 2000) * 12 + 1
+    SunSetUTDateMonth = LocalDateMonth
     
-    SunRiseUTHoursDecimal = UTFracDayRise * 24
-    SunRiseUTHours = int(SunRiseUTHoursDecimal)
+    # Leap year handling for Days
+    #if(SunSetUTDateYear%4 == 0 and (SunSetUTDateYear%100 != 0 or SunSetUTDateYear%400 == 0)):
+    #   SunSetUTDateDayDecimal = (SunSetUTDateMonthDecimal - SunSetUTDateMonth) * MonthLengthListLeapYear[SunSetUTDateMonth - 1] - 1
+    #    SunSetUTDateDay = int(SunSetUTDateDayDecimal)
+    #else:
+    #    SunSetUTDateDayDecimal = (SunSetUTDateMonthDecimal - SunSetUTDateMonth) * MonthLengthList[SunSetUTDateMonth - 1] - 1
+    #    SunSetUTDateDay = int(SunSetUTDateDayDecimal)
 
-    SunRiseUTMinutesDecimal = (SunRiseUTHoursDecimal - SunRiseUTHours) * 60
-    SunRiseUTMinutes = int(SunRiseUTMinutesDecimal)
+    SunSetUTDateDay = LocalDateDay
 
-    SunRiseUTSecondsDecimal = (SunRiseUTMinutesDecimal - SunRiseUTMinutes) * 60
-    SunRiseUTSeconds = int(SunRiseUTSecondsDecimal)
+    UTFracDaySet = JSet - int(JSet)
+    print(JSet)
+    UTFracDaySet *= 24
+
+    SunSetUT, SunSetUTHours, SunSetUTMinutes, SunSetUTSeconds, SunSetUTDateYear, SunSetUTDateMonth, SunSetUTDateDay = NormalizeTimeParameters(UTFracDaySet, SunSetUTDateYear, SunSetUTDateMonth, SunSetUTDateDay)
 
     # Convert results to Local Time
-    LocalTimeSet, LocalHoursSet, LocalMinutesSet, LocalSecondsSet, LocalDateYearSet, LocalDateMonthSet, LocalDateDaySet = UTtoLT(Latitude, SunSetUTHours, SunSetUTMinutes, SunSetUTSeconds, SunSetUTYears, SunSetUTMonths, SunSetUTDays)
-    LocalTimeRise, LocalHoursRise, LocalMinutesRise, LocalSecondsRise, LocalDateYearRise, LocalDateMonthRise, LocalDateDayRise = UTtoLT(Latitude, SunRiseUTHours, SunRiseUTMinutes, SunRiseUTSeconds, SunRiseUTYears, SunRiseUTMonths, SunRiseUTDays)
+    LocalTimeRise, LocalHoursRise, LocalMinutesRise, LocalSecondsRise, LocalDateYearRise, LocalDateMonthRise, LocalDateDayRise = UTtoLT(Latitude, SunRiseUTHours, SunRiseUTMinutes, SunRiseUTSeconds, SunRiseUTDateYear, SunRiseUTDateMonth, SunRiseUTDateDay)
+    LocalTimeSet, LocalHoursSet, LocalMinutesSet, LocalSecondsSet, LocalDateYearSet, LocalDateMonthSet, LocalDateDaySet = UTtoLT(Latitude, SunSetUTHours, SunSetUTMinutes, SunSetUTSeconds, SunSetUTDateYear, SunSetUTDateMonth, SunSetUTDateDay)
 
     return(LocalTimeSet, LocalHoursSet, LocalMinutesSet, LocalSecondsSet, LocalDateYearSet, LocalDateMonthSet, LocalDateDaySet, LocalTimeRise, LocalHoursRise, LocalMinutesRise, LocalSecondsRise, LocalDateYearRise, LocalDateMonthRise, LocalDateDayRise)
 
@@ -941,9 +986,9 @@ def SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateY
 def TwilightCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, LocalDateDay):
 
     # Definition of differenc Twilights
-    # Begin of Civil Twilight:          m = -6°
-    # Begin of Nautical Twilight:       m = -12°
-    # Begin of Astronomical Twilight:   m = -18°
+    # Begin/End of Civil Twilight:          m = -6°
+    # Begin/End of Nautical Twilight:       m = -12°
+    # Begin/End of Astronomical Twilight:   m = -18°
     AltitudeDaylight = 0
     AltitudeCivil = -6
     AltitudeNaval = -12
@@ -965,7 +1010,7 @@ def TwilightCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, Loc
     (LocalTimeSetAstro, LocalHoursSetAstro, LocalMinutesSetAstro, LocalSecondsSetAstro, LocalDateYearSetAstro, LocalDateMonthSetAstro, LocalDateDaySetAstro, 
     LocalTimeRiseAstro, LocalHoursRiseAstro, LocalMinutesRiseAstro, LocalSecondsRiseAstro, LocalDateYearRiseAstro, LocalDateMonthRiseAstro, LocalDateDayRiseAstro) = SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeAstro, LocalDateYear, LocalDateMonth, LocalDateDay)
 
-    # Step 1 day
+    # Step +1 day
     LocalDateNextDay = LocalDateDay + 1
 
     if(LocalDateYear%4 == 0 and (LocalDateYear%100 != 0 or LocalDateYear%400 == 0)):
@@ -1042,13 +1087,8 @@ def TwilightCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, Loc
     LocalTimeMidnight = NormalizeZeroBounded(LocalTimeMidnight, 24)
 
     # LT of Noon and Midnight
-    LocalHoursNoon = int(LocalTimeNoon)
-    LocalMinutesNoon = int((LocalTimeNoon - LocalHoursNoon) * 60)
-    LocalSecondsNoon = int((((LocalTimeNoon - LocalHoursNoon) * 60) - LocalMinutesNoon) * 60)
-
-    LocalHoursMidnight = int(LocalTimeMidnight)
-    LocalMinutesMidnight = int((LocalTimeMidnight - LocalHoursMidnight) * 60)
-    LocalSecondsMidnight = int((((LocalTimeMidnight - LocalHoursMidnight) * 60) - LocalMinutesMidnight) * 60)
+    LocalTimeNoon, LocalHoursNoon, LocalMinutesNoon, LocalSecondsNoon, LocalDateYearNoon, LocalDateMonthNoon, LocalDateDayNoon = NormalizeTimeParameters(LocalTimeNoon, LocalDateYearNoon, LocalDateMonthNoon, LocalDateDayNoon)
+    LocalTimeMidnight, LocalHoursMidnight, LocalMinutesMidnight, LocalSecondsMidnight, LocalDateYearMidnight, LocalDateMonthMidnight, LocalDateDayMidnight = NormalizeTimeParameters(LocalTimeMidnight, LocalDateYearMidnight, LocalDateMonthMidnight, LocalDateDayMidnight)
 
     return(LocalHoursNoon, LocalMinutesNoon, LocalSecondsNoon, LocalDateYearNoon, LocalDateMonthNoon, LocalDateDayNoon,
             LocalHoursMidnight, LocalMinutesMidnight, LocalSecondsMidnight, LocalDateYearMidnight, LocalDateMonthMidnight, LocalDateDayMidnight,
@@ -1060,6 +1100,76 @@ def TwilightCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, Loc
             LocalHoursSetNaval, LocalMinutesSetNaval, LocalSecondsSetNaval, LocalDateYearSetNaval, LocalDateMonthSetNaval, LocalDateDaySetNaval,
             LocalHoursRiseAstro, LocalMinutesRiseAstro, LocalSecondsRiseAstro, LocalDateYearSetAstro, LocalDateMonthSetAstro, LocalDateDaySetAstro,
             LocalHoursSetAstro, LocalMinutesSetAstro, LocalSecondsSetAstro, LocalDateYearRiseAstro, LocalDateMonthRiseAstro, LocalDateDayRiseAstro)
+
+
+################################################################
+########                                                ########
+########   6. DRAW THE SUN'S ANNUAL PATH ON A SUNDIAL   ########
+########                                                ########
+################################################################
+
+def SundialPrecalculations(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, LocalDateDay):
+
+    # We would like to calculate rising and setting time
+    AltitudeOfSun = 0
+
+    # Daylight start and end LT
+    (LocalTimeSetDaylight, LocalHoursSetDaylight, LocalMinutesSetDaylight, LocalSecondsSetDaylight, LocalDateYearSetDaylight, LocalDateMonthSetDaylight, LocalDateDaySetDaylight, 
+    LocalTimeRiseDaylight, LocalHoursRiseDaylight, LocalMinutesRiseDaylight, LocalSecondsRiseDaylight, LocalDateYearRiseDaylight, LocalDateMonthRiseDaylight, LocalDateDayRiseDaylight) = SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateYear, LocalDateMonth, LocalDateDay)
+    
+    # Calculate the Coordinates of the Sun's Apparent Position
+    # Now UT = 0
+    UnitedHours = 0
+    UnitedMinutes = 0
+    UnitedSeconds = 0
+    JulianDays = CalculateJulianDate(LocalDateYear, LocalDateMonth, LocalDateDay, UnitedHours, UnitedMinutes, UnitedSeconds)
+    LocalHourAngleSun_Pos, LocalHourAngleSun_Orig, RightAscensionSun, DeclinationSun, Jtransit = SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeOfSun, JulianDays)
+
+    # Calculate Local Mean Sidereal Time for both Rising and Setting time
+    LocalSiderealHoursRise, LocalSiderealMinutesRise, LocalSiderealSecondsRise, UnitedHoursRise, UnitedMinutesRise, UnitedSecondsRise, GreenwichHoursRise, GreenwichMinutesRise, GreenwichSecondsRise = LocalSiderealTimeCalc(Longitude, LocalHoursRiseDaylight, LocalMinutesRiseDaylight, LocalSecondsRiseDaylight, LocalDateYearRiseDaylight, LocalDateMonthRiseDaylight, LocalDateDayRiseDaylight)
+    LocalSiderealHoursSet, LocalSiderealMinutesSet, LocalSiderealSecondsSet, UnitedHoursSet, UnitedMinutesSet, UnitedSecondsSet, GreenwichHoursSet, GreenwichMinutesSet, GreenwichSecondsSet = LocalSiderealTimeCalc(Longitude, LocalHoursSetDaylight, LocalMinutesSetDaylight, LocalSecondsSetDaylight, LocalDateYearSetDaylight, LocalDateMonthSetDaylight, LocalDateDaySetDaylight)
+
+    # Convert them to Decimal
+    LocalSiderealTimeRise = LocalSiderealHoursRise + LocalSiderealMinutesRise/60 + LocalSiderealSecondsRise/3600
+    LocalSiderealTimeSet = LocalSiderealHoursSet + LocalSiderealMinutesSet/60 + LocalSiderealSecondsSet/3600
+
+    # Calculate Hour Angle of Rising and Setting Sun
+    LocalHourAngleRise = LocalSiderealTimeRise - RightAscensionSun
+    LocalHourAngleSet = LocalSiderealTimeSet - RightAscensionSun
+
+    # Normalize Results
+    LocalHourAngleRise = NormalizeZeroBounded(LocalHourAngleRise, 24)
+    LocalHourAngleSet = NormalizeZeroBounded(LocalHourAngleSet, 24)
+
+    return(LocalHourAngleRise, LocalHourAngleSet, DeclinationSun)
+
+def SundialParametersCalc(Latitude, LocalHourAngle, DeclinationSun):
+
+    # Convert LHA from Hours to Degrees
+    LocalHourAngleDegrees = LocalHourAngle * 15
+
+    # Calculate Altitude (m)
+    # sin(m) = sin(δ) * sin(φ) + cos(δ) * cos(φ) * cos(H)
+    Altitude = math.degrees(math.asin(
+            math.sin(math.radians(DeclinationSun)) * math.cos(math.radians(Latitude)) +
+            math.cos(math.radians(DeclinationSun)) * math.cos(math.radians(Latitude)) * math.cos(math.radians(LocalHourAngleDegrees))
+            ))
+    # Normalize Altitude
+    # Altitude: # Declination: [-π/2,+π/2]
+    Altitude = NormalizeSymmetricallyBoundedPI_2(Altitude)
+
+    # Calculate Azimuth (A)
+    # sin(A) = - sin(H) * cos(δ) / cos(m)
+
+    # Azimuth at given H Local Hour Angle
+    Azimuth = math.degrees(math.asin(
+            - math.sin(math.radians(LocalHourAngleDegrees)) * math.cos(math.radians(DeclinationSun)) / math.cos(math.radians(Altitude))
+            ))
+    # Normalize Azimuth
+    # Azimuth: [0,+2π[
+    Azimuth = NormalizeZeroBounded(Azimuth, 360)
+
+    return(Altitude, Azimuth)
 
 
 ###############################################################################################
@@ -1084,7 +1194,7 @@ def TwilightCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, Loc
    ####                                                                                 ####
 
 # Print version info
-STARTMSG = "\n#### Csillész II Problem Solver Program {0} ####\n####    Developed by Balage Paliére and Co.    ####\n\n"
+STARTMSG = "\n#### Csillész II Problem Solver Program {0} ####\n####    Developed by Balage Paliére and Co.   ####\n\n"
 print(STARTMSG.format(ActualVersion))
 
 while(True):
@@ -1095,11 +1205,12 @@ while(True):
     print("(3) Local Mean Sidereal Time")
     print("(4) Datetimes of Sunsets and Sunrises")
     print("(5) Datetimes of Twilights")
+    print("(6) Plot Sun's Path on Sundial")
     print("(H) Solve End-Semester Homework")
     print("(Q) Quit Program\n")
 
     # Choose mode by user input
-    mode = input("> Choose a mode and press enter...:")
+    mode = input("> Choose a mode and press enter...: ")
     print('\n\n')
 
     #    _____                    _    _____              _____                 
@@ -1137,31 +1248,35 @@ while(True):
                 print(">> Conversion from Horizontal to Equatorial I Coordinate System")
                 print(">> Give Parameters!")
                 
-                print(">> Would you like to give Geographical Coordinates by yourself,\n>> or would like just to choose a predefined city's Coordinates?")
-                print("Write \'1\' for User defined Coordinates, and write \'2\' for Predefined Cities's Coordinates!")
+                print(">> Would you like to give Geographical Coordinates by yourself,\n>> or would like just to choose a predefined Location's Coordinates?")
+                print("Write \'1\' for User defined Coordinates, and write \'2\' for Predefined Locations' Coordinates!")
 
-                HorToEquIICityChoose = input(">> (1) User Defined, (2) Predefined: ")
+                HorToEquIILocationChoose = input(">> (1) User Defined, (2) Predefined: ")
                 
                 while(True):
-                    if(HorToEquIICityChoose == '1'):
-                        Latitude = float(input("> Latitude (φ): "))
+                    if(HorToEquIILocationChoose == '1'):
+                        print(">> HINT: You can write Latitude as a Decimal Fraction. For this you need to write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                        LatitudeHours = float(input("> Latitude (φ) Hours: ") or "0")
+                        LatitudeMinutes = float(input("> Latitude (φ) Minutes: ") or "0")
+                        LatitudeSeconds = float(input("> Latitude (φ) Seconds: ") or "0")
+                        Latitude = LatitudeHours + LatitudeMinutes/60 + LatitudeSeconds/3600
                         break
                     
-                    elif(HorToEquIICityChoose == '2'):
+                    elif(HorToEquIILocationChoose == '2'):
                         while(True):
-                            City = input("> City's name (type \'H\' for Help): ")
+                            Location = input("> Location's name (type \'H\' for Help): ")
 
-                            if(City == "Help" or City == "help" or City == "H" or City == "h"):
-                                print("Predefined Cities you can choose from:")
-                                for keys in CityDict.items():
+                            if(Location == "Help" or Location == "help" or Location == "H" or Location == "h"):
+                                print("Predefined Locations you can choose from:")
+                                for keys in LocationDict.items():
                                     print(keys)
                             
                             else:
                                 try:
-                                    Latitude = CityDict[City][0]
+                                    Latitude = LocationDict[Location][0]
 
                                 except KeyError:
-                                    print(">>>> ERROR: The City, named \"" + City + "\" is not in the Database!")
+                                    print(">>>> ERROR: The Location, named \"" + Location + "\" is not in the Database!")
                                     print(">>>> Type \"Help\" to list Available Cities in Database!")
                                     
                                 else:
@@ -1179,10 +1294,10 @@ while(True):
                 while(True):
                     HorToEquIChoose = input("Write \'Y\' or \'N\' (Yes or No)")
                     if(HorToEquIChoose == 'Y' or HorToEquIChoose == 'y' or HorToEquIChoose == 'Yes' or HorToEquIChoose == 'yes' or HorToEquIChoose == 'YEs' or HorToEquIChoose == 'yEs' or HorToEquIChoose == 'yeS' or HorToEquIChoose == 'YeS' or HorToEquIChoose == 'yES'):
-                        print(">> HINT: You can write LMST as a Decimal Fraction. For this you need\n>> To write Hours as a float-type value, and type 0 for both\n>> Minutes and Seconds.")
-                        LocalSiderealTimeHours = float(input("> Local Mean Sidereal Time (S) Hours: "))
-                        LocalSiderealTimeMinutes = float(input("> Local Mean Sidereal Time (S) Minutes: "))
-                        LocalSiderealTimeSeconds = float(input("> Local Mean Sidereal Time (S) Seconds: "))
+                        print(">> HINT: You can write LMST as a Decimal Fraction. For this you need to write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                        LocalSiderealTimeHours = float(input("> Local Mean Sidereal Time (S) Hours: ") or "0")
+                        LocalSiderealTimeMinutes = float(input("> Local Mean Sidereal Time (S) Minutes: ") or "0")
+                        LocalSiderealTimeSeconds = float(input("> Local Mean Sidereal Time (S) Seconds: ") or "0")
                         LocalSiderealTime = LocalSiderealTimeHours + LocalSiderealTimeMinutes/60 + LocalSiderealTimeSeconds/3600
                         break
 
@@ -1199,17 +1314,30 @@ while(True):
                 # α = S – t
                 Declination, LocalHourAngle, RightAscension = HorToEquI(Latitude, Altitude, Azimuth, LocalSiderealTime)
 
+                DeclinationHours = int(Declination)
+                DeclinationMinutes = int((Declination - DeclinationHours) * 60)
+                DeclinationSeconds = int((((Declination - DeclinationHours) * 60) - DeclinationMinutes) * 60)
+
+                LocalHourAngleHours = int(LocalHourAngle)
+                LocalHourAngleMinutes = int((LocalHourAngle - LocalHourAngleHours) * 60)
+                LocalHourAngleSeconds = int((((LocalHourAngle - LocalHourAngleHours) * 60) - LocalHourAngleMinutes) * 60)
+
                 # Print Results
                 print("\n> Calculated parameters in Equatorial I Coord. Sys.:")
                 
-                declinmsg = "- Declination (δ): {0}°"
-                hourangmsg = "- Local Hour Angle (t): {0} h"
-                print(declinmsg.format(Declination))
-                print(hourangmsg.format(LocalHourAngle))
+                declinmsg = "- Declination (δ): {0}° {1}\' {2}\""
+                hourangmsg = "- Local Hour Angle (t): {0}h {1}m {2}s"
+                print(declinmsg.format(DeclinationHours, DeclinationMinutes, DeclinationSeconds))
+                print(hourangmsg.format(LocalHourAngleHours, LocalHourAngleMinutes, LocalHourAngleSeconds))
                 
                 if(LocalSiderealTime != None):
-                    RAmsg = "- Right Ascension (α):  {0} h"
-                    print(RAmsg.format(RightAscension))
+                    
+                    RightAscensionHours = int(RightAscension)
+                    RightAscensionMinutes = int((RightAscension - RightAscensionHours) * 60)
+                    RightAscensionSeconds = int((((RightAscension - RightAscensionHours) * 60) - RightAscensionMinutes) * 60)
+
+                    RAmsg = "- Right Ascension (α): {0}h {1}m {2}s"
+                    print(RAmsg.format(RightAscensionHours, RightAscensionMinutes, RightAscensionSeconds))
 
                 print('\n')
 
@@ -1224,31 +1352,35 @@ while(True):
                 print(">> Conversion from Horizontal to Equatorial II Coordinate System")
                 print(">> Give Parameters!")
                 
-                print(">> Would you like to give Geographical Coordinates by yourself,\n>> or would like just to choose a predefined city's Coordinates?")
-                print(">> Write \'1\' for User defined Coordinates, and write \'2\' for Predefined Cities's Coordinates!")
+                print(">> Would you like to give Geographical Coordinates by yourself,\n>> or would like just to choose a predefined Location's Coordinates?")
+                print(">> Write \'1\' for User defined Coordinates, and write \'2\' for Predefined Locations' Coordinates!")
 
-                HorToEquIICityChoose = input(">> (1) User Defined, (2) Predefined: ")
+                HorToEquIILocationChoose = input(">> (1) User Defined, (2) Predefined: ")
                 
                 while(True):
-                    if(HorToEquIICityChoose == '1'):
-                        Latitude = float(input("> Latitude (φ): "))
+                    if(HorToEquIILocationChoose == '1'):
+                        print(">> HINT: You can write Latitude as a Decimal Fraction. For this you need to write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                        LatitudeHours = float(input("> Latitude (φ) Hours: ") or "0")
+                        LatitudeMinutes = float(input("> Latitude (φ) Minutes: ") or "0")
+                        LatitudeSeconds = float(input("> Latitude (φ) Seconds: ") or "0")
+                        Latitude = LatitudeHours + LatitudeMinutes/60 + LatitudeSeconds/3600
                         break
                     
-                    elif(HorToEquIICityChoose == '2'):
+                    elif(HorToEquIILocationChoose == '2'):
                         while(True):
-                            City = input("> City's name (type \'H\' for Help): ")
+                            Location = input("> Location's name (type \'H\' for Help): ")
 
-                            if(City == "Help" or City == "help" or City == "H" or City == "h"):
-                                print(">> Predefined Cities you can choose from:")
-                                for keys in CityDict.items():
+                            if(Location == "Help" or Location == "help" or Location == "H" or Location == "h"):
+                                print(">> Predefined Locations you can choose from:")
+                                for keys in LocationDict.items():
                                     print(keys)
                             
                             else:
                                 try:
-                                    Latitude = CityDict[City][0]
+                                    Latitude = LocationDict[Location][0]
 
                                 except KeyError:
-                                    print(">>>> ERROR: The City, named \"" + City + "\" is not in the Database!")
+                                    print(">>>> ERROR: The Location, named \"" + Location + "\" is not in the Database!")
                                     print(">>>> Type \"Help\" to list Available Cities in Database!")
                                     
                                 else:
@@ -1262,23 +1394,36 @@ while(True):
                 Altitude = float(input("> Altitude (m): "))
                 Azimuth = float(input("> Azimuth (A): "))
                 
-                print(">> HINT: You can write LMST as a Decimal Fraction. For this you need\n>> To write Hours as a float-type value, and type 0 for both\n>> Minutes and Seconds.")
-                LocalSiderealTimeHours = float(input("> Local Mean Sidereal Time (S) Hours: "))
-                LocalSiderealTimeMinutes = float(input("> Local Mean Sidereal Time (S) Minutes: "))
-                LocalSiderealTimeSeconds = float(input("> Local Mean Sidereal Time (S) Seconds: "))
+                print(">> HINT: You can write LMST as a Decimal Fraction. For this you need to write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                LocalSiderealTimeHours = float(input("> Local Mean Sidereal Time (S) Hours: ") or "0")
+                LocalSiderealTimeMinutes = float(input("> Local Mean Sidereal Time (S) Minutes: ") or "0")
+                LocalSiderealTimeSeconds = float(input("> Local Mean Sidereal Time (S) Seconds: ") or "0")
                 LocalSiderealTime = LocalSiderealTimeHours + LocalSiderealTimeMinutes/60 + LocalSiderealTimeSeconds/3600
 
                 Declination, RightAscension, LocalSiderealTime = HorToEquII(Latitude, Altitude, Azimuth, LocalSiderealTime)
 
+                DeclinationHours = int(Declination)
+                DeclinationMinutes = int((Declination - DeclinationHours) * 60)
+                DeclinationSeconds = int((((Declination - DeclinationHours) * 60) - DeclinationMinutes) * 60)
+
+                RightAscensionHours = int(RightAscension)
+                RightAscensionMinutes = int((RightAscension - RightAscensionHours) * 60)
+                RightAscensionSeconds = int((((RightAscension - RightAscensionHours) * 60) - RightAscensionMinutes) * 60)
+
+                LocalSiderealTimeHours = int(LocalSiderealTime)
+                LocalSiderealTimeMinutes = int((LocalSiderealTime - LocalSiderealTimeHours) * 60)
+                LocalSiderealTimeSeconds = int((((LocalSiderealTime - LocalSiderealTimeHours) * 60) - LocalSiderealTimeMinutes) * 60)
+
+
                 # Print Results
                 print("\n> Calculated Parameters in Equatorial II Coord. Sys.:")
 
-                declinmsg = "- Declination (δ): {0}°"
-                RAmsg = "- Right Ascension (α): {0}h"
-                sidermsg = "- Local Mean Sidereal Time (S): {0}h"
-                print(declinmsg.format(Declination))
-                print(RAmsg.format(RightAscension))
-                print(sidermsg.format(LocalSiderealTime))
+                declinmsg = "- Declination (δ): {0}° {1}\' {2}\""
+                RAmsg = "- Right Ascension (α): {0}h {1}m {2}s"
+                sidermsg = "- Local Mean Sidereal Time (S): {0}:{1}:{2}\n"
+                print(declinmsg.format(DeclinationHours, DeclinationMinutes, DeclinationSeconds))
+                print(RAmsg.format(RightAscensionHours, RightAscensionMinutes, RightAscensionSeconds))
+                print(sidermsg.format(LocalSiderealTimeHours, LocalSiderealTimeMinutes, LocalSiderealTimeSeconds))
                 print('\n')
 
             #  _____  
@@ -1292,32 +1437,36 @@ while(True):
                 print(">> Conversion from Equatorial I to Horizontal Coordinate System")
                 print(">> Give Parameters!\n")
                 
-                print(">>> CITY")
-                print(">> Would you like to give Geographical Coordinates by yourself,\n>> Or would like just to choose a predefined city's Coordinates?")
-                print(">> Write \'1\' for User defined Coordinates, and\n>> Write \'2\' for Predefined Cities's Coordinates!")
+                print(">>> LOCATION")
+                print(">> Would you like to give Geographical Coordinates by yourself,\n>> Or would like just to choose a predefined Location's Coordinates?")
+                print(">> Write \'1\' for User defined Coordinates, and\n>> Write \'2\' for Predefined Locations' Coordinates!")
 
-                EquIToHorCityChoose1 = input(">> (1) User Defined, (2) Predefined: ")
+                EquIToHorLocationChoose1 = input(">> (1) User Defined, (2) Predefined: ")
                 
                 while(True):
-                    if(EquIToHorCityChoose1 == '1'):
-                        Latitude = float(input("> Latitude (φ): "))
+                    if(EquIToHorLocationChoose1 == '1'):
+                        print(">> HINT: You can write Latitude as a Decimal Fraction. For this you need to write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                        LatitudeHours = float(input("> Latitude (φ) Hours: ") or "0")
+                        LatitudeMinutes = float(input("> Latitude (φ) Minutes: ") or "0")
+                        LatitudeSeconds = float(input("> Latitude (φ) Seconds: ") or "0")
+                        Latitude = LatitudeHours + LatitudeMinutes/60 + LatitudeSeconds/3600
                         break
                     
-                    elif(HorToEquIICityChoose == '2'):
+                    elif(HorToEquIILocationChoose == '2'):
                         while(True):
-                            City = input("> City's name (type \'H\' for Help): ")
+                            Location = input("> Location's name (type \'H\' for Help): ")
 
-                            if(City == "Help" or City == "help" or City == "H" or City == "h"):
-                                print(">> Predefined Cities you can choose from:")
-                                for keys in CityDict.items():
+                            if(Location == "Help" or Location == "help" or Location == "H" or Location == "h"):
+                                print(">> Predefined Locations you can choose from:")
+                                for keys in LocationDict.items():
                                     print(keys)
                             
                             else:
                                 try:
-                                    Latitude = CityDict[City][0]
+                                    Latitude = LocationDict[Location][0]
 
                                 except KeyError:
-                                    print(">>>> ERROR: The City, named \"" + City + "\" is not in the Database!")
+                                    print(">>>> ERROR: The Location, named \"" + Location + "\" is not in the Database!")
                                     print(">>>> Type \"Help\" to list Available Cities in Database!")
                                     
                                 else:
@@ -1341,16 +1490,22 @@ while(True):
 
                         if(RAorDecEquIToHorChoose == 'D' or RAorDecEquIToHorChoose == 'd'):
                             RightAscension = None
-                            Declination = float(input("> Declination (δ): "))
+                            DeclinationHours = float(input("> Declination (δ) Hours: ") or "0")
+                            DeclinationMinutes = float(input("> Declination (δ) Minutes: ") or "0")
+                            DeclinationSeconds = float(input("> Declination (δ) Seconds: ") or "0")
+                            Declination = DeclinationHours + DeclinationMinutes/60 + DeclinationSeconds/3600
                             break
 
                         elif(RAorDecEquIToHorChoose == 'B' or RAorDecEquIToHorChoose == 'b'):
-                            print(">> HINT: You can write RA as a Decimal Fraction. For this you need\n>> To write Hours as a float-type value, and type 0 for both\n>> Minutes and Seconds.")
-                            RightAscensionHours = float(input("> Right Ascension (α) Hours: "))
-                            RightAscensionMinutes = float(input("> Right Ascension (α) Minutes: "))
-                            RightAscensionSeconds = float(input("> Right Ascension (α) Seconds: "))
+                            print(">> HINT: You can write RA as a Decimal Fraction. For this you need to write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                            RightAscensionHours = float(input("> Right Ascension (α) Hours: ") or "0")
+                            RightAscensionMinutes = float(input("> Right Ascension (α) Minutes: ") or "0")
+                            RightAscensionSeconds = float(input("> Right Ascension (α) Seconds: ") or "0")
                             RightAscension = RightAscensionHours + RightAscensionMinutes/60 + RightAscensionSeconds/3600
-                            Declination = float(input("> Declination (δ): "))
+                            DeclinationHours = float(input("> Declination (δ) Hours: ") or "0")
+                            DeclinationMinutes = float(input("> Declination (δ) Minutes: ") or "0")
+                            DeclinationSeconds = float(input("> Declination (δ) Seconds: ") or "0")
+                            Declination = DeclinationHours + DeclinationMinutes/60 + DeclinationSeconds/3600
                             break
 
                         else:
@@ -1404,10 +1559,10 @@ while(True):
                         EquIToHorChoose1 = input(">> Write \'Y\' or \'N\' (Yes or No): ")
 
                         if(EquIToHorChoose1 == 'Y' or EquIToHorChoose1 == 'y' or EquIToHorChoose1 == 'Yes' or EquIToHorChoose1 == 'yes' or EquIToHorChoose1 == 'YEs' or EquIToHorChoose1 == 'yEs' or EquIToHorChoose1 == 'yeS' or EquIToHorChoose1 == 'YeS' or EquIToHorChoose1 == 'yES'):
-                            print(">> HINT: You can write LMST as a Decimal Fraction. For this you need\n>> To write Hours as a float-type value, and type 0 for both\n>> Minutes and Seconds.")
-                            LocalSiderealTimeHours = float(input("> Local Mean Sidereal Time (S) Hours: "))
-                            LocalSiderealTimeMinutes = float(input("> Local Mean Sidereal Time (S) Minutes: "))
-                            LocalSiderealTimeSeconds = float(input("> Local Mean Sidereal Time (S) Seconds: "))
+                            print(">> HINT: You can write LMST as a Decimal Fraction. For this you need to write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                            LocalSiderealTimeHours = float(input("> Local Mean Sidereal Time (S) Hours: ") or "0")
+                            LocalSiderealTimeMinutes = float(input("> Local Mean Sidereal Time (S) Minutes: ") or "0")
+                            LocalSiderealTimeSeconds = float(input("> Local Mean Sidereal Time (S) Seconds: ") or "0")
                             LocalSiderealTime = LocalSiderealTimeHours + LocalSiderealTimeMinutes/60 + LocalSiderealTimeSeconds/3600
                             break
 
@@ -1418,10 +1573,10 @@ while(True):
                             EquIToHorChoose2 = input(">> Write \'Y\' or \'N\' (Yes or No): ")
 
                             if(EquIToHorChoose2 == 'Y' or EquIToHorChoose2 == 'y' or EquIToHorChoose2 == 'Yes' or EquIToHorChoose2 == 'yes' or EquIToHorChoose2 == 'YEs' or EquIToHorChoose2 == 'yEs' or EquIToHorChoose2 == 'yeS' or EquIToHorChoose2 == 'YeS' or EquIToHorChoose2 == 'yES'):
-                                print(">> HINT: You can write LHA as a Decimal Fraction. For this you need\n>> To write Hours as a float-type value, and type 0 for both\n>> Minutes and Seconds.")
-                                LocalHourAngleHours = float(input("> Local Hour Angle (t) Hours: "))
-                                LocalHourAngleMinutes = float(input("> Local Hour Angle (t) Minutes: "))
-                                LocalHourAngleSeconds = float(input("> Local Hour Angle (t) Seconds: "))
+                                print(">> HINT: You can write LHA as a Decimal Fraction. For this you need to write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                                LocalHourAngleHours = float(input("> Local Hour Angle (t) Hours: ") or "0")
+                                LocalHourAngleMinutes = float(input("> Local Hour Angle (t) Minutes: ") or "0")
+                                LocalHourAngleSeconds = float(input("> Local Hour Angle (t) Seconds: ") or "0")
                                 LocalHourAngle = LocalHourAngleHours + LocalHourAngleMinutes/60 + LocalHourAngleSeconds/3600
                                 break
 
@@ -1439,10 +1594,10 @@ while(True):
                     EquIToHorChooseD = input(">> Write \'Y\' or \'N\' (Yes or No): ")
 
                     if(EquIToHorChooseD == 'Y' or EquIToHorChooseD == 'y' or EquIToHorChooseD == 'Yes' or EquIToHorChooseD == 'yes' or EquIToHorChooseD == 'YEs' or EquIToHorChooseD == 'yEs' or EquIToHorChooseD == 'yeS' or EquIToHorChooseD == 'YeS' or EquIToHorChooseD == 'yES'):
-                        print(">> HINT: You can write LHA as a Decimal Fraction. For this you need\n>> To write Hours as a float-type value, and type 0 for both\n>> Minutes and Seconds.")
-                        LocalHourAngleHours = float(input("> Local Hour Angle (t) Hours: "))
-                        LocalHourAngleMinutes = float(input("> Local Hour Angle (t) Minutes: "))
-                        LocalHourAngleSeconds = float(input("> Local Hour Angle (t) Seconds: "))
+                        print(">> HINT: You can write LHA as a Decimal Fraction. For this you need to write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                        LocalHourAngleHours = float(input("> Local Hour Angle (t) Hours: ") or "0")
+                        LocalHourAngleMinutes = float(input("> Local Hour Angle (t) Minutes: ") or "0")
+                        LocalHourAngleSeconds = float(input("> Local Hour Angle (t) Seconds: ") or "0")
                         LocalHourAngle = LocalHourAngleHours + LocalHourAngleMinutes/60 + LocalHourAngleSeconds/3600
                         break
 
@@ -1520,10 +1675,10 @@ while(True):
 
                 while(True):
                     if(EquIToEquIIStellarChoose == '1'):
-                        print(">> HINT: You can write RA as a Decimal Fraction. For this you need\n>> To write Hours as a float-type value, and type 0\n>> For both Minutes and Seconds.")
-                        RightAscensionHours = float(input("> Right Ascension (α) Hours: "))
-                        RightAscensionMinutes = float(input("> Right Ascension (α) Minutes: "))
-                        RightAscensionSeconds = float(input("> Right Ascension (α) Seconds: "))
+                        print(">> HINT: You can write RA as a Decimal Fraction. For this you need to write Hours as a float-type value, and type 0\n>> For both Minutes and Seconds.")
+                        RightAscensionHours = float(input("> Right Ascension (α) Hours: ") or "0")
+                        RightAscensionMinutes = float(input("> Right Ascension (α) Minutes: ") or "0")
+                        RightAscensionSeconds = float(input("> Right Ascension (α) Seconds: ") or "0")
                         RightAscension = RightAscensionHours + RightAscensionMinutes/60 + RightAscensionSeconds/3600
 
                         print(">> Is Declination given?")
@@ -1564,11 +1719,11 @@ while(True):
                                     print(">> Is Declination given?")
                                     while(True):
                                         EquIToEquIIChoose = input(">> Write \'Y\' or \'N\' (Yes or No): ")
-                                        
+
                                         if(EquIToEquIIChoose == 'Y' or EquIToEquIIChoose == 'y' or EquIToEquIIChoose == 'Yes' or EquIToEquIIChoose == 'yes' or EquIToEquIIChoose == 'YEs' or EquIToEquIIChoose == 'yEs' or EquIToEquIIChoose == 'yeS' or EquIToEquIIChoose == 'YeS' or EquIToEquIIChoose == 'yES'):
                                             Declination = StellarDict[StellarObject][1]
                                             break
-                                        
+
                                         elif(EquIToEquIIChoose == 'N' or EquIToEquIIChoose == 'n' or EquIToEquIIChoose == 'No' or EquIToEquIIChoose == 'no' or EquIToEquIIChoose == 'nO'):
                                             Declination = None
 
@@ -1576,29 +1731,38 @@ while(True):
                                             print(">>>> ERROR: Invalid option! Try Again!")
 
                         break
-                            
+
                     else:
                         print(">>>> ERROR: Invalid option! Try Again!")
 
                 print(">> You should input LHA (t) manually!")
-                print(">> HINT: You can write LHA as a Decimal Fraction. For this you need\n>> To write Hours as a float-type value, and type 0 for both\n>> Minutes and Seconds.")
-                LocalHourAngleHours = float(input("> Local Hour Angle (t) Hours: "))
-                LocalHourAngleMinutes = float(input("> Local Hour Angle (t) Minutes: "))
-                LocalHourAngleSeconds = float(input("> Local Hour Angle (t) Seconds: "))
+                print(">> HINT: You can write LHA as a Decimal Fraction. For this you need to write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                LocalHourAngleHours = float(input("> Local Hour Angle (t) Hours: ") or "0")
+                LocalHourAngleMinutes = float(input("> Local Hour Angle (t) Minutes: ") or "0")
+                LocalHourAngleSeconds = float(input("> Local Hour Angle (t) Seconds: ") or "0")
                 LocalHourAngle = LocalHourAngleHours + LocalHourAngleMinutes/60 + LocalHourAngleSeconds/3600
 
                 LocalSiderealTime = EquIToEquII(RightAscension, LocalHourAngle)
 
+                LocalSiderealTimeHours = int(LocalSiderealTime)
+                LocalSiderealTimeMinutes = int((LocalSiderealTime - LocalSiderealTimeHours) * 60)
+                LocalSiderealTimeSeconds = int((((LocalSiderealTime - LocalSiderealTimeHours) * 60) - LocalSiderealTimeMinutes) * 60)
+
                 # Print Results
                 print("\n> Calculated Parameters in Equatorial II Coord. Sys.:")
 
-                sidermsg = "- Local Mean Sidereal Time (S): {0}°"
+                sidermsg = "- Local Mean Sidereal Time (S): {0}:{1}:{2}"
                 print(sidermsg.format(LocalSiderealTime))
                 
                 if(Declination != None):
-                    declinmsg = "- Declination (δ): {0}°"
+
+                    DeclinationHours = int(Declination)
+                    DeclinationMinutes = int((Declination - DeclinationHours) * 60)
+                    DeclinationSeconds = int((((Declination - DeclinationHours) * 60) - DeclinationMinutes) * 60)
+
+                    declinmsg = "- Declination (δ): {0}° {1}\' {2}\""
                     print(declinmsg.format(Declination))
-                
+
                 else:
                     print("Declination is Unknown!")
 
@@ -1616,10 +1780,10 @@ while(True):
                 print(">> Give Parameters!")
 
                 print(">> You should input LMST (S) manually!")
-                print(">> HINT: You can write LMST as a Decimal Fraction. For this you need\n>> To write Hours as a float-type value, and type 0 for both\n>> Minutes and Seconds.")
-                LocalSiderealTimeHours = float(input("> Local Mean Sidereal Time (S) Hours: "))
-                LocalSiderealTimeMinutes = float(input("> Local Mean Sidereal Time (S) Minutes: "))
-                LocalSiderealTimeSeconds = float(input("> Local Mean Sidereal Time (S) Seconds: "))
+                print(">> HINT: You can write LMST as a Decimal Fraction. For this you need to write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                LocalSiderealTimeHours = float(input("> Local Mean Sidereal Time (S) Hours: ") or "0")
+                LocalSiderealTimeMinutes = float(input("> Local Mean Sidereal Time (S) Minutes: ") or "0")
+                LocalSiderealTimeSeconds = float(input("> Local Mean Sidereal Time (S) Seconds: ") or "0")
                 LocalSiderealTime = LocalSiderealTimeHours + LocalSiderealTimeMinutes/60 + LocalSiderealTimeSeconds/3600
 
                 print(">> Is Declination given?")
@@ -1645,10 +1809,10 @@ while(True):
                         break
 
                     elif(EquIIToEquIDecChoose == 'T' or EquIIToEquIDecChoose == 't'):
-                        print(">> HINT: You can write LHA as a Decimal Fraction. For this you need\n>> To write Hours as a float-type value, and type 0 for both\n>> Minutes and Seconds.")
-                        LocalHourAngleHours = float(input("> Local Hour Angle (t) Hours: "))
-                        LocalHourAngleMinutes = float(input("> Local Hour Angle (t) Minutes: "))
-                        LocalHourAngleSeconds = float(input("> Local Hour Angle (t) Seconds: "))
+                        print(">> HINT: You can write LHA as a Decimal Fraction. For this you need to write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                        LocalHourAngleHours = float(input("> Local Hour Angle (t) Hours: ") or "0")
+                        LocalHourAngleMinutes = float(input("> Local Hour Angle (t) Minutes: ") or "0")
+                        LocalHourAngleSeconds = float(input("> Local Hour Angle (t) Seconds: ") or "0")
                         LocalHourAngle = LocalHourAngleHours + LocalHourAngleMinutes/60 + LocalHourAngleSeconds/3600
                         RightAscension = None
                         break
@@ -1658,22 +1822,31 @@ while(True):
 
                 LocalHourAngle, RightAscension = EquIIToEquI(LocalSiderealTime, RightAscension, LocalHourAngle)
 
+                RightAscensionHours = int(RightAscension)
+                RightAscensionMinutes = int((RightAscension - RightAscensionHours) * 60)
+                RightAscensionSeconds = int((((RightAscension - RightAscensionHours) * 60) - RightAscensionMinutes) * 60)
+
                 # Print Results
                 print("\n> Calculated parameters in Equatorial I Coord. Sys.:")
 
-                RAmsg = "- Right Ascension (α):  {0} h"
+                RAmsg = "- Right Ascension (α): {0}h {1}m {2}s"
                 print(RAmsg.format(RightAscension))
 
                 if(Declination != None):
-                    declinmsg = "- Declination (δ): {0}°"
+
+                    DeclinationHours = int(Declination)
+                    DeclinationMinutes = int((Declination - DeclinationHours) * 60)
+                    DeclinationSeconds = int((((Declination - DeclinationHours) * 60) - DeclinationMinutes) * 60)
+
+                    declinmsg = "- Declination (δ): {0}° {1}\' {2}\""
                     print(declinmsg.format(Declination))
-                
+
                 else:
                     print("Declination is Unknown!")
 
                 print('\n')
 
-                hourangmsg = "- Local Hour Angle (t): {0} h"
+                hourangmsg = "- Local Hour Angle (t): {0}h {1}m {2}s"
                 print(hourangmsg.format(LocalHourAngle))
                 
                 print('\n')
@@ -1689,32 +1862,36 @@ while(True):
                 print(">> Conversion from Equatorial II to Horizontal Coordinate System")
                 print(">> Give Parameters!")
 
-                print(">>> CITY")
-                print(">> Would you like to give Geographical Coordinates by yourself,\n>> Or would like just to choose a predefined city's Coordinates?")
-                print(">> Write \'1\' for User defined Coordinates, and\n>> Write \'2\' for Predefined Cities's Coordinates!")
+                print(">>> LOCATION")
+                print(">> Would you like to give Geographical Coordinates by yourself,\n>> Or would like just to choose a predefined Location's Coordinates?")
+                print(">> Write \'1\' for User defined Coordinates, and\n>> Write \'2\' for Predefined Locations' Coordinates!")
 
-                EquIIToHorCityChoose = input(">> (1) User Defined, (2) Predefined: ")
+                EquIIToHorLocationChoose = input(">> (1) User Defined, (2) Predefined: ")
 
                 while(True):
-                    if(EquIIToHorCityChoose == '1'):
-                        Latitude = float(input("> Latitude (φ): "))
+                    if(EquIIToHorLocationChoose == '1'):
+                        print(">> HINT: You can write Latitude as a Decimal Fraction. For this you need to write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                        LatitudeHours = float(input("> Latitude (φ) Hours: ") or "0")
+                        LatitudeMinutes = float(input("> Latitude (φ) Minutes: ") or "0")
+                        LatitudeSeconds = float(input("> Latitude (φ) Seconds: ") or "0")
+                        Latitude = LatitudeHours + LatitudeMinutes/60 + LatitudeSeconds/3600
                         break
 
-                    elif(EquIIToHorCityChoose == '2'):
+                    elif(EquIIToHorLocationChoose == '2'):
                         while(True):
-                            City = input("> City's name (type \'H\' for Help): ")
+                            Location = input("> Location's name (type \'H\' for Help): ")
 
-                            if(City == "Help" or City == "help" or City == "H" or City == "h"):
-                                print(">> Predefined Cities you can choose from:")
-                                for keys in CityDict.items():
+                            if(Location == "Help" or Location == "help" or Location == "H" or Location == "h"):
+                                print(">> Predefined Locations you can choose from:")
+                                for keys in LocationDict.items():
                                     print(keys)
 
                             else:
                                 try:
-                                    Latitude = CityDict[City][0]
+                                    Latitude = LocationDict[Location][0]
 
                                 except KeyError:
-                                    print(">>>> ERROR: The City, named \"" + City + "\" is not in the Database!")
+                                    print(">>>> ERROR: The Location, named \"" + Location + "\" is not in the Database!")
                                     print(">>>> Type \"Help\" to list Available Cities in Database!")
 
                                 else:
@@ -1738,18 +1915,18 @@ while(True):
                         EquIIToEquIDecChoose = input(">> Right Ascension (write \'A\'), or Local Hour Angle in Hours (write \'T\')?: ")
                         if(EquIIToEquIDecChoose == 'A' or EquIIToEquIDecChoose == 'a'):
                             LocalHourAngle = None
-                            print(">> HINT: You can write RA as a Decimal Fraction. For this you need\n>> To write Hours as a float-type value, and type 0 for both\n>> Minutes and Seconds.")
-                            RightAscensionHours = float(input("> Right Ascension (α) Hours: "))
-                            RightAscensionMinutes = float(input("> Right Ascension (α) Minutes: "))
-                            RightAscensionSeconds = float(input("> Right Ascension (α) Seconds: "))
+                            print(">> HINT: You can write RA as a Decimal Fraction. For this you need to write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                            RightAscensionHours = float(input("> Right Ascension (α) Hours: ") or "0")
+                            RightAscensionMinutes = float(input("> Right Ascension (α) Minutes: ") or "0")
+                            RightAscensionSeconds = float(input("> Right Ascension (α) Seconds: ") or "0")
                             RightAscension = RightAscensionHours + RightAscensionMinutes/60 + RightAscensionSeconds/3600
                             break
 
                         elif(EquIIToEquIDecChoose == 'T' or EquIIToEquIDecChoose == 't'):
-                            print(">> HINT: You can write LHA as a Decimal Fraction. For this you need\n>> To write Hours as a float-type value, and type 0 for both\n>> Minutes and Seconds.")
-                            LocalHourAngleHours = float(input("> Local Hour Angle (t) Hours: "))
-                            LocalHourAngleMinutes = float(input("> Local Hour Angle (t) Minutes: "))
-                            LocalHourAngleSeconds = float(input("> Local Hour Angle (t) Seconds: "))
+                            print(">> HINT: You can write LHA as a Decimal Fraction. For this you need to write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                            LocalHourAngleHours = float(input("> Local Hour Angle (t) Hours: ") or "0")
+                            LocalHourAngleMinutes = float(input("> Local Hour Angle (t) Minutes: ") or "0")
+                            LocalHourAngleSeconds = float(input("> Local Hour Angle (t) Seconds: ") or "0")
                             LocalHourAngle = LocalHourAngleHours + LocalHourAngleMinutes/60 + LocalHourAngleSeconds/3600
                             RightAscension = None
                             break
@@ -1785,10 +1962,10 @@ while(True):
 
                                     elif(EquIIToEquIDecChoose == 'T' or EquIIToEquIDecChoose == 't'):
                                         print(">> You should input LHA (t) manually!")
-                                        print(">> HINT: You can write LHA as a Decimal Fraction. For this you need\n>> To write Hours as a float-type value, and type 0 for both\n>> Minutes and Seconds.")
-                                        LocalHourAngleHours = float(input("> Local Hour Angle (t) Hours: "))
-                                        LocalHourAngleMinutes = float(input("> Local Hour Angle (t) Minutes: "))
-                                        LocalHourAngleSeconds = float(input("> Local Hour Angle (t) Seconds: "))
+                                        print(">> HINT: You can write LHA as a Decimal Fraction. For this you need to write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                                        LocalHourAngleHours = float(input("> Local Hour Angle (t) Hours: ") or "0")
+                                        LocalHourAngleMinutes = float(input("> Local Hour Angle (t) Minutes: ") or "0")
+                                        LocalHourAngleSeconds = float(input("> Local Hour Angle (t) Seconds: ") or "0")
                                         LocalHourAngle = LocalHourAngleHours + LocalHourAngleMinutes/60 + LocalHourAngleSeconds/3600
                                         RightAscension = None
                                         break
@@ -1802,10 +1979,10 @@ while(True):
                         print(">>>> ERROR: Invalid option! Try Again!")
 
                 print(">> You should input LMST (S) manually!")
-                print(">> HINT: You can write LMST as a Decimal Fraction. For this you need\n>> To write Hours as a float-type value, and type 0 for both\n>> Minutes and Seconds.")
-                LocalSiderealTimeHours = float(input("> Local Mean Sidereal Time (S) Hours: "))
-                LocalSiderealTimeMinutes = float(input("> Local Mean Sidereal Time (S) Minutes: "))
-                LocalSiderealTimeSeconds = float(input("> Local Mean Sidereal Time (S) Seconds: "))
+                print(">> HINT: You can write LMST as a Decimal Fraction. For this you need to write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                LocalSiderealTimeHours = float(input("> Local Mean Sidereal Time (S) Hours: ") or "0")
+                LocalSiderealTimeMinutes = float(input("> Local Mean Sidereal Time (S) Minutes: ") or "0")
+                LocalSiderealTimeSeconds = float(input("> Local Mean Sidereal Time (S) Seconds: ") or "0")
                 LocalSiderealTime = LocalSiderealTimeHours + LocalSiderealTimeMinutes/60 + LocalSiderealTimeSeconds/3600
 
                 Altitude, Azimuth = EquIIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSiderealTime, LocalHourAngle)
@@ -1839,9 +2016,9 @@ while(True):
             print(">> Geographical Distance Calculator\n")
             print(">> Please choose a mode you'd like to use!")
             print("(1) Positional Coordinates from User Input")
-            print("(2) Positional Coordinates of Predefined Cities")
+            print("(2) Positional Coordinates of Predefined Locations")
             print("(Q) Quit to Main Menu")
-            DistMode = input("> Choose a mode and press enter...:")
+            DistMode = input("> Choose a mode and press enter...: ")
 
             print('\n')
             if(DistMode == '1'):
@@ -1860,54 +2037,54 @@ while(True):
                 print(distmsg.format(Latitude1,Longitude1,Latitude2,Longitude2, Distance))
 
             elif(DistMode == '2'):
-                print(">> Calculate Distance of Choosen Predefined Cities\n")
+                print(">> Calculate Distance of Choosen Predefined Locations\n")
                 print(">> Write the Names of Two Choosen Cities to the Input!")
                 while(True):
-                    City1 = input("City #1 (type \'H\' for Help): ")
+                    Location1 = input("Location #1 (type \'H\' for Help): ")
 
-                    if(City1 == "Help" or City1 == "help" or City1 == "H" or City1 == "h"):
-                        print(">> Predefined Cities you can choose from:")
-                        for keys in CityDict.items():
+                    if(Location1 == "Help" or Location1 == "help" or Location1 == "H" or Location1 == "h"):
+                        print(">> Predefined Locations you can choose from:")
+                        for keys in LocationDict.items():
                             print(keys)
 
                     else:
                         try:
-                            Latitude1 = CityDict[City1][0]
-                            Longitude1 = CityDict[City1][1]
+                            Latitude1 = LocationDict[Location1][0]
+                            Longitude1 = LocationDict[Location1][1]
 
                         except KeyError:
-                            print(">>>> ERROR: The City, named \"" + City1 + "\" is not in the Database!")
+                            print(">>>> ERROR: The Location, named \"" + Location1 + "\" is not in the Database!")
                             print(">>>> Type \"Help\" to list Available Cities in Database!")
 
                         else:
                             break
 
                 while(True):
-                    City2 = input("City #2 (type \'H\' for Help): ")
+                    Location2 = input("Location #2 (type \'H\' for Help): ")
 
-                    if(City2 == "Help" or City2 == "help" or City2 == "H" or City2 == "h"):
-                        print(">> Predefined Cities you can choose from:")
-                        for keys in CityDict.items():
+                    if(Location2 == "Help" or Location2 == "help" or Location2 == "H" or Location2 == "h"):
+                        print(">> Predefined Locations you can choose from:")
+                        for keys in LocationDict.items():
                             print(keys)
 
                     else:
                         try:
-                            Latitude2 = CityDict[City2][0]
-                            Longitude2 = CityDict[City2][1]
+                            Latitude2 = LocationDict[Location2][0]
+                            Longitude2 = LocationDict[Location2][1]
 
                         except KeyError:
-                            print(">>>> ERROR: The City, named \"" + City2 + "\" is not in the Database!")
+                            print(">>>> ERROR: The Location, named \"" + Location2 + "\" is not in the Database!")
                             print(">>>> Type \"Help\" to list Available Cities in Database!")
                             
                         else:
                             break
 
-                Distance = GeogDistCityCalc(Latitude1, Latitude2, Longitude1, Longitude2)
+                Distance = GeogDistLocationCalc(Latitude1, Latitude2, Longitude1, Longitude2)
                 # Convert Distance to Km
                 Distance = float(Distance / 1000)
 
                 distmsg = "\n>>> The Geographical Distance Between\n>>> {0} and {1} is\n>>> {2:.3f} km\n"
-                print(distmsg.format(City1, City2, Distance))
+                print(distmsg.format(Location1, Location2, Distance))
 
             elif(DistMode == 'Q' or DistMode == 'q'):
                 break
@@ -1927,9 +2104,9 @@ while(True):
             print(">> Local Mean Sidereal Time Calculator\n")
             print(">> Please choose a mode you'd like to use!")
             print("(1) Parameters from User Input")
-            print("(2) Parameters of Predefined Cities")
+            print("(2) Parameters of Predefined Locations")
             print("(Q) Quit to Main Menu")
-            DistMode = input("> Choose a mode and press enter...:")
+            DistMode = input("> Choose a mode and press enter...: ")
 
             print('\n')
 
@@ -1938,8 +2115,17 @@ while(True):
                 print(">> Give Parameters!")
                 
                 # Input Positional Parameters
-                Latitude = float(input("> Latitude (φ): "))
-                Longitude = float(input("> Longitude (λ): "))
+                print(">> HINT: You can write Latitude as a Decimal Fraction. For this you need to write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                LatitudeHours = float(input("> Latitude (φ) Hours: ") or "0")
+                LatitudeMinutes = float(input("> Latitude (φ) Minutes: ") or "0")
+                LatitudeSeconds = float(input("> Latitude (φ) Seconds: ") or "0")
+                Latitude = LatitudeHours + LatitudeMinutes/60 + LatitudeSeconds/3600
+
+                print(">> HINT: You can write Longitude as a Decimal Fraction. For this you need to write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                LongitudeHours = float(input("> Longitude (λ) Hours: ") or "0")
+                LongitudeMinutes = float(input("> Longitude (λ) Minutes: ") or "0")
+                LongitudeSeconds = float(input("> Longitude (λ) Seconds: ") or "0")
+                Longitude = LongitudeHours + LongitudeMinutes/60 + LongitudeSeconds/3600
 
                 # Input Time Parameters
                 while(True):
@@ -1972,50 +2158,50 @@ while(True):
                             print(daysmsg.format(MonthLengthList[DateMonth - 1]))
 
                 while(True):
-                    LocalHours = float(input("> Local Hours: "))
+                    LocalHours = float(input("> Local Hours: ") or "0")
                     if(LocalHours >= 0 and LocalHours < 24):
                         break
                     else:
                         print(">>>> ERROR: Hours should be inside [0,24[ interval!\n")
 
                 while(True):
-                    LocalMinutes = int(input("> Local Minutes: "))
+                    LocalMinutes = int(input("> Local Minutes: ") or "0")
                     if(LocalMinutes >= 0 and LocalMinutes <= 59):
                         break
                     else:
                         print(">>>> ERROR: Minutes should be inside [0,59] interval, and should be Integer!\n")
 
                 while(True):
-                    LocalSeconds = float(input("> Local Seconds: "))
+                    LocalSeconds = float(input("> Local Seconds: ") or "0")
                     if(LocalSeconds >= 0 and LocalSeconds < 60):
                         break
                     else:
                         print(">>>> ERROR: Seconds should be inside [0,60[ interval!\n")
 
-                LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeonds, UnitedHours, UnitedMinutes, UnitedSeconds, GreenwichHours, GreenwichMinutes, GreenwichSeconds = SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, LocalSeconds, DateYear, DateMonth, DateDay)
+                LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeconds, UnitedHours, UnitedMinutes, UnitedSeconds, GreenwichHours, GreenwichMinutes, GreenwichSeconds = LocalSiderealTimeCalc(Longitude, LocalHours, LocalMinutes, LocalSeconds, DateYear, DateMonth, DateDay)
 
                 sidmsg = "\n>>> The Local Mean Sidereal Time\n>>> at {0}:{1}:{2} UT, at location\n>>> {3}°,{4}° with\n>>> {5}:{6}:{7} GMST at 00:00:00 UT\n>>> is {8}:{9}:{10}\n\n"
-                print(sidmsg.format(UnitedHours, UnitedMinutes, UnitedSeconds, Latitude, Longitude, GreenwichHours, GreenwichMinutes, GreenwichSeconds, LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeonds))
+                print(sidmsg.format(UnitedHours, UnitedMinutes, UnitedSeconds, Latitude, Longitude, GreenwichHours, GreenwichMinutes, GreenwichSeconds, LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeconds))
 
             elif(DistMode == '2'):
-                print(">> Calculate LMST from the Coordinates of a Predefined City\n")
-                print(">> Write the Name of a Choosen City to the Input!")
+                print(">> Calculate LMST from the Coordinates of a Predefined Location\n")
+                print(">> Write the Name of a Choosen Location to the Input!")
 
-                # Input Choosen City's Name
+                # Input Choosen Location's Name
                 while(True):
-                    City = input("> City's name (type \'H\' for Help): ")
+                    Location = input("> Location's name (type \'H\' for Help): ")
                     
-                    if(City == "Help" or City == "help" or City == "H" or City == "h"):
-                        print(">> Predefined Cities you can choose from:")
-                        for keys in CityDict.items():
+                    if(Location == "Help" or Location == "help" or Location == "H" or Location == "h"):
+                        print(">> Predefined Locations you can choose from:")
+                        for keys in LocationDict.items():
                             print(keys)
                     
                     else:
                         try:
-                            Longitude = CityDict[City][1]
+                            Longitude = LocationDict[Location][1]
 
                         except KeyError:
-                            print(">>>> ERROR: The City, named \"" + City + "\" is not in the Database!")
+                            print(">>>> ERROR: The Location, named \"" + Location + "\" is not in the Database!")
                             print(">>>> Type \"Help\" to list Available Cities in Database!")
                             
                         else:
@@ -2053,30 +2239,30 @@ while(True):
                             print(daysmsg.format(MonthLengthList[DateMonth - 1]))
 
                 while(True):
-                    LocalHours = float(input("> Local Hours: "))
+                    LocalHours = float(input("> Local Hours: ") or "0")
                     if(LocalHours >= 0 and LocalHours < 24):
                         break
                     else:
                         print(">>>> ERROR: Hours should be inside [0,24[ interval!\n")
 
                 while(True):
-                    LocalMinutes = int(input("> Local Minutes: "))
+                    LocalMinutes = int(input("> Local Minutes: ") or "0")
                     if(LocalMinutes >= 0 and LocalMinutes <= 59):
                         break
                     else:
                         print(">>>> ERROR: Minutes should be inside [0,59] interval, and should be Integer!\n")
 
                 while(True):
-                    LocalSeconds = float(input("> Local Seconds: "))
+                    LocalSeconds = float(input("> Local Seconds: ") or "0")
                     if(LocalSeconds >= 0 and LocalSeconds < 60):
                         break
                     else:
                         print(">>>> ERROR: Seconds should be inside [0,60[ interval!\n")
 
-                LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeonds, UnitedHours, UnitedMinutes, UnitedSeconds, GreenwichHours, GreenwichMinutes, GreenwichSeconds = SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, LocalSeconds, DateYear, DateMonth, DateDay)
+                LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeconds, UnitedHours, UnitedMinutes, UnitedSeconds, GreenwichHours, GreenwichMinutes, GreenwichSeconds = LocalSiderealTimeCalc(Longitude, LocalHours, LocalMinutes, LocalSeconds, DateYear, DateMonth, DateDay)
 
                 sidmsg = "\n>>> The Local Mean Sidereal Time at {0}:{1}:{2} UT\n>>> in {3} with\n>>> {4}:{5}:{6} GMST at 00:00:00 UT\n>>> is {7}:{8}:{9}\n\n"
-                print(sidmsg.format(UnitedHours, UnitedMinutes, UnitedSeconds, City, GreenwichHours, GreenwichMinutes, GreenwichSeconds, LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeonds))
+                print(sidmsg.format(UnitedHours, UnitedMinutes, UnitedSeconds, Location, GreenwichHours, GreenwichMinutes, GreenwichSeconds, LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeconds))
 
             elif(DistMode == 'Q' or DistMode == 'q'):
                 break
@@ -2098,9 +2284,9 @@ while(True):
             print(">> Calculate Datetimes of Sunset/Rises at Specific Location")
             print(">> Please choose a mode you'd like to use!")
             print("(1) Parameters from User Input")
-            print("(2) Parameters of Predefined Cities")
+            print("(2) Parameters of Predefined Locations")
             print("(Q) Quit to Main Menu")
-            SunMode = input("> Choose a mode and press enter...:")
+            SunMode = input("> Choose a mode and press enter...: ")
 
             print('\n')
             if(SunMode == '1'):
@@ -2109,30 +2295,39 @@ while(True):
                     print(">> Give Parameters!")
 
                     # Input Positional Parameters
-                    Latitude = float(input("> Latitude (φ): "))
-                    Longitude = float(input("> Longitude (λ): "))
+                    print(">> HINT: You can write Latitude as a Decimal Fraction. For this you need to write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                    LatitudeHours = float(input("> Latitude (φ) Hours: ") or "0")
+                    LatitudeMinutes = float(input("> Latitude (φ) Minutes: ") or "0")
+                    LatitudeSeconds = float(input("> Latitude (φ) Seconds: ") or "0")
+                    Latitude = LatitudeHours + LatitudeMinutes/60 + LatitudeSeconds/3600
+
+                    print(">> HINT: You can write Longitude as a Decimal Fraction. For this you need to write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                    LongitudeHours = float(input("> Longitude (λ) Hours: ") or "0")
+                    LongitudeMinutes = float(input("> Longitude (λ) Minutes: ") or "0")
+                    LongitudeSeconds = float(input("> Longitude (λ) Seconds: ") or "0")
+                    Longitude = LongitudeHours + LongitudeMinutes/60 + LongitudeSeconds/3600
                     break
 
             elif(SunMode == '2'):
-                print(">> Calculate Datetimes of Sunset/Rises from the Coordinates of a Predefined City")
-                print(">> Write the Name of a Choosen City to the Input!")
+                print(">> Calculate Datetimes of Sunset/Rises from the Coordinates of a Predefined Location")
+                print(">> Write the Name of a Choosen Location to the Input!")
 
-                # Input Choosen City's Name
+                # Input Choosen Location's Name
                 while(True):
-                    City = input("> City's name (type \'H\' for Help): ")
+                    Location = input("> Location's name (type \'H\' for Help): ")
                     
-                    if(City == "Help" or City == "help" or City == "H" or City == "h"):
-                        print(">> Predefined Cities you can choose from:")
-                        for keys in CityDict.items():
+                    if(Location == "Help" or Location == "help" or Location == "H" or Location == "h"):
+                        print(">> Predefined Locations you can choose from:")
+                        for keys in LocationDict.items():
                             print(keys)
                     
                     else:
                         try:
-                            Latitude = CityDict[City][0]
-                            Longitude = CityDict[City][1]
+                            Latitude = LocationDict[Location][0]
+                            Longitude = LocationDict[Location][1]
 
                         except KeyError:
-                            print(">>>> ERROR: The City, named \"" + City + "\" is not in the Database!")
+                            print(">>>> ERROR: The Location, named \"" + Location + "\" is not in the Database!")
                             print(">>>> Type \"Help\" to list Available Cities in Database!")
                             
                         else:
@@ -2186,7 +2381,7 @@ while(True):
                 print(suncoordmsg.format(Latitude, Longitude))
 
             elif(SunMode == '2'):
-                print("\n>>> Calculated Datetimes of Sunset/Rise for " + City + ":")
+                print("\n>>> Calculated Datetimes of Sunset/Rise for " + Location + ":")
 
             sunrisemsg = "\n>> The Sunrise will occur on {0}.{1}.{2}.,\n>> At {3}:{4}:{5} LT"
             sunsetmsg = "\n>> The Sunset will occur on {0}.{1}.{2}.,\n>> At {3}:{4}:{5} LT\n"
@@ -2208,48 +2403,57 @@ while(True):
             print(">> Calculate Datetimes of Twilights at Specific Location")
             print(">> Please choose a mode you'd like to use!")
             print("(1) Parameters from User Input")
-            print("(2) Parameters of Predefined Cities")
+            print("(2) Parameters of Predefined Locations")
             print("(Q) Quit to Main Menu")
-            TwiMode = input("> Choose a mode and press enter...:")
+            TwiMode = input("> Choose a mode and press enter...: ")
 
             print('\n')
-            if(TwiMode == '1'):
-                while(True):
+            while(True):
+                if(TwiMode == '1'):
                     print(">> Calculate Twilights from given Parameters\n")
                     print(">> Give Parameters!")
 
                     # Input Positional Parameters
-                    Latitude = float(input("> Latitude (φ): "))
-                    Longitude = float(input("> Longitude (λ): "))
+                    print(">> HINT: You can write Latitude as a Decimal Fraction. For this you need to write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                    LatitudeHours = float(input("> Latitude (φ) Hours: ") or "0")
+                    LatitudeMinutes = float(input("> Latitude (φ) Minutes: ") or "0")
+                    LatitudeSeconds = float(input("> Latitude (φ) Seconds: ") or "0")
+                    Latitude = LatitudeHours + LatitudeMinutes/60 + LatitudeSeconds/3600
+
+                    print(">> HINT: You can write Longitude as a Decimal Fraction. For this you need to write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                    LongitudeHours = float(input("> Longitude (λ) Hours: ") or "0")
+                    LongitudeMinutes = float(input("> Longitude (λ) Minutes: ") or "0")
+                    LongitudeSeconds = float(input("> Longitude (λ) Seconds: ") or "0")
+                    Longitude = LongitudeHours + LongitudeMinutes/60 + LongitudeSeconds/3600
                     break
 
-            elif(TwiMode == '2'):
-                print(">> Calculate Datetimes of Twilights from the Coordinates of a Predefined City")
-                print(">> Write the Name of a Choosen City to the Input!")
+                elif(TwiMode == '2'):
+                    print(">> Calculate Datetimes of Twilights from the Coordinates of a Predefined Location")
+                    print(">> Write the Name of a Choosen Location to the Input!")
 
-                # Input Choosen City's Name
-                while(True):
-                    City = input("> City's name (type \'H\' for Help): ")
-                    
-                    if(City == "Help" or City == "help" or City == "H" or City == "h"):
-                        print(">> Predefined Cities you can choose from:")
-                        for keys in CityDict.items():
-                            print(keys)
-                    
-                    else:
-                        try:
-                            Latitude = CityDict[City][0]
-                            Longitude = CityDict[City][1]
-
-                        except KeyError:
-                            print(">>>> ERROR: The City, named \"" + City + "\" is not in the Database!")
-                            print(">>>> Type \"Help\" to list Available Cities in Database!")
-                            
+                    # Input Choosen Location's Name
+                    while(True):
+                        Location = input("> Location's name (type \'H\' for Help): ")
+                        
+                        if(Location == "Help" or Location == "help" or Location == "H" or Location == "h"):
+                            print(">> Predefined Locations you can choose from:")
+                            for keys in LocationDict.items():
+                                print(keys)
+                        
                         else:
-                            break
+                            try:
+                                Latitude = LocationDict[Location][0]
+                                Longitude = LocationDict[Location][1]
 
-            elif(TwiMode == 'Q' or TwiMode == 'q'):
-                break
+                            except KeyError:
+                                print(">>>> ERROR: The Location, named \"" + Location + "\" is not in the Database!")
+                                print(">>>> Type \"Help\" to list Available Cities in Database!")
+                                
+                            else:
+                                break
+
+                elif(TwiMode == 'Q' or TwiMode == 'q'):
+                    break
 
             else:
                 print(">>>> ERROR: Invalid option! Try Again!")
@@ -2333,6 +2537,264 @@ while(True):
 
 
 
+    #   _____                 _ _       _ 
+    #  /  ___|               | (_)     | |
+    #  \ `--. _   _ _ __   __| |_  __ _| |
+    #   `--. \ | | | '_ \ / _` | |/ _` | |
+    #  /\__/ / |_| | | | | (_| | | (_| | |
+    #  \____/ \__,_|_| |_|\__,_|_|\__,_|_|
+    # Plot Sundial for Choosen Locations
+    elif(mode == '6'):
+        while(True):
+            print(">> Plot Sun's Path on a Sundial at Choosen Location on Earth")
+            print(">> Please choose a mode you'd like to use!")
+            print("(1) Parameters from User Input")
+            print("(2) Parameters of Predefined Locations")
+            print("(Q) Quit to Main Menu")
+            TwiMode = input("> Choose a mode and press enter...: ")
+
+            # Constants for calculation
+            Planet = "Earth"
+
+            print('\n')
+            if(TwiMode == '1'):
+                while(True):
+                    print(">> Calculate Twilights from given Parameters\n")
+                    print(">> Give Parameters!")
+
+                    # Input Positional Parameters
+                    print(">> HINT: You can write Latitude as a Decimal Fraction. For this you need to write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                    LatitudeHours = float(input("> Latitude (φ) Hours: ") or "0")
+                    LatitudeMinutes = float(input("> Latitude (φ) Minutes: ") or "0")
+                    LatitudeSeconds = float(input("> Latitude (φ) Seconds: ") or "0")
+                    Latitude = LatitudeHours + LatitudeMinutes/60 + LatitudeSeconds/3600
+
+                    print(">> HINT: You can write Longitude as a Decimal Fraction. For this you need to write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                    LongitudeHours = float(input("> Longitude (λ) Hours: ") or "0")
+                    LongitudeMinutes = float(input("> Longitude (λ) Minutes: ") or "0")
+                    LongitudeSeconds = float(input("> Longitude (λ) Seconds: ") or "0")
+                    Longitude = LongitudeHours + LongitudeMinutes/60 + LongitudeSeconds/3600
+                    break
+
+            elif(TwiMode == '2'):
+                print(">> Calculate Datetimes of Twilights from the Coordinates of a Predefined Location")
+                print(">> Write the Name of a Choosen Location to the Input!")
+
+                # Input Choosen Location's Name
+                while(True):
+                    Location = input("> Location's name (type \'H\' for Help): ")
+                    
+                    if(Location == "Help" or Location == "help" or Location == "H" or Location == "h"):
+                        print(">> Predefined Locations you can choose from:")
+                        for keys in LocationDict.items():
+                            print(keys)
+                    
+                    else:
+                        try:
+                            Latitude = LocationDict[Location][0]
+                            Longitude = LocationDict[Location][1]
+
+                        except KeyError:
+                            print(">>>> ERROR: The Location, named \"" + Location + "\" is not in the Database!")
+                            print(">>>> Type \"Help\" to list Available Cities in Database!")
+                            
+                        else:
+                            break
+
+            elif(TwiMode == 'Q' or TwiMode == 'q'):
+                break
+
+            else:
+                print(">>>> ERROR: Invalid option! Try Again!")
+
+            print(">> For which Year would You like to Draw the Sundial?")
+            while(True):
+                SunDialYear = float(input("> Choosen Year: "))
+                if(SunDialYear != 0):
+                    break
+                else:
+                    print(">>>> ERROR: Year 0 is not defined! Please write another date!\n")
+
+            
+            while(True):
+                print(">> Would you like to plot the Sun's path for a Choosen Date in This Year too?")
+                SunDialChoose = input(">> Write Y for Yes or N for No: ")
+                if(SunDialChoose == 'Y' or SunDialChoose == 'y' or SunDialChoose == 'Yes' or SunDialChoose == 'yes' or SunDialChoose == 'YEs' or SunDialChoose == 'yEs' or SunDialChoose == 'yeS' or SunDialChoose == 'YeS' or SunDialChoose == 'yES'):
+                    # Input Time Parameters
+                    while(True):
+                        LocalDateMonth = int(input("> Month: "))
+                        if(LocalDateMonth > 0 and LocalDateMonth < 13):
+                            break
+                        else:
+                            print(">>>> ERROR: Months should be inside [1,12] interval, and should be Integer!\n")
+
+                    # Leap Year	Handling
+                    while(True):
+                        LocalDateDay = int(input("> Day: "))
+                        if(LocalDateYear%4 == 0 and (LocalDateYear%100 != 0 or LocalDateYear%400 == 0)):
+                            if(MonthLengthListLeapYear[LocalDateMonth - 1] >= LocalDateDay and LocalDateDay > 0):
+                                break
+                            else:
+                                daysmsg = ">>>> ERROR: Days should be inside [1,{0}] interval, and should be Integer!\n"
+                                print(daysmsg.format(MonthLengthListLeapYear[LocalDateMonth - 1]))
+                        else:
+                            if(MonthLengthList[LocalDateMonth - 1] >= LocalDateDay and LocalDateDay > 0):
+                                break
+                            else:
+                                daysmsg = ">>>> ERROR: Days should be inside [1,{0}] interval, and should be Integer!\n"
+                                print(daysmsg.format(MonthLengthList[LocalDateMonth - 1]))
+
+                    break
+
+                elif(SunDialChoose == 'N' or SunDialChoose == 'n' or SunDialChoose == 'No' or SunDialChoose == 'no' or SunDialChoose == 'nO'):
+                    break
+
+                else:
+                    print(">>>> ERROR: Invalid option! Try Again!")
+
+            if(SunDialChoose == 'Y' or SunDialChoose == 'y' or SunDialChoose == 'Yes' or SunDialChoose == 'yes' or SunDialChoose == 'YEs' or SunDialChoose == 'yEs' or SunDialChoose == 'yeS' or SunDialChoose == 'YeS' or SunDialChoose == 'yES'):
+
+                ### CHOOSEN DATE ###
+                LocalHourAngleRiseChoosen, LocalHourAngleSetChoosen, DeclinationSunChoosen = SundialPrecalculations(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, LocalDateDay)
+
+                # Create lists for plot parameters
+                LocalHourAngleChoosen = []
+                AltitudesChoosen = []
+                AzimuthsChoosen = []
+
+                # Calculate plot parameters
+                for LocalHourAngleActual in range(int(LocalHourAngleRiseChoosen * 100000), int(LocalHourAngleSetChoosen * 100000), 300):
+                    
+                    # Calculate parameters by ~10 seconds interval
+                    AltitudeActual, AzimuthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunChoosen)
+
+                    # Append parameters to lists
+                    LocalHourAngleChoosen.append(LocalHourAngleActual)
+                    AltitudesChoosen.append(AltitudeActual)
+                    AzimuthsChoosen.append(AzimuthActual)
+
+
+            ### SUMMER SOLSTICE ###
+            LocalDateMonthSummer = 6
+            if(SunDialYear%4 == 0):
+                LocalDateDaySummer = 20
+            
+            else:
+                LocalDateDaySummer = 21
+            
+            LocalHourAngleRiseSummer, LocalHourAngleSetSummer, DeclinationSunSummer = SundialPrecalculations(Planet, Latitude, Longitude, SunDialYear, LocalDateMonthSummer, LocalDateDaySummer)
+
+            # Create lists for plot parameters
+            LocalHourAngleSummer = []
+            AltitudesSummer = []
+            AzimuthsSummer = []
+
+            # Calculate plot parameters
+            for LocalHourAngleActual in range(int(LocalHourAngleRiseSummer * 100000), int(LocalHourAngleSetSummer * 100000), 300):
+                
+                # Norm back to normal
+                LocalHourAngleActual/100000
+
+                # Calculate parameters by ~10 seconds interval
+                AltitudeActual, AzimuthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSummer)
+
+                # Append parameters to lists
+                LocalHourAngleSummer.append(LocalHourAngleActual)
+                AltitudesSummer.append(AltitudeActual)
+                AzimuthsSummer.append(AzimuthActual)
+
+
+            ### WINTER SOLSTICE ###
+            LocalDateMonthWinter = 12
+            if((SunDialYear + 1)%4 == 0):
+                LocalDateDayWinter = 22
+            
+            else:
+                LocalDateDayWinter = 21
+
+            LocalHourAngleRiseWinter, LocalHourAngleSetWinter, DeclinationSunWinter = SundialPrecalculations(Planet, Latitude, Longitude, SunDialYear, LocalDateMonthWinter, LocalDateDayWinter)
+
+            # Create lists for plot parameters
+            LocalHourAngleWinter = []
+            AltitudesWinter = []
+            AzimuthsWinter = []
+
+            # Calculate plot parameters
+            for LocalHourAngleActual in range(int(LocalHourAngleRiseWinter * 100000), int(LocalHourAngleSetWinter * 100000), 300):
+                
+                # Norm back to normal
+                LocalHourAngleActual/100000
+                
+                # Calculate parameters by ~10 seconds interval
+                AltitudeActual, AzimuthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunWinter)
+
+                # Append parameters to lists
+                LocalHourAngleWinter.append(LocalHourAngleActual)
+                AltitudesWinter.append(AltitudeActual)
+                AzimuthsWinter.append(AzimuthActual)
+
+
+            ### MARCH EQUINOX ###
+            LocalDateMonthMarch = 3
+            LocalDateDayMarch = 20
+
+            LocalHourAngleRiseMarch, LocalHourAngleSetMarch, DeclinationSunMarch = SundialPrecalculations(Planet, Latitude, Longitude, SunDialYear, LocalDateMonthMarch, LocalDateDayMarch)
+
+            # Create lists for plot parameters
+            LocalHourAngleMarch = []
+            AltitudesMarch = []
+            AzimuthsMarch = []
+
+            # Calculate plot parameters
+            for LocalHourAngleActual in range(int(LocalHourAngleRiseMarch * 100000), int(LocalHourAngleSetMarch * 100000), 300):
+                
+                # Norm back to normal
+                LocalHourAngleActual/100000
+                
+                # Calculate parameters by ~10 seconds interval
+                AltitudeActual, AzimuthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunMarch)
+
+                # Append parameters to lists
+                LocalHourAngleMarch.append(LocalHourAngleActual)
+                AltitudesMarch.append(AltitudeActual)
+                AzimuthsMarch.append(AzimuthActual)
+
+
+            ### SEPTEMBER EQIUNOX ###
+            LocalDateMonthSeptember = 9
+            if(SunDialYear%4 == 0 or (SunDialYear - 1)%4 == 0):
+                LocalDateDaySeptember = 22
+
+            else:
+                LocalDateDaySeptember = 23
+
+            LocalHourAngleRiseSeptember, LocalHourAngleSetSeptember, DeclinationSunSeptember = SundialPrecalculations(Planet, Latitude, Longitude, SunDialYear, LocalDateMonthSeptember, LocalDateDaySeptember)
+
+            print(24-(LocalHourAngleRiseSeptember - LocalHourAngleSetSeptember))
+
+            # Create lists for plot parameters
+            LocalHourAngleSeptember = []
+            AltitudesSeptember = []
+            AzimuthsSeptember = []
+
+            # Calculate plot parameters
+            for LocalHourAngleActual in range(int(LocalHourAngleRiseSeptember * 100000), int(LocalHourAngleSetSeptember * 100000), 300):
+                
+                # Norm back to normal
+                LocalHourAngleActual/100000
+                
+                # Calculate parameters by ~10 seconds interval
+                AltitudeActual, AzimuthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSeptember)
+
+                # Append parameters to lists
+                LocalHourAngleSeptember.append(LocalHourAngleActual)
+                AltitudesSeptember.append(AltitudeActual)
+                AzimuthsSeptember.append(AzimuthActual)
+
+
+            print(len(LocalHourAngleSeptember), len(AltitudesSeptember), len(AzimuthsSeptember))
+
+
     #   _   _                                         _    
     #  | | | |                                       | |   
     #  | |_| | ___  _ __ ___   _____      _____  _ __| | __
@@ -2347,23 +2809,23 @@ while(True):
 
         print("1.1/1:")
 
-        City = "Szombathely"
-        Longitude = CityDict[City][1]
+        Location = "Szombathely"
+        Longitude = LocationDict[Location][1]
         LocalDateYear = 2017
         LocalDateMonth = 12
         LocalDateDay = 27
         LocalHours = 14
         LocalMinutes = 0
         LocalSeconds = 0
-        LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeonds, UnitedHours, UnitedMinutes, UnitedSeconds, GreenwichHours, GreenwichMinutes, GreenwichSeconds = SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, LocalSeconds, LocalDateYear, LocalDateMonth, LocalDateDay)
+        LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeconds, UnitedHours, UnitedMinutes, UnitedSeconds, GreenwichHours, GreenwichMinutes, GreenwichSeconds = LocalSiderealTimeCalc(Longitude, LocalHours, LocalMinutes, LocalSeconds, LocalDateYear, LocalDateMonth, LocalDateDay)
 
         sidmsg = "\n>>> The Local Mean Sidereal Time at {0}:{1}:{2} UT\n>>> in {3} with\n>>> {4}:{5}:{6} GMST at 00:00:00 UT\n>>> is {7}:{8}:{9}\n\n"
-        print(sidmsg.format(UnitedHours, UnitedMinutes, UnitedSeconds, City, GreenwichHours, GreenwichMinutes, GreenwichSeconds, LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeonds))
+        print(sidmsg.format(UnitedHours, UnitedMinutes, UnitedSeconds, Location, GreenwichHours, GreenwichMinutes, GreenwichSeconds, LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeconds))
         print("_________________________________________________________________________")
 
         print("1.1/2:")
 
-        Latitude = CityDict["Szeged"][0]
+        Latitude = LocationDict["Szeged"][0]
         RightAscensionVenus = 18 + 41/60 + 54/3600
         DeclinationVenus = -(24 + 4/60 + 9/3600)
         Altitude, Azimuth1, Azimuth2, H_dil = EquIToHor(Latitude, RightAscensionVenus, DeclinationVenus, 0, None, None, None)
@@ -2381,9 +2843,9 @@ while(True):
         print("1.1/3:")
 
         Planet = "Earth"
-        City = "Piszkesteto"
-        Latitude = CityDict[City][0]
-        Longitude = CityDict[City][1]
+        Location = "Piszkesteto"
+        Latitude = LocationDict[Location][0]
+        Longitude = LocationDict[Location][1]
         LocalDateYear = 2018
         LocalDateMonth = 12
         LocalDateDay1 = 21
@@ -2420,7 +2882,7 @@ while(True):
         AstroNightMinutes = int((AstroNightLength - AstroNightHours) * 60)
         AstroNightSeconds = int((((AstroNightLength - AstroNightHours) * 60) - AstroNightMinutes) * 60)
 
-        astrotimemsg = ">>> The astronomical night's lenght at " + City + " is\n>>> {0}:{1}:{2} long\n>>> On between {3}.{4}.{5}, and {6} evening.\n"
+        astrotimemsg = ">>> The astronomical night's lenght at " + Location + " is\n>>> {0}:{1}:{2} long\n>>> On between {3}.{4}.{5}, and {6} evening.\n"
         print(astrotimemsg.format(AstroNightHours, AstroNightMinutes, AstroNightSeconds, LocalDateYear, LocalDateMonth, LocalDateDay1, LocalDateDay2))
         print("_________________________________________________________________________")
 
@@ -2430,10 +2892,10 @@ while(True):
 
         print("1.2/2.")
 
-        City = "Baja"
+        Location = "Baja"
         Star = "Altair"
-        Latitude = CityDict[City][0]
-        Longitude = CityDict[City][1]
+        Latitude = LocationDict[Location][0]
+        Longitude = LocationDict[Location][1]
         RightAscension = StellarDict[Star][0]
         Declination = StellarDict[Star][1]
         Altitude = None
@@ -2446,15 +2908,19 @@ while(True):
         LocalDateMonth = 6
         LocalDateDay = 21
 
-        LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeonds, UnitedHours, UnitedMinutes, UnitedSeconds, GreenwichHours, GreenwichMinutes, GreenwichSeconds = SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, LocalSeconds, LocalDateYear, LocalDateMonth, LocalDateDay)
+        # Calculate Local Mean Sidereal Time
+        LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeconds, UnitedHours, UnitedMinutes, UnitedSeconds, GreenwichHours, GreenwichMinutes, GreenwichSeconds = LocalSiderealTimeCalc(Longitude, LocalHours, LocalMinutes, LocalSeconds, LocalDateYear, LocalDateMonth, LocalDateDay)
         
         # Convert to decimal
-        LocalSiderealTime = LocalSiderealHours + LocalSiderealMinutes/60 + LocalSiderealSeonds/3600
+        LocalSiderealTime = LocalSiderealHours + LocalSiderealMinutes/60 + LocalSiderealSeconds/3600
         
         # Normalize result
         LocalSiderealTime = NormalizeZeroBounded(LocalSiderealTime, 24)
 
         Altitude, Azimuth = EquIIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSiderealTime, LocalHourAngle)
+
+        print(">>> Used formulas:\n>>> 1. S_0 (Greenwich Mean Sidereal Time) at 00:00 UT was calculated\n>>> 2. S (Local Mean Sidereal Time) = S_0 + Longitude/15 + dS * UnitedTime\n>>> 3. S - α = t; H = 15*t")
+        print(">>> 4. sin(m) = sin(δ) * sin(φ) + cos(δ) * cos(φ) * cos(H); Altitude (m) should been between [-π/2,+π/2]\n>>> 5. sin(A) = - sin(H) * cos(δ) / cos(m), Azimuth at given H hour angle\n")
 
         # Print Results
         timemsg = ">>> Altitude and Azimuth of Altair from Baja On {0}.{1}.{2}"
@@ -2472,9 +2938,9 @@ while(True):
 
         print("1.2/3.")
 
-        City = "Rio"
-        Latitude = CityDict[City][0]
-        Longitude = CityDict[City][1]
+        Location = "Rio"
+        Latitude = LocationDict[Location][0]
+        Longitude = LocationDict[Location][1]
 
         Altitude = 55.656388
         Azimuth = 208.113611
@@ -2486,10 +2952,10 @@ while(True):
         LocalDateMonth = 4
         LocalDateDay = 17
 
-        LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeonds, UnitedHours, UnitedMinutes, UnitedSeconds, GreenwichHours, GreenwichMinutes, GreenwichSeconds = SiderealFromPredefined(Longitude, LocalHours, LocalMinutes, LocalSeconds, LocalDateYear, LocalDateMonth, LocalDateDay)
+        LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeconds, UnitedHours, UnitedMinutes, UnitedSeconds, GreenwichHours, GreenwichMinutes, GreenwichSeconds = LocalSiderealTimeCalc(Longitude, LocalHours, LocalMinutes, LocalSeconds, LocalDateYear, LocalDateMonth, LocalDateDay)
         
         # Convert to decimal
-        LocalSiderealTime = LocalSiderealHours + LocalSiderealMinutes/60 + LocalSiderealSeonds/3600
+        LocalSiderealTime = LocalSiderealHours + LocalSiderealMinutes/60 + LocalSiderealSeconds/3600
         
         # Normalize result
         LocalSiderealTime = NormalizeZeroBounded(LocalSiderealTime, 24)
@@ -2505,9 +2971,9 @@ while(True):
         LocalSiderealTimeSeconds = int((((LocalSiderealTime - LocalSiderealTimeHours) * 60) - LocalSiderealTimeMinutes) * 60)
 
         equIImsg = ">>> Calculated Parameters of the Star in Equatorial II Coord. Sys. from {0}:"
-        print(equIImsg.format(City))
+        print(equIImsg.format(Location))
 
-        declinmsg = ">>> Declination (δ): {0}°"
+        declinmsg = ">>> Declination (δ): {0}° {1}\' {2}\""
         RAmsg = ">>> Right Ascension (α): {0}h {1}m {2}s"
         sidermsg = ">>> Local Mean Sidereal Time (S): {0}:{1}:{2}\n"
         print(declinmsg.format(Declination))
