@@ -62,7 +62,7 @@ import math
 # import numpy as np
 
 # Current Version of the Csillész II Problem Solver
-ActualVersion = 'v1.19'
+ActualVersion = 'v1.20'
 
 
 
@@ -426,9 +426,35 @@ def HorToEquI(Latitude, Altitude, Azimuth, LocalSiderealTime=None):
 
     # Calculate Local Hour Angle in Degrees (H)
     # sin(H) = - sin(A) * cos(m) / cos(δ)
-    LocalHourAngleDegrees = math.degrees(math.asin(
+    LocalHourAngleDegrees1_1 = math.degrees(math.asin(
                             - math.sin(math.radians(Azimuth)) * math.cos(math.radians(Altitude)) / math.cos(math.radians(Declination))
                             ))
+
+    if(LocalHourAngleDegrees1_1 <= 180):
+        LocalHourAngleDegrees1_2 = 180 - LocalHourAngleDegrees1_1
+
+    elif(LocalHourAngleDegrees1_1 > 180):
+        LocalHourAngleDegrees1_2 = 540 - LocalHourAngleDegrees1_1
+
+    # Check correct value
+    # cos(H) = (sin(m) - sin(δ) * sin(φ)) / cos(δ) * cos(φ)
+    LocalHourAngleDegrees2_1 = math.degrees(math.acos(
+                            (math.sin(math.radians(Altitude)) - math.sin(math.radians(Declination)) * math.sin(math.radians(Latitude))) /
+                            (math.cos(math.radians(Declination)) * math.cos(math.radians(Latitude)))
+                            ))
+
+    LocalHourAngleDegrees2_2 = - LocalHourAngleDegrees2_1
+
+    # Compare Azimuth values
+    if(int(LocalHourAngleDegrees1_1) == int(LocalHourAngleDegrees2_1)):
+        LocalHourAngleDegrees = LocalHourAngleDegrees1_1
+
+    elif(int(LocalHourAngleDegrees1_1) == int(LocalHourAngleDegrees2_2)):
+        LocalHourAngleDegrees = LocalHourAngleDegrees1_1
+
+    else:
+        LocalHourAngleDegrees = LocalHourAngleDegrees1_2
+
     # Normalize result [0,+2π[
     LocalHourAngleDegrees = NormalizeZeroBounded(LocalHourAngleDegrees, 360)
     # Convert to hours from angles (H -> t)
@@ -547,6 +573,10 @@ def EquIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSid
         # acos(x) has two correct output on this interval
         LocalHourAngleDegrees2 = - LocalHourAngleDegrees1
 
+        # Normalize LHAs:
+        LocalHourAngleDegrees1 = NormalizeZeroBounded(LocalHourAngleDegrees1, 360)
+        LocalHourAngleDegrees2 = NormalizeZeroBounded(LocalHourAngleDegrees2, 360)
+
         # Calculate Azimuth (A) for both Local Hour Angles!
         # Calculate Azimuth (A) for FIRST LOCAK HOUR ANGLE
         # sin(A) = - sin(H) * cos(δ) / cos(m)
@@ -614,20 +644,8 @@ def EquIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSid
 
 
         # Calculate time between them
-        # sin(H) = - sin(A) * cos(m) / cos(δ)
-        H1 = math.degrees(math.asin(
-            - math.sin(math.radians(Azimuth1)) * math.cos(math.radians(Altitude)) / math.cos(math.radians(Declination)) ))
-
-        H2 = math.degrees(math.asin(
-            - math.sin(math.radians(Azimuth2)) * math.cos(math.radians(Altitude)) / math.cos(math.radians(Declination)) ))
-
-        H1 = NormalizeZeroBounded(H1, 360)
-        H2 = NormalizeZeroBounded(H2, 360)
-
-        if(H2 >= H1):
-            H_dil = H2 - H1
-        else:
-            H_dil = H1 - H2
+        # Use precalculated LHAs
+        H_dil = LocalHourAngleDegrees2 - LocalHourAngleDegrees1
 
         return(Altitude, Azimuth1, Azimuth2, H_dil)
 
@@ -880,14 +898,17 @@ def SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeOfSun, JulianDays):
                             math.sin(math.radians((EclLongitudeSun))**3 * math.tan(math.radians(Latitude)) * (3 + math.tan(math.radians(Latitude))**2) + OrbitDict[Planet + "H"][2] * 
                             math.sin(math.radians(EclLongitudeSun))**5 * math.tan(math.radians(Latitude)) * (15 + 10 * math.tan(math.radians(Latitude))**2 + 3 * math.tan(math.radians(Latitude))**4)))
 
-    # 7./b Local Hour Angle of Sun (H)
+    # 7./b1 Local Hour Angle of Sun (H)
     # cos(H) = (sin(m_0) - sin(φ) * sin(δ)) / (cos(φ) * cos(δ))
     # LocalHourAngleSun (t_0) is the Local Hour Angle from the Observer's Zenith
     # Latitude (φ) is the North Latitude of the Observer (north is positive, south is negative) on the Earth
     # m_0 = -0.83 is a compensation of Altitude (m) in degrees, for the Sun's distorted shape, and the atmospherical refraction
+    # The equation return two value, LHA1 and LHA2. We need that one, which is approximately equals to LHA_Pos
     LocalHourAngleSun_Orig = math.degrees(math.acos(
                            ((math.sin(math.radians(AltitudeOfSun - 0.83)) - math.sin(math.radians(Latitude)) * math.sin(math.radians(DeclinationSun))) /
                            (math.cos(math.radians(Latitude)) * math.cos(math.radians(DeclinationSun)))) ))
+
+    #LocalHourAngleSun_Orig2 = - LocalHourAngleSun_Orig1
     
     # Normalize result for Hour Angles
     LocalHourAngleSun_Pos = NormalizeZeroBounded(LocalHourAngleSun_Pos, 360)
@@ -1129,6 +1150,8 @@ def SundialPrecalculations(Planet, Latitude, Longitude, LocalDateYear, LocalDate
     LocalSiderealTimeRise = LocalSiderealHoursRise + LocalSiderealMinutesRise/60 + LocalSiderealSecondsRise/3600
     LocalSiderealTimeSet = LocalSiderealHoursSet + LocalSiderealMinutesSet/60 + LocalSiderealSecondsSet/3600
 
+    print(RightAscensionSun)
+
     # Calculate Hour Angle of Rising and Setting Sun
     LocalHourAngleRise = LocalSiderealTimeRise - RightAscensionSun
     LocalHourAngleSet = LocalSiderealTimeSet - RightAscensionSun
@@ -1136,6 +1159,8 @@ def SundialPrecalculations(Planet, Latitude, Longitude, LocalDateYear, LocalDate
     # Normalize Results
     LocalHourAngleRise = NormalizeZeroBounded(LocalHourAngleRise, 24)
     LocalHourAngleSet = NormalizeZeroBounded(LocalHourAngleSet, 24)
+
+    print(LocalHourAngleRise, LocalHourAngleSet)
 
     return(LocalHourAngleRise, LocalHourAngleSet, DeclinationSun)
 
@@ -1158,7 +1183,7 @@ def SundialParametersCalc(Latitude, LocalHourAngle, DeclinationSun):
     # sin(A) = - sin(H) * cos(δ) / cos(m)
     # Azimuth at given H Local Hour Angle
     Azimuth1 = math.degrees(math.asin(
-            - math.sin(math.radians(LocalHourAngleDegrees)) * math.cos(math.radians(Declination)) / math.cos(math.radians(Altitude))
+            - math.sin(math.radians(LocalHourAngleDegrees)) * math.cos(math.radians(DeclinationSun)) / math.cos(math.radians(Altitude))
             ))
 
     if(Azimuth1 <= 180):
@@ -1169,8 +1194,9 @@ def SundialParametersCalc(Latitude, LocalHourAngle, DeclinationSun):
 
     # Calculate Azimuth (A) with a second method, to determine which one is the correct (A_1 or A_2?)
     # cos(A) = (sin(δ) - sin(φ) * sin(m)) / (cos(φ) * cos(m))
+    print(DeclinationSun, Latitude, Altitude)
     Azimuth3 = math.degrees(math.acos(
-            (math.sin(math.radians(Declination)) - math.sin(math.radians(Latitude)) * math.sin(math.radians(Altitude))) / 
+            (math.sin(math.radians(DeclinationSun)) - math.sin(math.radians(Latitude)) * math.sin(math.radians(Altitude))) / 
             (math.cos(math.radians(Latitude)) * math.cos(math.radians(Altitude)))
     ))
 
@@ -1268,12 +1294,12 @@ while(True):
             if(CoordMode == '1'):
                 print(">> Conversion from Horizontal to Equatorial I Coordinate System")
                 print(">> Give Parameters!")
-                
+
                 print(">> Would you like to give Geographical Coordinates by yourself,\n>> or would like to choose a predefined Location's Coordinates?")
                 print("Write \'1\' for User defined Coordinates, and write \'2\' for Predefined Locations' Coordinates!")
 
                 HorToEquILocationChoose = input(">> (1) User Defined, (2) Predefined: ")
-                
+
                 while(True):
                     if(HorToEquILocationChoose == '1'):
                         print(">> HINT: You can write Latitude as a Decimal Fraction. For this you need to\n>> Write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
@@ -1897,13 +1923,13 @@ while(True):
                 print(">> Conversion from Equatorial II to Horizontal Coordinate System")
                 print(">> Give Parameters!")
 
-                print(">>> LOCATION")
-                print(">> Would you like to give Geographical Coordinates by yourself,\n>> Or would like to choose a predefined Location's Coordinates?")
-                print(">> Write \'1\' for User defined Coordinates, and\n>> Write \'2\' for Predefined Locations' Coordinates!")
-
-                EquIIToHorLocationChoose = input(">> (1) User Defined, (2) Predefined: ")
-
                 while(True):
+                    print(">>> LOCATION")
+                    print(">> Would you like to give Geographical Coordinates by yourself,\n>> Or would like to choose a predefined Location's Coordinates?")
+                    print(">> Write \'1\' for User defined Coordinates, and\n>> Write \'2\' for Predefined Locations' Coordinates!")
+
+                    EquIIToHorLocationChoose = input(">> (1) User Defined, (2) Predefined: ")
+
                     if(EquIIToHorLocationChoose == '1'):
                         print(">> HINT: You can write Latitude as a Decimal Fraction. For this you need to\n>> Write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
                         LatitudeHours = float(input("> Latitude (φ) Hours: ") or "0")
@@ -1937,13 +1963,14 @@ while(True):
                     else:
                         print(">>>> ERROR: Invalid option! Try Again!")
 
-                print("\n>>> STELLAR OBJECT")
-                print(">> Would you like to give the stellar object's Coordinates by yourself,\n>> Or would like to choose a Predefined Object's Coordinates?")
-                print(">> Write \'1\' for User defined Coordinates, and\n>> Write \'2\' for a Predefined Stellar Object's Coordinates!")
-
-                EquIIToHorStellarChoose = input(">> (1) User Defined, (2) Predefined: ")
 
                 while(True):
+                    print("\n>>> STELLAR OBJECT")
+                    print(">> Would you like to give the stellar object's Coordinates by yourself,\n>> Or would like to choose a Predefined Object's Coordinates?")
+                    print(">> Write \'1\' for User defined Coordinates, and\n>> Write \'2\' for a Predefined Stellar Object's Coordinates!")
+
+                    EquIIToHorStellarChoose = input(">> (1) User Defined, (2) Predefined: ")
+
                     if(EquIIToHorStellarChoose == '1'):
                         
                         print(">> Which essential Parameter Is given?")
@@ -2052,10 +2079,11 @@ while(True):
             print(">> Please choose a mode you'd like to use!")
             print("(1) Positional Coordinates from User Input")
             print("(2) Positional Coordinates of Predefined Locations")
-            print("(Q) Quit to Main Menu")
-            DistMode = input("> Choose a mode and press enter...: ")
+            print("(Q) Quit to Main Menu\n")
 
+            DistMode = input("> Choose a mode and press enter...: ")
             print('\n')
+
             if(DistMode == '1'):
                 print(">> Calculate Distance from given Coordinates\n")
                 print(">> Give Parameters!")
@@ -2140,9 +2168,9 @@ while(True):
             print(">> Please choose a mode you'd like to use!")
             print("(1) Parameters from User Input")
             print("(2) Parameters of Predefined Locations")
-            print("(Q) Quit to Main Menu")
-            DistMode = input("> Choose a mode and press enter...: ")
+            print("(Q) Quit to Main Menu\n")
 
+            DistMode = input("> Choose a mode and press enter...: ")
             print('\n')
 
             if(DistMode == '1'):
@@ -2320,28 +2348,28 @@ while(True):
             print(">> Please choose a mode you'd like to use!")
             print("(1) Parameters from User Input")
             print("(2) Parameters of Predefined Locations")
-            print("(Q) Quit to Main Menu")
+            print("(Q) Quit to Main Menu\n")
+
             SunMode = input("> Choose a mode and press enter...: ")
-
             print('\n')
+
             if(SunMode == '1'):
-                while(True):
-                    print(">> Calculate Sunset/Rises from given Parameters\n")
-                    print(">> Give Parameters!")
+                print(">> Calculate Sunset/Rises from given Parameters\n")
+                print(">> Give Parameters!")
 
-                    # Input Positional Parameters
-                    print(">> HINT: You can write Latitude as a Decimal Fraction. For this you need to\n>> Write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
-                    LatitudeHours = float(input("> Latitude (φ) Hours: ") or "0")
-                    LatitudeMinutes = float(input("> Latitude (φ) Minutes: ") or "0")
-                    LatitudeSeconds = float(input("> Latitude (φ) Seconds: ") or "0")
-                    Latitude = LatitudeHours + LatitudeMinutes/60 + LatitudeSeconds/3600
+                # Input Positional Parameters
+                print(">> HINT: You can write Latitude as a Decimal Fraction. For this you need to\n>> Write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                LatitudeHours = float(input("> Latitude (φ) Hours: ") or "0")
+                LatitudeMinutes = float(input("> Latitude (φ) Minutes: ") or "0")
+                LatitudeSeconds = float(input("> Latitude (φ) Seconds: ") or "0")
+                Latitude = LatitudeHours + LatitudeMinutes/60 + LatitudeSeconds/3600
 
-                    print(">> HINT: You can write Longitude as a Decimal Fraction. For this you need to\n>> Write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
-                    LongitudeHours = float(input("> Longitude (λ) Hours: ") or "0")
-                    LongitudeMinutes = float(input("> Longitude (λ) Minutes: ") or "0")
-                    LongitudeSeconds = float(input("> Longitude (λ) Seconds: ") or "0")
-                    Longitude = LongitudeHours + LongitudeMinutes/60 + LongitudeSeconds/3600
-                    break
+                print(">> HINT: You can write Longitude as a Decimal Fraction. For this you need to\n>> Write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                LongitudeHours = float(input("> Longitude (λ) Hours: ") or "0")
+                LongitudeMinutes = float(input("> Longitude (λ) Minutes: ") or "0")
+                LongitudeSeconds = float(input("> Longitude (λ) Seconds: ") or "0")
+                Longitude = LongitudeHours + LongitudeMinutes/60 + LongitudeSeconds/3600
+
 
             elif(SunMode == '2'):
                 print(">> Calculate Datetimes of Sunset/Rises from the Coordinates of a Predefined Location")
@@ -2372,56 +2400,58 @@ while(True):
                 break
 
             else:
-                print(">>>> ERROR: Invalid option! Try Again!")
+                print(">>>> ERROR: Invalid option! Try Again!\n")
 
-            # Input Time Parameters
-            while(True):
-                LocalDateYear = int(input("> Year: "))
-                if(LocalDateYear != 0):
-                    break
-                else:
-                    print(">>>> ERROR: Year 0 is not defined! Please write another date!\n")
 
-            while(True):
-                LocalDateMonth = int(input("> Month: "))
-                if(LocalDateMonth > 0 and LocalDateMonth < 13):
-                    break
-                else:
-                    print(">>>> ERROR: Months should be inside [1,12] interval, and should be Integer!\n")
-
-            # Leap Year	Handling
-            while(True):
-                LocalDateDay = int(input("> Day: "))
-                if(LocalDateYear%4 == 0 and (LocalDateYear%100 != 0 or LocalDateYear%400 == 0)):
-                    if(MonthLengthListLeapYear[LocalDateMonth - 1] >= LocalDateDay and LocalDateDay > 0):
+            if(SunMode == '1' or SunMode == '2'):
+                # Input Time Parameters
+                while(True):
+                    LocalDateYear = int(input("> Year: "))
+                    if(LocalDateYear != 0):
                         break
                     else:
-                        daysmsg = ">>>> ERROR: Days should be inside [1,{0}] interval, and should be Integer!\n"
-                        print(daysmsg.format(MonthLengthListLeapYear[LocalDateMonth - 1]))
-                else:
-                    if(MonthLengthList[LocalDateMonth - 1] >= LocalDateDay and LocalDateDay > 0):
+                        print(">>>> ERROR: Year 0 is not defined! Please write another date!\n")
+
+                while(True):
+                    LocalDateMonth = int(input("> Month: "))
+                    if(LocalDateMonth > 0 and LocalDateMonth < 13):
                         break
                     else:
-                        daysmsg = ">>>> ERROR: Days should be inside [1,{0}] interval, and should be Integer!\n"
-                        print(daysmsg.format(MonthLengthList[LocalDateMonth - 1]))
+                        print(">>>> ERROR: Months should be inside [1,12] interval, and should be Integer!\n")
 
-            Planet = "Earth"
-            AltitudeOfSun = 0
+                # Leap Year	Handling
+                while(True):
+                    LocalDateDay = int(input("> Day: "))
+                    if(LocalDateYear%4 == 0 and (LocalDateYear%100 != 0 or LocalDateYear%400 == 0)):
+                        if(MonthLengthListLeapYear[LocalDateMonth - 1] >= LocalDateDay and LocalDateDay > 0):
+                            break
+                        else:
+                            daysmsg = ">>>> ERROR: Days should be inside [1,{0}] interval, and should be Integer!\n"
+                            print(daysmsg.format(MonthLengthListLeapYear[LocalDateMonth - 1]))
+                    else:
+                        if(MonthLengthList[LocalDateMonth - 1] >= LocalDateDay and LocalDateDay > 0):
+                            break
+                        else:
+                            daysmsg = ">>>> ERROR: Days should be inside [1,{0}] interval, and should be Integer!\n"
+                            print(daysmsg.format(MonthLengthList[LocalDateMonth - 1]))
 
-            (LocalTimeSet, LocalHoursSet, LocalMinutesSet, LocalSecondsSet, LocalDateYearSet, LocalDateMonthSet, LocalDateDaySet, 
-            LocalTimeRise, LocalHoursRise, LocalMinutesRise, LocalSecondsRise, LocalDateYearRise, LocalDateMonthRise, LocalDateDayRise) = SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateYear, LocalDateMonth, LocalDateDay)
+                Planet = "Earth"
+                AltitudeOfSun = 0
 
-            if(SunMode == '1'):
-                suncoordmsg = ">>> Calculated Datetimes of Sunset/Rise for Coordinates: \n>>> {0}, {1}"
-                print(suncoordmsg.format(Latitude, Longitude))
+                (LocalTimeSet, LocalHoursSet, LocalMinutesSet, LocalSecondsSet, LocalDateYearSet, LocalDateMonthSet, LocalDateDaySet, 
+                LocalTimeRise, LocalHoursRise, LocalMinutesRise, LocalSecondsRise, LocalDateYearRise, LocalDateMonthRise, LocalDateDayRise) = SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateYear, LocalDateMonth, LocalDateDay)
 
-            elif(SunMode == '2'):
-                print("\n>>> Calculated Datetimes of Sunset/Rise for " + Location + ":")
+                if(SunMode == '1'):
+                    suncoordmsg = ">>> Calculated Datetimes of Sunset/Rise for Coordinates: \n>>> {0}, {1}"
+                    print(suncoordmsg.format(Latitude, Longitude))
 
-            sunrisemsg = "\n>> The Sunrise will occur on {0}.{1}.{2}.,\n>> At {3}:{4}:{5} LT"
-            sunsetmsg = "\n>> The Sunset will occur on {0}.{1}.{2}.,\n>> At {3}:{4}:{5} LT\n"
-            print(sunrisemsg.format(LocalDateYearRise, LocalDateMonthRise, LocalDateDayRise, LocalHoursRise, LocalMinutesRise, LocalSecondsRise))
-            print(sunsetmsg.format(LocalDateYearSet, LocalDateMonthSet, LocalDateDaySet, LocalHoursSet, LocalMinutesSet, LocalSecondsSet))
+                elif(SunMode == '2'):
+                    print("\n>>> Calculated Datetimes of Sunset/Rise for " + Location + ":")
+
+                sunrisemsg = "\n>> The Sunrise will occur on {0}.{1}.{2}.,\n>> At {3}:{4}:{5} LT"
+                sunsetmsg = "\n>> The Sunset will occur on {0}.{1}.{2}.,\n>> At {3}:{4}:{5} LT\n"
+                print(sunrisemsg.format(LocalDateYearRise, LocalDateMonthRise, LocalDateDayRise, LocalHoursRise, LocalMinutesRise, LocalSecondsRise))
+                print(sunsetmsg.format(LocalDateYearSet, LocalDateMonthSet, LocalDateDaySet, LocalHoursSet, LocalMinutesSet, LocalSecondsSet))
 
 
     #   _______       _ _ _       _     _      _____      _      
@@ -2439,183 +2469,37 @@ while(True):
             print(">> Please choose a mode you'd like to use!")
             print("(1) Parameters from User Input")
             print("(2) Parameters of Predefined Locations")
-            print("(Q) Quit to Main Menu")
+            print("(Q) Quit to Main Menu\n")
+
             TwiMode = input("> Choose a mode and press enter...: ")
-
             print('\n')
-            while(True):
-                if(TwiMode == '1'):
-                    print(">> Calculate Twilights from given Parameters\n")
-                    print(">> Give Parameters!")
 
-                    # Input Positional Parameters
-                    print(">> HINT: You can write Latitude as a Decimal Fraction. For this you need to\n>> Write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
-                    LatitudeHours = float(input("> Latitude (φ) Hours: ") or "0")
-                    LatitudeMinutes = float(input("> Latitude (φ) Minutes: ") or "0")
-                    LatitudeSeconds = float(input("> Latitude (φ) Seconds: ") or "0")
-                    Latitude = LatitudeHours + LatitudeMinutes/60 + LatitudeSeconds/3600
+            # Constant for Calculations
+            Planet = "Earth"
 
-                    print(">> HINT: You can write Longitude as a Decimal Fraction. For this you need to\n>> Write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
-                    LongitudeHours = float(input("> Longitude (λ) Hours: ") or "0")
-                    LongitudeMinutes = float(input("> Longitude (λ) Minutes: ") or "0")
-                    LongitudeSeconds = float(input("> Longitude (λ) Seconds: ") or "0")
-                    Longitude = LongitudeHours + LongitudeMinutes/60 + LongitudeSeconds/3600
-                    break
+            if(TwiMode == '1'):
+                print(">> Calculate Twilights from given Parameters\n")
+                print(">> Give Parameters!")
 
-                elif(TwiMode == '2'):
+                # Input Positional Parameters
+                print(">> HINT: You can write Latitude as a Decimal Fraction. For this you need to\n>> Write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                LatitudeHours = float(input("> Latitude (φ) Hours: ") or "0")
+                LatitudeMinutes = float(input("> Latitude (φ) Minutes: ") or "0")
+                LatitudeSeconds = float(input("> Latitude (φ) Seconds: ") or "0")
+                Latitude = LatitudeHours + LatitudeMinutes/60 + LatitudeSeconds/3600
+
+                print(">> HINT: You can write Longitude as a Decimal Fraction. For this you need to\n>> Write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                LongitudeHours = float(input("> Longitude (λ) Hours: ") or "0")
+                LongitudeMinutes = float(input("> Longitude (λ) Minutes: ") or "0")
+                LongitudeSeconds = float(input("> Longitude (λ) Seconds: ") or "0")
+                Longitude = LongitudeHours + LongitudeMinutes/60 + LongitudeSeconds/3600
+
+            elif(TwiMode == '2'):
+                while(True):
                     print(">> Calculate Datetimes of Twilights from the Coordinates of a Predefined Location")
                     print(">> Write the Name of a Choosen Location to the Input!")
 
                     # Input Choosen Location's Name
-                    Location = input("> Location's name (type \'H\' for Help): ")
-                    
-                    if(Location == "Help" or Location == "help" or Location == "H" or Location == "h"):
-                        print(">> Predefined Locations you can choose from:")
-                        for keys in LocationDict.items():
-                            print(keys)
-                    
-                    else:
-                        try:
-                            Latitude = LocationDict[Location][0]
-                            Longitude = LocationDict[Location][1]
-
-                        except KeyError:
-                            print(">>>> ERROR: The Location, named \"" + Location + "\" is not in the Database!")
-                            print(">>>> Type \"Help\" to list Available Cities in Database!")
-                            
-                        else:
-                            break
-
-                elif(TwiMode == 'Q' or TwiMode == 'q'):
-                    break
-
-            else:
-                print(">>>> ERROR: Invalid option! Try Again!")
-
-            # Input Time Parameters
-            while(True):
-                LocalDateYear = int(input("> Year: "))
-                if(LocalDateYear != 0):
-                    break
-                else:
-                    print(">>>> ERROR: Year 0 is not defined! Please write another date!\n")
-
-            while(True):
-                LocalDateMonth = int(input("> Month: "))
-                if(LocalDateMonth > 0 and LocalDateMonth < 13):
-                    break
-                else:
-                    print(">>>> ERROR: Months should be inside [1,12] interval, and should be Integer!\n")
-
-            # Leap Year	Handling
-            while(True):
-                LocalDateDay = int(input("> Day: "))
-                if(LocalDateYear%4 == 0 and (LocalDateYear%100 != 0 or LocalDateYear%400 == 0)):
-                    if(MonthLengthListLeapYear[LocalDateMonth - 1] >= LocalDateDay and LocalDateDay > 0):
-                        break
-                    else:
-                        daysmsg = ">>>> ERROR: Days should be inside [1,{0}] interval, and should be Integer!\n"
-                        print(daysmsg.format(MonthLengthListLeapYear[LocalDateMonth - 1]))
-                else:
-                    if(MonthLengthList[LocalDateMonth - 1] >= LocalDateDay and LocalDateDay > 0):
-                        break
-                    else:
-                        daysmsg = ">>>> ERROR: Days should be inside [1,{0}] interval, and should be Integer!\n"
-                        print(daysmsg.format(MonthLengthList[LocalDateMonth - 1]))
-
-            Planet = "Earth"
-
-            (LocalHoursNoon, LocalMinutesNoon, LocalSecondsNoon, LocalDateYearNoon, LocalDateMonthNoon, LocalDateDayNoon,
-            LocalHoursMidnight, LocalMinutesMidnight, LocalSecondsMidnight, LocalDateYearMidnight, LocalDateMonthMidnight, LocalDateDayMidnight,
-            LocalHoursRiseDaylight, LocalMinutesRiseDaylight, LocalSecondsRiseDaylight, LocalDateYearRiseDaylight, LocalDateMonthRiseDaylight, LocalDateDayRiseDaylight,
-            LocalHoursSetDaylight, LocalMinutesSetDaylight, LocalSecondsSetDaylight, LocalDateYearSetDaylight, LocalDateMonthSetDaylight, LocalDateDaySetDaylight,
-            LocalHoursRiseCivil, LocalMinutesRiseCivil, LocalSecondsRiseCivil, LocalDateYearRiseCivil, LocalDateMonthRiseCivil, LocalDateDayRiseCivil,
-            LocalHoursSetCivil, LocalMinutesSetCivil, LocalSecondsSetCivil, LocalDateYearSetCivil, LocalDateMonthSetCivil, LocalDateDaySetCivil,
-            LocalHoursRiseNaval, LocalMinutesRiseNaval, LocalSecondsRiseNaval, LocalDateYearRiseNaval, LocalDateMonthRiseNaval, LocalDateDayRiseNaval,
-            LocalHoursSetNaval, LocalMinutesSetNaval, LocalSecondsSetNaval, LocalDateYearSetNaval, LocalDateMonthSetNaval, LocalDateDaySetNaval,
-            LocalHoursRiseAstro, LocalMinutesRiseAstro, LocalSecondsRiseAstro, LocalDateYearSetAstro, LocalDateMonthSetAstro, LocalDateDaySetAstro,
-            LocalHoursSetAstro, LocalMinutesSetAstro, LocalSecondsSetAstro, LocalDateYearRiseAstro, LocalDateMonthRiseAstro, LocalDateDayRiseAstro) = TwilightCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, LocalDateDay)
-
-
-            msgdaylightrise = "\n>> Rising Daylight's time: {0}:{1}:{2} on {3}.{4}.{5}"
-            msgdaylightset = ">> Setting Daylight's time: {0}:{1}:{2} on {3}.{4}.{5}\n"
-
-            msgcivilrise = "\n>> Rising Civil Twilight's time is between\n>> {0}:{1}:{2} and {3}:{4}:{5} on {6}.{7}.{8}"
-            msgcivilset = ">> Setting Civil Twilight's time is between\n>> {0}:{1}:{2} and {3}:{4}:{5} on {6}.{7}.{8}\n"
-
-            msgnavalrise = "\n>> Rising Nautical Twilight's time is between\n>> {0}:{1}:{2} and {3}:{4}:{5} on {6}.{7}.{8}"
-            msgnavalset = ">> Setting Nautical Twilight's time is between\n>> {0}:{1}:{2} and {3}:{4}:{5} on {6}.{7}.{8}\n"
-
-            msgastrorise = "\n>> Rising Astronomical Twilight's time is between\n>> {0}:{1}:{2} and {3}:{4}:{5} on {6}.{7}.{8}"
-            msgastroset = ">> Setting Astronomical Twilight's time is between\n>> {0}:{1}:{2} and {3}:{4}:{5} on {6}.{7}.{8}\n"
-
-            msgnoon = "\n>> Noon occurs at {0}:{1}:{2} on {3}.{4}.{5}"
-            msgmidnight = ">> Midnight occurs at {0}:{1}:{2} on {3}.{4}.{5}\n"
-
-            # +4 and -6 are Corrections for more accurate times
-
-            print(msgdaylightrise.format(LocalHoursRiseDaylight, LocalMinutesRiseDaylight, LocalSecondsRiseDaylight, LocalDateYearRiseDaylight, LocalDateMonthRiseDaylight, LocalDateDayRiseDaylight))
-            print(msgdaylightset.format(LocalHoursSetDaylight, LocalMinutesSetDaylight, LocalSecondsSetDaylight, LocalDateYearSetDaylight, LocalDateMonthSetDaylight, LocalDateDaySetDaylight))
-        
-            print(msgcivilrise.format(LocalHoursRiseCivil, LocalMinutesRiseCivil + 4, LocalSecondsRiseCivil, LocalHoursRiseDaylight, LocalMinutesRiseDaylight, LocalSecondsRiseDaylight, LocalDateYearRiseCivil, LocalDateMonthRiseCivil, LocalDateDayRiseCivil))
-            print(msgcivilset.format(LocalHoursSetDaylight, LocalMinutesSetDaylight, LocalSecondsSetDaylight, LocalHoursSetCivil, LocalMinutesSetCivil - 6, LocalSecondsSetCivil, LocalDateYearSetCivil, LocalDateMonthSetCivil, LocalDateDaySetCivil))
-
-            print(msgnavalrise.format(LocalHoursRiseNaval, LocalMinutesRiseNaval + 4, LocalSecondsRiseNaval, LocalHoursRiseCivil, LocalMinutesRiseCivil + 4, LocalSecondsRiseCivil, LocalDateYearRiseNaval, LocalDateMonthRiseNaval, LocalDateDayRiseNaval))
-            print(msgnavalset.format(LocalHoursSetCivil, LocalMinutesSetCivil - 6, LocalSecondsSetCivil, LocalHoursSetNaval, LocalMinutesSetNaval - 6, LocalSecondsSetNaval, LocalDateYearSetNaval, LocalDateMonthSetNaval, LocalDateDaySetNaval))
-
-            print(msgastrorise.format(LocalHoursRiseAstro, LocalMinutesRiseAstro + 4, LocalSecondsRiseAstro, LocalHoursRiseNaval, LocalMinutesRiseNaval + 4, LocalSecondsRiseNaval, LocalDateYearSetAstro, LocalDateMonthSetAstro, LocalDateDaySetAstro))
-            print(msgastroset.format(LocalHoursSetNaval, LocalMinutesSetNaval - 6, LocalSecondsSetNaval, LocalHoursSetAstro, LocalMinutesSetAstro - 6, LocalSecondsSetAstro, LocalDateYearRiseAstro, LocalDateMonthRiseAstro, LocalDateDayRiseAstro))
-
-            print(msgnoon.format(LocalHoursNoon, LocalMinutesNoon, LocalSecondsNoon, LocalDateYearNoon, LocalDateMonthNoon, LocalDateDayNoon))
-            print(msgmidnight.format(LocalHoursMidnight, LocalMinutesMidnight, LocalSecondsMidnight, LocalDateYearMidnight, LocalDateMonthMidnight, LocalDateDayMidnight))
-
-
-
-    #   _____                 _ _       _ 
-    #  /  ___|               | (_)     | |
-    #  \ `--. _   _ _ __   __| |_  __ _| |
-    #   `--. \ | | | '_ \ / _` | |/ _` | |
-    #  /\__/ / |_| | | | | (_| | | (_| | |
-    #  \____/ \__,_|_| |_|\__,_|_|\__,_|_|
-    # Plot Sundial for Choosen Locations
-    elif(mode == '6'):
-        while(True):
-            print(">> Plot Sun's Path on a Sundial at Choosen Location on Earth")
-            print(">> Please choose a mode you'd like to use!")
-            print("(1) Parameters from User Input")
-            print("(2) Parameters of Predefined Locations")
-            print("(Q) Quit to Main Menu")
-            TwiMode = input("> Choose a mode and press enter...: ")
-
-            # Constants for calculation
-            Planet = "Earth"
-
-            print('\n')
-            if(TwiMode == '1'):
-                while(True):
-                    print(">> Calculate Twilights from given Parameters\n")
-                    print(">> Give Parameters!")
-
-                    # Input Positional Parameters
-                    print(">> HINT: You can write Latitude as a Decimal Fraction. For this you need to\n>> Write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
-                    LatitudeHours = float(input("> Latitude (φ) Hours: ") or "0")
-                    LatitudeMinutes = float(input("> Latitude (φ) Minutes: ") or "0")
-                    LatitudeSeconds = float(input("> Latitude (φ) Seconds: ") or "0")
-                    Latitude = LatitudeHours + LatitudeMinutes/60 + LatitudeSeconds/3600
-
-                    print(">> HINT: You can write Longitude as a Decimal Fraction. For this you need to\n>> Write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
-                    LongitudeHours = float(input("> Longitude (λ) Hours: ") or "0")
-                    LongitudeMinutes = float(input("> Longitude (λ) Minutes: ") or "0")
-                    LongitudeSeconds = float(input("> Longitude (λ) Seconds: ") or "0")
-                    Longitude = LongitudeHours + LongitudeMinutes/60 + LongitudeSeconds/3600
-                    break
-
-            elif(TwiMode == '2'):
-                print(">> Calculate Datetimes of Twilights from the Coordinates of a Predefined Location")
-                print(">> Write the Name of a Choosen Location to the Input!")
-
-                # Input Choosen Location's Name
-                while(True):
                     Location = input("> Location's name (type \'H\' for Help): ")
                     
                     if(Location == "Help" or Location == "help" or Location == "H" or Location == "h"):
@@ -2641,192 +2525,346 @@ while(True):
             else:
                 print(">>>> ERROR: Invalid option! Try Again!")
 
-            print(">> For which Year would You like to Draw the Sundial?")
-            while(True):
-                SunDialYear = float(input("> Choosen Year: "))
-                if(SunDialYear != 0):
-                    break
-                else:
-                    print(">>>> ERROR: Year 0 is not defined! Please write another date!\n")
+            if(TwiMode == '1' or TwiMode == '2'):
+                # Input Time Parameters
+                while(True):
+                    LocalDateYear = int(input("> Year: "))
+                    if(LocalDateYear != 0):
+                        break
+                    else:
+                        print(">>>> ERROR: Year 0 is not defined! Please write another date!\n")
 
-            
-            while(True):
-                print(">> Would you like to plot the Sun's path for a Choosen Date in This Year too?")
-                SunDialChoose = input(">> Write Y for Yes or N for No: ")
-                if(SunDialChoose == 'Y' or SunDialChoose == 'y' or SunDialChoose == 'Yes' or SunDialChoose == 'yes' or SunDialChoose == 'YEs' or SunDialChoose == 'yEs' or SunDialChoose == 'yeS' or SunDialChoose == 'YeS' or SunDialChoose == 'yES'):
-                    # Input Time Parameters
-                    while(True):
-                        LocalDateMonth = int(input("> Month: "))
-                        if(LocalDateMonth > 0 and LocalDateMonth < 13):
+                while(True):
+                    LocalDateMonth = int(input("> Month: "))
+                    if(LocalDateMonth > 0 and LocalDateMonth < 13):
+                        break
+                    else:
+                        print(">>>> ERROR: Months should be inside [1,12] interval, and should be Integer!\n")
+
+                # Leap Year	Handling
+                while(True):
+                    LocalDateDay = int(input("> Day: "))
+                    if(LocalDateYear%4 == 0 and (LocalDateYear%100 != 0 or LocalDateYear%400 == 0)):
+                        if(MonthLengthListLeapYear[LocalDateMonth - 1] >= LocalDateDay and LocalDateDay > 0):
                             break
                         else:
-                            print(">>>> ERROR: Months should be inside [1,12] interval, and should be Integer!\n")
-
-                    # Leap Year	Handling
-                    while(True):
-                        LocalDateDay = int(input("> Day: "))
-                        if(LocalDateYear%4 == 0 and (LocalDateYear%100 != 0 or LocalDateYear%400 == 0)):
-                            if(MonthLengthListLeapYear[LocalDateMonth - 1] >= LocalDateDay and LocalDateDay > 0):
-                                break
-                            else:
-                                daysmsg = ">>>> ERROR: Days should be inside [1,{0}] interval, and should be Integer!\n"
-                                print(daysmsg.format(MonthLengthListLeapYear[LocalDateMonth - 1]))
+                            daysmsg = ">>>> ERROR: Days should be inside [1,{0}] interval, and should be Integer!\n"
+                            print(daysmsg.format(MonthLengthListLeapYear[LocalDateMonth - 1]))
+                    else:
+                        if(MonthLengthList[LocalDateMonth - 1] >= LocalDateDay and LocalDateDay > 0):
+                            break
                         else:
-                            if(MonthLengthList[LocalDateMonth - 1] >= LocalDateDay and LocalDateDay > 0):
+                            daysmsg = ">>>> ERROR: Days should be inside [1,{0}] interval, and should be Integer!\n"
+                            print(daysmsg.format(MonthLengthList[LocalDateMonth - 1]))
+
+
+                (LocalHoursNoon, LocalMinutesNoon, LocalSecondsNoon, LocalDateYearNoon, LocalDateMonthNoon, LocalDateDayNoon,
+                LocalHoursMidnight, LocalMinutesMidnight, LocalSecondsMidnight, LocalDateYearMidnight, LocalDateMonthMidnight, LocalDateDayMidnight,
+                LocalHoursRiseDaylight, LocalMinutesRiseDaylight, LocalSecondsRiseDaylight, LocalDateYearRiseDaylight, LocalDateMonthRiseDaylight, LocalDateDayRiseDaylight,
+                LocalHoursSetDaylight, LocalMinutesSetDaylight, LocalSecondsSetDaylight, LocalDateYearSetDaylight, LocalDateMonthSetDaylight, LocalDateDaySetDaylight,
+                LocalHoursRiseCivil, LocalMinutesRiseCivil, LocalSecondsRiseCivil, LocalDateYearRiseCivil, LocalDateMonthRiseCivil, LocalDateDayRiseCivil,
+                LocalHoursSetCivil, LocalMinutesSetCivil, LocalSecondsSetCivil, LocalDateYearSetCivil, LocalDateMonthSetCivil, LocalDateDaySetCivil,
+                LocalHoursRiseNaval, LocalMinutesRiseNaval, LocalSecondsRiseNaval, LocalDateYearRiseNaval, LocalDateMonthRiseNaval, LocalDateDayRiseNaval,
+                LocalHoursSetNaval, LocalMinutesSetNaval, LocalSecondsSetNaval, LocalDateYearSetNaval, LocalDateMonthSetNaval, LocalDateDaySetNaval,
+                LocalHoursRiseAstro, LocalMinutesRiseAstro, LocalSecondsRiseAstro, LocalDateYearSetAstro, LocalDateMonthSetAstro, LocalDateDaySetAstro,
+                LocalHoursSetAstro, LocalMinutesSetAstro, LocalSecondsSetAstro, LocalDateYearRiseAstro, LocalDateMonthRiseAstro, LocalDateDayRiseAstro) = TwilightCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, LocalDateDay)
+
+
+                msgdaylightrise = "\n>> Rising Daylight's time: {0}:{1}:{2} on {3}.{4}.{5}"
+                msgdaylightset = ">> Setting Daylight's time: {0}:{1}:{2} on {3}.{4}.{5}\n"
+
+                msgcivilrise = "\n>> Rising Civil Twilight's time is between\n>> {0}:{1}:{2} and {3}:{4}:{5} on {6}.{7}.{8}"
+                msgcivilset = ">> Setting Civil Twilight's time is between\n>> {0}:{1}:{2} and {3}:{4}:{5} on {6}.{7}.{8}\n"
+
+                msgnavalrise = "\n>> Rising Nautical Twilight's time is between\n>> {0}:{1}:{2} and {3}:{4}:{5} on {6}.{7}.{8}"
+                msgnavalset = ">> Setting Nautical Twilight's time is between\n>> {0}:{1}:{2} and {3}:{4}:{5} on {6}.{7}.{8}\n"
+
+                msgastrorise = "\n>> Rising Astronomical Twilight's time is between\n>> {0}:{1}:{2} and {3}:{4}:{5} on {6}.{7}.{8}"
+                msgastroset = ">> Setting Astronomical Twilight's time is between\n>> {0}:{1}:{2} and {3}:{4}:{5} on {6}.{7}.{8}\n"
+
+                msgnoon = "\n>> Noon occurs at {0}:{1}:{2} on {3}.{4}.{5}"
+                msgmidnight = ">> Midnight occurs at {0}:{1}:{2} on {3}.{4}.{5}\n"
+
+                # +4 and -6 are Corrections for more accurate times
+
+                print(msgdaylightrise.format(LocalHoursRiseDaylight, LocalMinutesRiseDaylight, LocalSecondsRiseDaylight, LocalDateYearRiseDaylight, LocalDateMonthRiseDaylight, LocalDateDayRiseDaylight))
+                print(msgdaylightset.format(LocalHoursSetDaylight, LocalMinutesSetDaylight, LocalSecondsSetDaylight, LocalDateYearSetDaylight, LocalDateMonthSetDaylight, LocalDateDaySetDaylight))
+            
+                print(msgcivilrise.format(LocalHoursRiseCivil, LocalMinutesRiseCivil + 4, LocalSecondsRiseCivil, LocalHoursRiseDaylight, LocalMinutesRiseDaylight, LocalSecondsRiseDaylight, LocalDateYearRiseCivil, LocalDateMonthRiseCivil, LocalDateDayRiseCivil))
+                print(msgcivilset.format(LocalHoursSetDaylight, LocalMinutesSetDaylight, LocalSecondsSetDaylight, LocalHoursSetCivil, LocalMinutesSetCivil - 6, LocalSecondsSetCivil, LocalDateYearSetCivil, LocalDateMonthSetCivil, LocalDateDaySetCivil))
+
+                print(msgnavalrise.format(LocalHoursRiseNaval, LocalMinutesRiseNaval + 4, LocalSecondsRiseNaval, LocalHoursRiseCivil, LocalMinutesRiseCivil + 4, LocalSecondsRiseCivil, LocalDateYearRiseNaval, LocalDateMonthRiseNaval, LocalDateDayRiseNaval))
+                print(msgnavalset.format(LocalHoursSetCivil, LocalMinutesSetCivil - 6, LocalSecondsSetCivil, LocalHoursSetNaval, LocalMinutesSetNaval - 6, LocalSecondsSetNaval, LocalDateYearSetNaval, LocalDateMonthSetNaval, LocalDateDaySetNaval))
+
+                print(msgastrorise.format(LocalHoursRiseAstro, LocalMinutesRiseAstro + 4, LocalSecondsRiseAstro, LocalHoursRiseNaval, LocalMinutesRiseNaval + 4, LocalSecondsRiseNaval, LocalDateYearSetAstro, LocalDateMonthSetAstro, LocalDateDaySetAstro))
+                print(msgastroset.format(LocalHoursSetNaval, LocalMinutesSetNaval - 6, LocalSecondsSetNaval, LocalHoursSetAstro, LocalMinutesSetAstro - 6, LocalSecondsSetAstro, LocalDateYearRiseAstro, LocalDateMonthRiseAstro, LocalDateDayRiseAstro))
+
+                print(msgnoon.format(LocalHoursNoon, LocalMinutesNoon, LocalSecondsNoon, LocalDateYearNoon, LocalDateMonthNoon, LocalDateDayNoon))
+                print(msgmidnight.format(LocalHoursMidnight, LocalMinutesMidnight, LocalSecondsMidnight, LocalDateYearMidnight, LocalDateMonthMidnight, LocalDateDayMidnight))
+
+
+
+    #   _____                 _ _       _ 
+    #  /  ___|               | (_)     | |
+    #  \ `--. _   _ _ __   __| |_  __ _| |
+    #   `--. \ | | | '_ \ / _` | |/ _` | |
+    #  /\__/ / |_| | | | | (_| | | (_| | |
+    #  \____/ \__,_|_| |_|\__,_|_|\__,_|_|
+    # Plot Sundial for Choosen Locations
+    elif(mode == '6'):
+        while(True):
+            print(">> Plot Sun's Path on a Sundial at Choosen Location on Earth")
+            print(">> Please choose a mode you'd like to use!")
+            print("(1) Parameters from User Input")
+            print("(2) Parameters of Predefined Locations")
+            print("(Q) Quit to Main Menu")
+            
+            SundialMode = input("> Choose a mode and press enter...: ")
+
+            print('\n')
+
+            # Constants for calculation
+            Planet = "Earth"
+
+            if(SundialMode == '1'):
+                print(">> Calculate Twilights from given Parameters\n")
+                print(">> Give Parameters!")
+
+                # Input Positional Parameters
+                print(">> HINT: You can write Latitude as a Decimal Fraction. For this you need to\n>> Write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                LatitudeHours = float(input("> Latitude (φ) Hours: ") or "0")
+                LatitudeMinutes = float(input("> Latitude (φ) Minutes: ") or "0")
+                LatitudeSeconds = float(input("> Latitude (φ) Seconds: ") or "0")
+                Latitude = LatitudeHours + LatitudeMinutes/60 + LatitudeSeconds/3600
+
+                print(">> HINT: You can write Longitude as a Decimal Fraction. For this you need to\n>> Write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                LongitudeHours = float(input("> Longitude (λ) Hours: ") or "0")
+                LongitudeMinutes = float(input("> Longitude (λ) Minutes: ") or "0")
+                LongitudeSeconds = float(input("> Longitude (λ) Seconds: ") or "0")
+                Longitude = LongitudeHours + LongitudeMinutes/60 + LongitudeSeconds/3600
+
+
+            elif(SundialMode == '2'):
+                print(">> Calculate Datetimes of Twilights from the Coordinates of a Predefined Location")
+                print(">> Write the Name of a Choosen Location to the Input!")
+
+                # Input Choosen Location's Name
+                while(True):
+                    Location = input("> Location's name (type \'H\' for Help): ")
+                    
+                    if(Location == "Help" or Location == "help" or Location == "H" or Location == "h"):
+                        print(">> Predefined Locations you can choose from:")
+                        for keys in LocationDict.items():
+                            print(keys)
+                    
+                    else:
+                        try:
+                            Latitude = LocationDict[Location][0]
+                            Longitude = LocationDict[Location][1]
+
+                        except KeyError:
+                            print(">>>> ERROR: The Location, named \"" + Location + "\" is not in the Database!")
+                            print(">>>> Type \"Help\" to list Available Cities in Database!")
+                            
+                        else:
+                            break
+
+            elif(SundialMode == 'Q' or SundialMode == 'q'):
+                break
+
+            else:
+                print(">>>> ERROR: Invalid option! Try Again!")
+
+            if(SundialMode == '1' or '2'):
+                print(">> For which Year would You like to Draw the Sundial?")
+                while(True):
+                    SunDialYear = float(input("> Choosen Year: "))
+                    if(SunDialYear != 0):
+                        break
+                    else:
+                        print(">>>> ERROR: Year 0 is not defined! Please write another date!\n")
+
+                
+                while(True):
+                    print(">> Would you like to plot the Sun's path for a Choosen Date in This Year too?")
+                    SunDialChoose = input(">> Write Y for Yes or N for No: ")
+                    if(SunDialChoose == 'Y' or SunDialChoose == 'y' or SunDialChoose == 'Yes' or SunDialChoose == 'yes' or SunDialChoose == 'YEs' or SunDialChoose == 'yEs' or SunDialChoose == 'yeS' or SunDialChoose == 'YeS' or SunDialChoose == 'yES'):
+                        # Input Time Parameters
+                        while(True):
+                            LocalDateMonth = int(input("> Month: "))
+                            if(LocalDateMonth > 0 and LocalDateMonth < 13):
                                 break
                             else:
-                                daysmsg = ">>>> ERROR: Days should be inside [1,{0}] interval, and should be Integer!\n"
-                                print(daysmsg.format(MonthLengthList[LocalDateMonth - 1]))
+                                print(">>>> ERROR: Months should be inside [1,12] interval, and should be Integer!\n")
 
-                    break
+                        # Leap Year	Handling
+                        while(True):
+                            LocalDateDay = int(input("> Day: "))
+                            if(LocalDateYear%4 == 0 and (LocalDateYear%100 != 0 or LocalDateYear%400 == 0)):
+                                if(MonthLengthListLeapYear[LocalDateMonth - 1] >= LocalDateDay and LocalDateDay > 0):
+                                    break
+                                else:
+                                    daysmsg = ">>>> ERROR: Days should be inside [1,{0}] interval, and should be Integer!\n"
+                                    print(daysmsg.format(MonthLengthListLeapYear[LocalDateMonth - 1]))
+                            else:
+                                if(MonthLengthList[LocalDateMonth - 1] >= LocalDateDay and LocalDateDay > 0):
+                                    break
+                                else:
+                                    daysmsg = ">>>> ERROR: Days should be inside [1,{0}] interval, and should be Integer!\n"
+                                    print(daysmsg.format(MonthLengthList[LocalDateMonth - 1]))
 
-                elif(SunDialChoose == 'N' or SunDialChoose == 'n' or SunDialChoose == 'No' or SunDialChoose == 'no' or SunDialChoose == 'nO'):
-                    break
+                        break
 
+                    elif(SunDialChoose == 'N' or SunDialChoose == 'n' or SunDialChoose == 'No' or SunDialChoose == 'no' or SunDialChoose == 'nO'):
+                        break
+
+                    else:
+                        print(">>>> ERROR: Invalid option! Try Again!")
+
+                if(SunDialChoose == 'Y' or SunDialChoose == 'y' or SunDialChoose == 'Yes' or SunDialChoose == 'yes' or SunDialChoose == 'YEs' or SunDialChoose == 'yEs' or SunDialChoose == 'yeS' or SunDialChoose == 'YeS' or SunDialChoose == 'yES'):
+
+                    ### CHOOSEN DATE ###
+                    LocalHourAngleRiseChoosen, LocalHourAngleSetChoosen, DeclinationSunChoosen = SundialPrecalculations(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, LocalDateDay)
+
+                    # Create lists for plot parameters
+                    LocalHourAngleChoosen = []
+                    AltitudesChoosen = []
+                    AzimuthsChoosen = []
+
+                    # Calculate plot parameters
+                    for LocalHourAngleActual in range(int(LocalHourAngleRiseChoosen * 100000), int(LocalHourAngleSetChoosen * 100000), 300):
+                        
+                        # Calculate parameters by ~10 seconds interval
+                        AltitudeActual, AzimuthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunChoosen)
+
+                        # Append parameters to lists
+                        LocalHourAngleChoosen.append(LocalHourAngleActual)
+                        AltitudesChoosen.append(AltitudeActual)
+                        AzimuthsChoosen.append(AzimuthActual)
+
+
+                ### SUMMER SOLSTICE ###
+                LocalDateMonthSummer = 6
+                if(SunDialYear%4 == 0):
+                    LocalDateDaySummer = 20
+                
                 else:
-                    print(">>>> ERROR: Invalid option! Try Again!")
-
-            if(SunDialChoose == 'Y' or SunDialChoose == 'y' or SunDialChoose == 'Yes' or SunDialChoose == 'yes' or SunDialChoose == 'YEs' or SunDialChoose == 'yEs' or SunDialChoose == 'yeS' or SunDialChoose == 'YeS' or SunDialChoose == 'yES'):
-
-                ### CHOOSEN DATE ###
-                LocalHourAngleRiseChoosen, LocalHourAngleSetChoosen, DeclinationSunChoosen = SundialPrecalculations(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, LocalDateDay)
+                    LocalDateDaySummer = 21
+                
+                LocalHourAngleRiseSummer, LocalHourAngleSetSummer, DeclinationSunSummer = SundialPrecalculations(Planet, Latitude, Longitude, SunDialYear, LocalDateMonthSummer, LocalDateDaySummer)
 
                 # Create lists for plot parameters
-                LocalHourAngleChoosen = []
-                AltitudesChoosen = []
-                AzimuthsChoosen = []
+                LocalHourAngleSummer = []
+                AltitudesSummer = []
+                AzimuthsSummer = []
 
                 # Calculate plot parameters
-                for LocalHourAngleActual in range(int(LocalHourAngleRiseChoosen * 100000), int(LocalHourAngleSetChoosen * 100000), 300):
+                for LocalHourAngleActual in range(int(LocalHourAngleRiseSummer * 100000), int(LocalHourAngleSetSummer * 100000), 300):
                     
+                    # Norm back to normal
+                    LocalHourAngleActual/100000
+
                     # Calculate parameters by ~10 seconds interval
-                    AltitudeActual, AzimuthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunChoosen)
+                    AltitudeActual, AzimuthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSummer)
 
                     # Append parameters to lists
-                    LocalHourAngleChoosen.append(LocalHourAngleActual)
-                    AltitudesChoosen.append(AltitudeActual)
-                    AzimuthsChoosen.append(AzimuthActual)
+                    LocalHourAngleSummer.append(LocalHourAngleActual)
+                    AltitudesSummer.append(AltitudeActual)
+                    AzimuthsSummer.append(AzimuthActual)
 
 
-            ### SUMMER SOLSTICE ###
-            LocalDateMonthSummer = 6
-            if(SunDialYear%4 == 0):
-                LocalDateDaySummer = 20
-            
-            else:
-                LocalDateDaySummer = 21
-            
-            LocalHourAngleRiseSummer, LocalHourAngleSetSummer, DeclinationSunSummer = SundialPrecalculations(Planet, Latitude, Longitude, SunDialYear, LocalDateMonthSummer, LocalDateDaySummer)
-
-            # Create lists for plot parameters
-            LocalHourAngleSummer = []
-            AltitudesSummer = []
-            AzimuthsSummer = []
-
-            # Calculate plot parameters
-            for LocalHourAngleActual in range(int(LocalHourAngleRiseSummer * 100000), int(LocalHourAngleSetSummer * 100000), 300):
+                ### WINTER SOLSTICE ###
+                LocalDateMonthWinter = 12
+                if((SunDialYear + 1)%4 == 0):
+                    LocalDateDayWinter = 22
                 
-                # Norm back to normal
-                LocalHourAngleActual/100000
+                else:
+                    LocalDateDayWinter = 21
 
-                # Calculate parameters by ~10 seconds interval
-                AltitudeActual, AzimuthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSummer)
+                LocalHourAngleRiseWinter, LocalHourAngleSetWinter, DeclinationSunWinter = SundialPrecalculations(Planet, Latitude, Longitude, SunDialYear, LocalDateMonthWinter, LocalDateDayWinter)
 
-                # Append parameters to lists
-                LocalHourAngleSummer.append(LocalHourAngleActual)
-                AltitudesSummer.append(AltitudeActual)
-                AzimuthsSummer.append(AzimuthActual)
+                # Create lists for plot parameters
+                LocalHourAngleWinter = []
+                AltitudesWinter = []
+                AzimuthsWinter = []
 
+                # Calculate plot parameters
+                for LocalHourAngleActual in range(int(LocalHourAngleRiseWinter * 100000), int(LocalHourAngleSetWinter * 100000), 300):
+                    
+                    # Norm back to normal
+                    LocalHourAngleActual/100000
+                    
+                    # Calculate parameters by ~10 seconds interval
+                    AltitudeActual, AzimuthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunWinter)
 
-            ### WINTER SOLSTICE ###
-            LocalDateMonthWinter = 12
-            if((SunDialYear + 1)%4 == 0):
-                LocalDateDayWinter = 22
-            
-            else:
-                LocalDateDayWinter = 21
-
-            LocalHourAngleRiseWinter, LocalHourAngleSetWinter, DeclinationSunWinter = SundialPrecalculations(Planet, Latitude, Longitude, SunDialYear, LocalDateMonthWinter, LocalDateDayWinter)
-
-            # Create lists for plot parameters
-            LocalHourAngleWinter = []
-            AltitudesWinter = []
-            AzimuthsWinter = []
-
-            # Calculate plot parameters
-            for LocalHourAngleActual in range(int(LocalHourAngleRiseWinter * 100000), int(LocalHourAngleSetWinter * 100000), 300):
-                
-                # Norm back to normal
-                LocalHourAngleActual/100000
-                
-                # Calculate parameters by ~10 seconds interval
-                AltitudeActual, AzimuthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunWinter)
-
-                # Append parameters to lists
-                LocalHourAngleWinter.append(LocalHourAngleActual)
-                AltitudesWinter.append(AltitudeActual)
-                AzimuthsWinter.append(AzimuthActual)
+                    # Append parameters to lists
+                    LocalHourAngleWinter.append(LocalHourAngleActual)
+                    AltitudesWinter.append(AltitudeActual)
+                    AzimuthsWinter.append(AzimuthActual)
 
 
-            ### MARCH EQUINOX ###
-            LocalDateMonthMarch = 3
-            LocalDateDayMarch = 20
+                ### MARCH EQUINOX ###
+                LocalDateMonthMarch = 3
+                LocalDateDayMarch = 20
 
-            LocalHourAngleRiseMarch, LocalHourAngleSetMarch, DeclinationSunMarch = SundialPrecalculations(Planet, Latitude, Longitude, SunDialYear, LocalDateMonthMarch, LocalDateDayMarch)
+                LocalHourAngleRiseMarch, LocalHourAngleSetMarch, DeclinationSunMarch = SundialPrecalculations(Planet, Latitude, Longitude, SunDialYear, LocalDateMonthMarch, LocalDateDayMarch)
 
-            # Create lists for plot parameters
-            LocalHourAngleMarch = []
-            AltitudesMarch = []
-            AzimuthsMarch = []
+                # Create lists for plot parameters
+                LocalHourAngleMarch = []
+                AltitudesMarch = []
+                AzimuthsMarch = []
 
-            # Calculate plot parameters
-            for LocalHourAngleActual in range(int(LocalHourAngleRiseMarch * 100000), int(LocalHourAngleSetMarch * 100000), 300):
-                
-                # Norm back to normal
-                LocalHourAngleActual/100000
-                
-                # Calculate parameters by ~10 seconds interval
-                AltitudeActual, AzimuthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunMarch)
+                # Calculate plot parameters
+                for LocalHourAngleActual in range(int(LocalHourAngleRiseMarch * 100000), int(LocalHourAngleSetMarch * 100000), 300):
+                    
+                    # Norm back to normal
+                    LocalHourAngleActual/100000
+                    
+                    # Calculate parameters by ~10 seconds interval
+                    AltitudeActual, AzimuthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunMarch)
 
-                # Append parameters to lists
-                LocalHourAngleMarch.append(LocalHourAngleActual)
-                AltitudesMarch.append(AltitudeActual)
-                AzimuthsMarch.append(AzimuthActual)
-
-
-            ### SEPTEMBER EQIUNOX ###
-            LocalDateMonthSeptember = 9
-            if(SunDialYear%4 == 0 or (SunDialYear - 1)%4 == 0):
-                LocalDateDaySeptember = 22
-
-            else:
-                LocalDateDaySeptember = 23
-
-            LocalHourAngleRiseSeptember, LocalHourAngleSetSeptember, DeclinationSunSeptember = SundialPrecalculations(Planet, Latitude, Longitude, SunDialYear, LocalDateMonthSeptember, LocalDateDaySeptember)
-
-            print(24-(LocalHourAngleRiseSeptember - LocalHourAngleSetSeptember))
-
-            # Create lists for plot parameters
-            LocalHourAngleSeptember = []
-            AltitudesSeptember = []
-            AzimuthsSeptember = []
-
-            # Calculate plot parameters
-            for LocalHourAngleActual in range(int(LocalHourAngleRiseSeptember * 100000), int(LocalHourAngleSetSeptember * 100000), 300):
-                
-                # Norm back to normal
-                LocalHourAngleActual/100000
-                
-                # Calculate parameters by ~10 seconds interval
-                AltitudeActual, AzimuthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSeptember)
-
-                # Append parameters to lists
-                LocalHourAngleSeptember.append(LocalHourAngleActual)
-                AltitudesSeptember.append(AltitudeActual)
-                AzimuthsSeptember.append(AzimuthActual)
+                    # Append parameters to lists
+                    LocalHourAngleMarch.append(LocalHourAngleActual)
+                    AltitudesMarch.append(AltitudeActual)
+                    AzimuthsMarch.append(AzimuthActual)
 
 
-            print(len(LocalHourAngleSeptember), len(AltitudesSeptember), len(AzimuthsSeptember))
+                ### SEPTEMBER EQIUNOX ###
+                LocalDateMonthSeptember = 9
+                if(SunDialYear%4 == 0 or (SunDialYear - 1)%4 == 0):
+                    LocalDateDaySeptember = 22
+
+                else:
+                    LocalDateDaySeptember = 23
+
+                LocalHourAngleRiseSeptember, LocalHourAngleSetSeptember, DeclinationSunSeptember = SundialPrecalculations(Planet, Latitude, Longitude, SunDialYear, LocalDateMonthSeptember, LocalDateDaySeptember)
+
+                print(24-(LocalHourAngleRiseSeptember - LocalHourAngleSetSeptember))
+
+                # Create lists for plot parameters
+                LocalHourAngleSeptember = []
+                AltitudesSeptember = []
+                AzimuthsSeptember = []
+
+                # Calculate plot parameters
+                for LocalHourAngleActual in range(int(LocalHourAngleRiseSeptember * 100000), int(LocalHourAngleSetSeptember * 100000), 300):
+                    
+                    # Norm back to normal
+                    LocalHourAngleActual/100000
+                    
+                    # Calculate parameters by ~10 seconds interval
+                    AltitudeActual, AzimuthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSeptember)
+
+                    # Append parameters to lists
+                    LocalHourAngleSeptember.append(LocalHourAngleActual)
+                    AltitudesSeptember.append(AltitudeActual)
+                    AzimuthsSeptember.append(AzimuthActual)
+
+
+                print(len(LocalHourAngleSummer), len(AltitudesSummer), len(AzimuthsSummer))
+                print(len(LocalHourAngleWinter), len(AltitudesWinter), len(AzimuthsWinter))
+                print(len(LocalHourAngleMarch), len(AltitudesMarch), len(AzimuthsMarch))
+                print(len(LocalHourAngleSeptember), len(AltitudesSeptember), len(AzimuthsSeptember))
 
 
     #   _   _                                         _    
@@ -2838,7 +2876,7 @@ while(True):
     # HOMEWORK MODE
     elif(mode == 'Home' or mode == 'home' or mode == 'H' or mode == 'h'):
 
-        print("###  Csillesz II end-semesterhomework results, solved by the program  ###")
+        print("###  Csillesz II end-semester homework results, solved by the program  ###")
         print("_________________________________________________________________________")
 
         print("1.1/1:")
@@ -2853,16 +2891,30 @@ while(True):
         LocalSeconds = 0
         LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeconds, UnitedHours, UnitedMinutes, UnitedSeconds, GreenwichSiderealHours, GreenwichSiderealMinutes, GreenwichSiderealSeconds = LocalSiderealTimeCalc(Longitude, LocalHours, LocalMinutes, LocalSeconds, LocalDateYear, LocalDateMonth, LocalDateDay)
 
+        print(">>> Calculate LMST at " + Location + ", at" + str(LocalHours) + ":" + str(LocalMinutes) + ":" + str(LocalSeconds) + "LT," + str(LocalDateYear) + "." + str(LocalDateMonth) + "." + str(LocalDateDay))
+        print(">>> Used formulas:")
+        print(">>> 1. S_0 (Greenwich Mean Sidereal Time) at 00:00 UT was calculated")
+        print(">>> 2. S (Local Mean Sidereal Time) = S_0 + Longitude/15 + dS * UnitedTime")
+
         sidmsg = "\n>>> The Local Mean Sidereal Time at {0}:{1}:{2} UT\n>>> in {3} with\n>>> {4}:{5}:{6} GMST at 00:00:00 UT\n>>> is {7}:{8}:{9}\n\n"
         print(sidmsg.format(UnitedHours, UnitedMinutes, UnitedSeconds, Location, GreenwichSiderealHours, GreenwichSiderealMinutes, GreenwichSiderealSeconds, LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeconds))
         print("_________________________________________________________________________")
 
         print("1.1/2:")
 
-        Latitude = LocationDict["Szeged"][0]
+        Location = "Szeged"
+        Latitude = LocationDict[Location][0]
         RightAscensionVenus = 18 + 41/60 + 54/3600
         DeclinationVenus = -(24 + 4/60 + 9/3600)
         Altitude, Azimuth1, Azimuth2, H_dil = EquIToHor(Latitude, RightAscensionVenus, DeclinationVenus, 0, None, None, None)
+
+        print(">>> Calculate Rising and Setting Local Time of Venus,\n>>> As seen from" + Location + ".")
+        print(">>> Used formulas:")
+        print(">>> 1. First let's calculate LHA:\n>>> cos(H) = (sin(m) - sin(δ) * sin(φ)) / cos(δ) * cos(φ)")
+        print(">>> 2. arccos(x) has two correct output on this interval.\n>>> One if them will be the Rising, the other is\n>>> The Setting Local Hour Angle: LHA2 = -LHA1")
+        print(">>> 3. We calculate Azimuth for both Local Hour Angle.\n>>> For each one, we use 2 equations to determine the correct output:")
+        print(">>> a) sin(A) = - sin(H) * cos(δ) / cos(m)\n>>> b) cos(A) = (sin(δ) - sin(φ) * sin(m)) / (cos(φ) * cos(m))")
+        print(">>> These 2 equation outputs 2-2 values for an Azimuth. 1-1 from both these\n>>> Outputs will be equal, and that's the correct value for one of the Azimuths.\n")        
 
         # Print Results
         print(">>> INFO: Available Data are only suited for Calculating Rising or\n>>> Setting Altitudes!")
@@ -2910,16 +2962,23 @@ while(True):
         LocalDateDaySetAstroTime1 = LocalHoursSetAstro1 + LocalMinutesSetAstro1/60 + LocalSecondsSetAstro1/3600
         LocalDateDayRiseAstroTime2 = LocalHoursRiseAstro2 + LocalMinutesRiseAstro2/60 + LocalSecondsRiseAstro2/3600
 
+        print(">>> Calculate lenght of Astronomical Twilight at" + Location + "on\n>>> " + str(LocalDateYear) + "." + str(LocalDateMonth) + "." + str(LocalDateDay2) + " evening.")
+        print(">>> Used formulas:")
+        print(">>> 1. Sun's position for given day was calculated (RA and δ)")
+        print(">>> 2. Julian Date of the Begind/End of Astrological Twilights\n>>> Was been calculated.")
+        print(">>> 3. Julian Date was converted to United Time (UT), then Local Time (LT)\n>>> Was calculated for" + Location + "\n")
+
         # Length of the astronomical night
         AstroNightLength = 24 - (LocalDateDaySetAstroTime1 - LocalDateDayRiseAstroTime2)
         AstroNightHours = int(AstroNightLength)
         AstroNightMinutes = int((AstroNightLength - AstroNightHours) * 60)
         AstroNightSeconds = int((((AstroNightLength - AstroNightHours) * 60) - AstroNightMinutes) * 60)
 
-        print(">>> Used formulas:")
-        print(">>> ")
-
-        astrotimemsg = ">>> The astronomical night's lenght at " + Location + " is\n>>> {0}:{1}:{2} long\n>>> On between {3}.{4}.{5}, and {6} evening.\n"
+        astrosetmsg = ">>> End of Astronomical Twilight on {0}.{1}.{2} is at {3}:{4}:{5}"
+        astrorisemsg = ">>> Begin of Astronomical Twilight on {0}.{1}.{2} is at {3}:{4}:{5}"
+        astrotimemsg = ">>> The astronomical night's lenght at " + Location + " is\n>>> {0}:{1}:{2} long\n>>> In the night, between {3}.{4}.{5}, and {6}.\n"
+        print(astrosetmsg.format(LocalDateYear, LocalDateMonth, LocalDateDay1, LocalHoursSetAstro1, LocalMinutesSetAstro1, LocalSecondsSetAstro1))
+        print(astrorisemsg.format(LocalDateYear, LocalDateMonth, LocalDateDay2, LocalHoursRiseAstro2, LocalMinutesRiseAstro2, LocalSecondsRiseAstro2))
         print(astrotimemsg.format(AstroNightHours, AstroNightMinutes, AstroNightSeconds, LocalDateYear, LocalDateMonth, LocalDateDay1, LocalDateDay2))
         print("_________________________________________________________________________")
 
@@ -2973,18 +3032,21 @@ while(True):
         AltitudeMinutes = int((Altitude - AltitudeHours) * 60)
         AltitudeSeconds = int((((Altitude - AltitudeHours) * 60) - AltitudeMinutes) * 60)
 
-        print(">>> Used formulas:\n>>> 1. S_0 (Greenwich Mean Sidereal Time) at 00:00 UT was calculated\n>>> 2. S (Local Mean Sidereal Time) = S_0 + Longitude/15 + dS * UnitedTime\n>>> 3. S - α = t; H = 15*t")
-        print(">>> 4. sin(m) = sin(δ) * sin(φ) + cos(δ) * cos(φ) * cos(H); Altitude (m) should been between [-π/2,+π/2]")
+        print(">>> Used formulas:")
+        print(">>> 1. S_0 (Greenwich Mean Sidereal Time) at 00:00 UT was calculated")
+        print(">>> 2. S (Local Mean Sidereal Time) = S_0 + Longitude/15 + dS * UnitedTime")
+        print(">>> 3. S - α = t; H = 15*t")
+        print(">>> 4. sin(m) = sin(δ) * sin(φ) + cos(δ) * cos(φ) * cos(H);\n>>> Altitude (m) should been between [-π/2,+π/2]")
         print(">>> 5. sin(A) = - sin(H) * cos(δ) / cos(m), Azimuth at given H hour angle\n>>> Also cos(A) = (sin(δ) - sin(φ) sin(m)) / cos(φ) cos(m)")
-        print(">>> These 2 equation outputs 2-2 values for Azimuth. 1-1 from both these outputs\n>>> will be equal, that's the correct value for Azimuth.")
+        print(">>> These 2 equation outputs 2-2 values for Azimuth. 1-1 from both these\n>>> Outputs will be equal, and that's the correct value for Azimuth.\n")
 
         # Print Results
-        timemsg = ">>> Altitude and Azimuth of Altair from Baja On {0}.{1}.{2}"
+        timemsg = ">>> Altitude and Azimuth of " + Star + " from " + Location + " on {0}.{1}.{2}"
         grwmsg = ">>> GMST: {0}:{1}:{2}"
         print(timemsg.format(LocalDateYear, LocalDateMonth, LocalDateDay))
         print(grwmsg.format(GreenwichSiderealHours, GreenwichSiderealMinutes, GreenwichSiderealSeconds))
 
-        print(">>> Calculated Parameters in Horizontal Coord. Sys.:")
+        print(">>> Calculated Parameters:")
         locsidmsg = ">>> Local Mean Siderel Time (S): {0}:{1}:{2}"
         lhamsg = ">>> Local Hour Angle (t): {0}h {1}m {2}s"
         azimmsg = ">>> Azimuth (A):  {0}° {1}' {2}\""
@@ -3034,6 +3096,15 @@ while(True):
         LocalSiderealTimeHours = int(LocalSiderealTime)
         LocalSiderealTimeMinutes = int((LocalSiderealTime - LocalSiderealTimeHours) * 60)
         LocalSiderealTimeSeconds = int((((LocalSiderealTime - LocalSiderealTimeHours) * 60) - LocalSiderealTimeMinutes) * 60)
+
+        print("Calculate a star's equatorial II coordinates (S and δ) from Horizontal coords.")
+        print("Used Formulas:")
+        print(">>> 1. S_0 (Greenwich Mean Sidereal Time) at 00:00 UT was calculated")
+        print(">>> 2. S (Local Mean Sidereal Time) = S_0 + Longitude/15 + dS * UnitedTime")
+        print(">>> 3. Declination was calculated:\n>>> sin(δ) = sin(m) * sin(φ) + cos(m) * cos(φ) * cos(A)")
+        print(">>> 4. Local Hour Angle was calculated with two equations:\n>>> a) sin(H) = - sin(A) * cos(m) / cos(δ)\n>>> b) cos(H) = (sin(m) - sin(δ) * sin(φ)) / cos(δ) * cos(φ)")
+        print(">>> These 2 equations outputs 2-2 values for Local Hour Angle. 1-1 from both\n>>> These outputs will be equal, and that's the correct value for LHA.")
+        print(">>> 5. Right Ascension was also calculated: RA = S - t; t = 15 * H\n")
 
         equIImsg = ">>> Calculated Parameters of the Star in Equatorial II Coord. Sys. from {0}:"
         print(equIImsg.format(Location))
