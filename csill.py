@@ -62,7 +62,7 @@ import math
 # import numpy as np
 
 # Current Version of the Csillész II Problem Solver
-ActualVersion = 'v1.20'
+ActualVersion = 'v1.21'
 
 
 
@@ -130,7 +130,7 @@ StellarDict = {
     "AlphaCentauri": [14.66014, -60.83399],
     "AlphaPersei": [3.40538, 49.86118],
     "Alphard": [9.45979, -8.65860],
-    "Altair": [19.84639, 8.86832],
+    "Altair": [19.8625, 8.92278],
     "Antares": [16.49013, -26.43200],
     "Arcturus": [14.26103, 19.18222],
     "BetaCeti": [0.72649, -17.986605],
@@ -329,11 +329,14 @@ def LTtoUT(LocalHours, LocalMinutes, LocalSeconds, DateYear, DateMonth, DateDay)
     # Summer/Winter Saving time
     # Summer: March 26/31 - October 8/14 LT+1
     # Winter: October 8/14 - March 26/31 LT+0
-    if((DateMonth > 3 and DateMonth < 10) or ((DateMonth == 3 and DateDay >=25) or (DateMonth == 10 and (DateDay >= 8 and DateDay <=14)))):
-        UnitedTime = LocalTime - (int(Longitude/15) + 1)
+    # ISN'T NEEDED
+    '''if((DateMonth > 3 and DateMonth < 10) or ((DateMonth == 3 and DateDay >=25) or (DateMonth == 10 and (DateDay >= 8 and DateDay <=14)))):
+        UnitedTime = LocalTime - (round(Longitude/15, 0) + 1)
 
     else:
-        UnitedTime = LocalTime - int(Longitude/15)
+        UnitedTime = LocalTime - round(Longitude/15, 0)'''
+
+    UnitedTime = LocalTime - round(Longitude/15, 0)
 
     # Apply corrections if United Time is not in the correct format
     UnitedTime, UnitedHours, UnitedMinutes, UnitedSeconds, UnitedDateYear, UnitedDateMonth, UnitedDateDay = NormalizeTimeParameters(UnitedTime, DateYear, DateMonth, DateDay)
@@ -350,11 +353,14 @@ def UTtoLT(Latitude, UnitedHours, UnitedMinutes, UnitedSeconds, UnitedDateYear, 
     # Summer/Winter Saving time
     # Summer: March 26/31 - October 8/14 LT+1
     # Winter: October 8/14 - March 26/31 LT+0
-    if((UnitedDateMonth > 3 and UnitedDateMonth < 10) or ((UnitedDateMonth == 3 and UnitedDateDay >=25) or (UnitedDateMonth == 10 and (UnitedDateDay >= 8 and UnitedDateDay <=14)))):
-        LocalTime = UnitedTime + (int(Longitude/15) + 1)
+    # ISN'T NEEDED
+    '''if((UnitedDateMonth > 3 and UnitedDateMonth < 10) or ((UnitedDateMonth == 3 and UnitedDateDay >=25) or (UnitedDateMonth == 10 and (UnitedDateDay >= 8 and UnitedDateDay <=14)))):
+        LocalTime = UnitedTime + (round(Longitude/15, 0) + 1)
 
     else:
-        LocalTime = UnitedTime + int(Longitude/15)
+        LocalTime = UnitedTime + round(Longitude/15, 0)'''
+
+    LocalTime = UnitedTime + round(Longitude/15, 0)
 
     # Apply corrections if Local Time is not in the correct format
     LocalTime, LocalHours, LocalMinutes, LocalSeconds, LocalDateYear, LocalDateMonth, LocalDateDay = NormalizeTimeParameters(LocalTime, UnitedDateYear, UnitedDateMonth, UnitedDateDay)
@@ -809,7 +815,7 @@ def LocalSiderealTimeCalc(Longitude, LocalHours, LocalMinutes, LocalSeconds, Dat
 
     # Calculate LMST
     LMST = S_0 + Longitude/15 + dS * UnitedTime
-    
+
     # Norm LMST
     LMSTNorm = NormalizeZeroBounded(LMST, 24)
 
@@ -1192,9 +1198,10 @@ def SundialParametersCalc(Latitude, LocalHourAngle, DeclinationSun):
     elif(Azimuth1 > 180):
         Azimuth2 = 540 - Azimuth1
 
+    print(Azimuth1, Azimuth2)
+
     # Calculate Azimuth (A) with a second method, to determine which one is the correct (A_1 or A_2?)
     # cos(A) = (sin(δ) - sin(φ) * sin(m)) / (cos(φ) * cos(m))
-    print(DeclinationSun, Latitude, Altitude)
     Azimuth3 = math.degrees(math.acos(
             (math.sin(math.radians(DeclinationSun)) - math.sin(math.radians(Latitude)) * math.sin(math.radians(Altitude))) / 
             (math.cos(math.radians(Latitude)) * math.cos(math.radians(Altitude)))
@@ -3006,7 +3013,7 @@ while(True):
 
         # Calculate Local Mean Sidereal Time
         LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeconds, UnitedHours, UnitedMinutes, UnitedSeconds, GreenwichSiderealHours, GreenwichSiderealMinutes, GreenwichSiderealSeconds = LocalSiderealTimeCalc(Longitude, LocalHours, LocalMinutes, LocalSeconds, LocalDateYear, LocalDateMonth, LocalDateDay)
-        
+
         # Convert to decimal
         LocalSiderealTime = LocalSiderealHours + LocalSiderealMinutes/60 + LocalSiderealSeconds/3600
         
@@ -3109,9 +3116,11 @@ while(True):
         equIImsg = ">>> Calculated Parameters of the Star in Equatorial II Coord. Sys. from {0}:"
         print(equIImsg.format(Location))
 
+        grwmsg = ">>> GMST: {0}:{1}:{2}" 
         declinmsg = ">>> Declination (δ): {0}° {1}\' {2}\""
         RAmsg = ">>> Right Ascension (α): {0}h {1}m {2}s"
         sidermsg = ">>> Local Mean Sidereal Time (S): {0}:{1}:{2}\n"
+        print(grwmsg.format(GreenwichSiderealHours, GreenwichSiderealMinutes, GreenwichSiderealSeconds))
         print(declinmsg.format(DeclinationHours, DeclinationMinutes, DeclinationSeconds))
         print(RAmsg.format(RightAscensionHours, RightAscensionMinutes, RightAscensionSeconds))
         print(sidermsg.format(LocalSiderealTimeHours, LocalSiderealTimeMinutes, LocalSiderealTimeSeconds))
