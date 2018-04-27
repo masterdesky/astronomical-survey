@@ -29,9 +29,9 @@
 ##        > Calculate Datetimes of Sunrises and Sunsets                                      ##
 ##        > Calculate Twilights' Correct Datetimes at Specific Locations                     ##
 ##        > Solve Csillész II End-Semester Homework with One Click                           ##
+##        > Draw Sun's Path on Earth during a Choosen Year                                   ##
 ##       Future:                                                                             ##
 ##        > Draw Sun Analemma for a Choosen Year                                             ##
-##        > Draw Sun's Path on Earth during a Choosen Year                                   ##
 ##        > Better Optimalization and Greater Precision                                      ##
 ####                                                                                       ####
 ###############################################################################################
@@ -54,15 +54,15 @@
 ###############################################################################################
 
 # If libraries are not installed, decomment and run
-# pip install matplotlib --upgrade
-# pip install numpy --upgrade
+#pip install matplotlib --upgrade
+#pip install numpy --upgrade
 
 import math
-# import matplotlib.pyplot as plt
-# import numpy as np
+import matplotlib.pyplot as plt
+#import numpy as np
 
 # Current Version of the Csillész II Problem Solver
-ActualVersion = 'v1.21'
+ActualVersion = 'v1.23'
 
 
 
@@ -199,16 +199,19 @@ def NormalizeZeroBounded(Parameter, NonZeroBound):
 
     return(Parameter)
 
+# Time is normalized into [0h,24h[ intervals
 def NormalizeZeroBoundedTime(Time):
 
-    # Time is normalized into [0h,24h[ intervals
-    Multiply = abs(int(Time / 24))
-
     if(Time >= 24):
+        Multiply = int(Time / 24)
         Time = Time - Multiply * 24
 
     if(Time < 0):
-        Time = Time + (Multiply + 1) * 24
+        Multiply = int(Time / 24) - 1
+        Time = Time + abs(Multiply) * 24
+
+    else:
+        Multiply = 0
 
     return(Time, Multiply)
 
@@ -243,6 +246,7 @@ def NormalizeTimeParameters(Time, Year, Month, Day):
 
     # First normalize Time if abs(Time) >= 24
     Time, Multiply = NormalizeZeroBoundedTime(Time)
+    
 
     # CORRECTIONS IF MINUTES >= 60 or SECONDS >= 60
     Hours = int(Time)
@@ -291,30 +295,39 @@ def NormalizeTimeParameters(Time, Year, Month, Day):
     else:
         CountingIndex = 0
 
-    while(CountingIndex != 0):
-        while(Year%4 == 0 and (Year%100 != 0 or Year%400 == 0)):
-            while(Day > MonthLengthListLeapYear[Month - 1]):
+    while(True):
+        if(Year%4 == 0 and (Year%100 != 0 or Year%400 == 0)):
+            if(Day > MonthLengthListLeapYear[Month - 1]):
                 Day = Day - MonthLengthListLeapYear[Month - 1]
                 Month = Month + 1
                 if(Month == 13):
                     Month = 1
                     Year = Year + 1
+
                 if(Day > MonthLengthListLeapYear[Month - 1]):
-                    CountingIndex = CountingIndex -  MonthLengthListLeapYear[Month - 1]
+                    CountingIndex = CountingIndex - MonthLengthListLeapYear[Month - 1]
                 else:
                     CountingIndex = 0
+                    break
+            else:
+                break
 
-        while(Year%4 != 0):
-            while(Day > MonthLengthList[Month - 1]):
+        if(Year%4 != 0):
+            if(Day > MonthLengthList[Month - 1]):
                 Day = Day - MonthLengthList[Month - 1]
                 Month = Month + 1
                 if(Month == 13):
                     Month = 1
                     Year = Year + 1
+
                 if(Day > MonthLengthList[Month - 1]):
-                    CountingIndex = CountingIndex -  MonthLengthList[Month - 1]
+                    CountingIndex = CountingIndex - MonthLengthList[Month - 1]
                 else:
                     CountingIndex = 0
+                    break
+            else:
+                break
+
 
     return(Time, Hours, Minutes, Seconds, Year, Month, Day)
 
@@ -330,13 +343,13 @@ def LTtoUT(LocalHours, LocalMinutes, LocalSeconds, DateYear, DateMonth, DateDay)
     # Summer: March 26/31 - October 8/14 LT+1
     # Winter: October 8/14 - March 26/31 LT+0
     # ISN'T NEEDED
-    '''if((DateMonth > 3 and DateMonth < 10) or ((DateMonth == 3 and DateDay >=25) or (DateMonth == 10 and (DateDay >= 8 and DateDay <=14)))):
+    if((DateMonth > 3 and DateMonth < 10) or ((DateMonth == 3 and DateDay >=25) or (DateMonth == 10 and (DateDay >= 8 and DateDay <=14)))):
         UnitedTime = LocalTime - (round(Longitude/15, 0) + 1)
 
     else:
-        UnitedTime = LocalTime - round(Longitude/15, 0)'''
+        UnitedTime = LocalTime - round(Longitude/15, 0)
 
-    UnitedTime = LocalTime - round(Longitude/15, 0)
+    #UnitedTime = LocalTime - round(Longitude/15, 0)
 
     # Apply corrections if United Time is not in the correct format
     UnitedTime, UnitedHours, UnitedMinutes, UnitedSeconds, UnitedDateYear, UnitedDateMonth, UnitedDateDay = NormalizeTimeParameters(UnitedTime, DateYear, DateMonth, DateDay)
@@ -354,13 +367,13 @@ def UTtoLT(Latitude, UnitedHours, UnitedMinutes, UnitedSeconds, UnitedDateYear, 
     # Summer: March 26/31 - October 8/14 LT+1
     # Winter: October 8/14 - March 26/31 LT+0
     # ISN'T NEEDED
-    '''if((UnitedDateMonth > 3 and UnitedDateMonth < 10) or ((UnitedDateMonth == 3 and UnitedDateDay >=25) or (UnitedDateMonth == 10 and (UnitedDateDay >= 8 and UnitedDateDay <=14)))):
+    if((UnitedDateMonth > 3 and UnitedDateMonth < 10) or ((UnitedDateMonth == 3 and UnitedDateDay >=25) or (UnitedDateMonth == 10 and (UnitedDateDay >= 8 and UnitedDateDay <=14)))):
         LocalTime = UnitedTime + (round(Longitude/15, 0) + 1)
 
     else:
-        LocalTime = UnitedTime + round(Longitude/15, 0)'''
+        LocalTime = UnitedTime + round(Longitude/15, 0)
 
-    LocalTime = UnitedTime + round(Longitude/15, 0)
+    #LocalTime = UnitedTime + round(Longitude/15, 0)
 
     # Apply corrections if Local Time is not in the correct format
     LocalTime, LocalHours, LocalMinutes, LocalSeconds, LocalDateYear, LocalDateMonth, LocalDateDay = NormalizeTimeParameters(LocalTime, UnitedDateYear, UnitedDateMonth, UnitedDateDay)
@@ -534,6 +547,8 @@ def EquIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSid
                 - math.sin(math.radians(LocalHourAngleDegrees)) * math.cos(math.radians(Declination)) / math.cos(math.radians(Altitude))
                 ))
 
+        Azimuth1 = NormalizeZeroBounded(Azimuth1, 360)
+
         if(Azimuth1 <= 180):
             Azimuth2 = 180 - Azimuth1
 
@@ -591,6 +606,8 @@ def EquIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSid
                 - math.sin(math.radians(LocalHourAngleDegrees1)) * math.cos(math.radians(Declination)) / math.cos(math.radians(Altitude))
                 ))
 
+        Azimuth1_1 = NormalizeZeroBounded(Azimuth1_1, 360)
+
         if(Azimuth1_1 <= 180):
             Azimuth1_2 = 180 - Azimuth1_1
 
@@ -622,6 +639,8 @@ def EquIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSid
         Azimuth2_1 = math.degrees(math.asin(
                 - math.sin(math.radians(LocalHourAngleDegrees2)) * math.cos(math.radians(Declination)) / math.cos(math.radians(Altitude))
                 ))
+
+        Azimuth2_1 = NormalizeZeroBounded(Azimuth2_1, 360)
 
         if(Azimuth2_1 <= 180):
             Azimuth2_2 = 180 - Azimuth2_1
@@ -1066,7 +1085,8 @@ def TwilightCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, Loc
 
     # Noon and Midnight
     LocalTimeNoon = LocalTimeRiseDaylight + (LocalTimeSetDaylight - LocalTimeRiseDaylight) / 2
-    LocalTimeMidnight = LocalTimeSetAstro + (((24 - LocalTimeSetAstro) + LocalTimeRiseAstro2) / 2)
+    #LocalTimeMidnight = LocalTimeSetAstro + (((24 - LocalTimeSetAstro) + LocalTimeRiseAstro2) / 2)
+    LocalTimeMidnight = LocalTimeNoon + 12
 
     # Calc Midnight Date
     if(LocalTimeMidnight > 24):
@@ -1106,8 +1126,8 @@ def TwilightCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, Loc
     LocalDateYearNoon = LocalDateYearRiseAstro
 
     # Normalize results
-    LocalTimeNoon = NormalizeZeroBounded(LocalTimeNoon, 24)
-    LocalTimeMidnight = NormalizeZeroBounded(LocalTimeMidnight, 24)
+    #LocalTimeNoon = NormalizeZeroBounded(LocalTimeNoon, 24)
+    #LocalTimeMidnight = NormalizeZeroBounded(LocalTimeMidnight, 24)
 
     # LT of Noon and Midnight
     LocalTimeNoon, LocalHoursNoon, LocalMinutesNoon, LocalSecondsNoon, LocalDateYearNoon, LocalDateMonthNoon, LocalDateDayNoon = NormalizeTimeParameters(LocalTimeNoon, LocalDateYearNoon, LocalDateMonthNoon, LocalDateDayNoon)
@@ -1139,7 +1159,7 @@ def SundialPrecalculations(Planet, Latitude, Longitude, LocalDateYear, LocalDate
     # Daylight start and end LT
     (LocalTimeSetDaylight, LocalHoursSetDaylight, LocalMinutesSetDaylight, LocalSecondsSetDaylight, LocalDateYearSetDaylight, LocalDateMonthSetDaylight, LocalDateDaySetDaylight, 
     LocalTimeRiseDaylight, LocalHoursRiseDaylight, LocalMinutesRiseDaylight, LocalSecondsRiseDaylight, LocalDateYearRiseDaylight, LocalDateMonthRiseDaylight, LocalDateDayRiseDaylight) = SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateYear, LocalDateMonth, LocalDateDay)
-    
+
     # Calculate the Coordinates of the Sun's Apparent Position
     # Now UT = 0
     UnitedHours = 0
@@ -1156,8 +1176,6 @@ def SundialPrecalculations(Planet, Latitude, Longitude, LocalDateYear, LocalDate
     LocalSiderealTimeRise = LocalSiderealHoursRise + LocalSiderealMinutesRise/60 + LocalSiderealSecondsRise/3600
     LocalSiderealTimeSet = LocalSiderealHoursSet + LocalSiderealMinutesSet/60 + LocalSiderealSecondsSet/3600
 
-    print(RightAscensionSun)
-
     # Calculate Hour Angle of Rising and Setting Sun
     LocalHourAngleRise = LocalSiderealTimeRise - RightAscensionSun
     LocalHourAngleSet = LocalSiderealTimeSet - RightAscensionSun
@@ -1165,8 +1183,6 @@ def SundialPrecalculations(Planet, Latitude, Longitude, LocalDateYear, LocalDate
     # Normalize Results
     LocalHourAngleRise = NormalizeZeroBounded(LocalHourAngleRise, 24)
     LocalHourAngleSet = NormalizeZeroBounded(LocalHourAngleSet, 24)
-
-    print(LocalHourAngleRise, LocalHourAngleSet)
 
     return(LocalHourAngleRise, LocalHourAngleSet, DeclinationSun)
 
@@ -1188,17 +1204,17 @@ def SundialParametersCalc(Latitude, LocalHourAngle, DeclinationSun):
     # Calculate Azimuth (A)
     # sin(A) = - sin(H) * cos(δ) / cos(m)
     # Azimuth at given H Local Hour Angle
-    Azimuth1 = math.degrees(math.asin(
+    Azimuth = math.degrees(math.asin(
             - math.sin(math.radians(LocalHourAngleDegrees)) * math.cos(math.radians(DeclinationSun)) / math.cos(math.radians(Altitude))
             ))
+
+    '''Azimuth1 = NormalizeZeroBounded(Azimuth1, 360)
 
     if(Azimuth1 <= 180):
         Azimuth2 = 180 - Azimuth1
 
     elif(Azimuth1 > 180):
         Azimuth2 = 540 - Azimuth1
-
-    print(Azimuth1, Azimuth2)
 
     # Calculate Azimuth (A) with a second method, to determine which one is the correct (A_1 or A_2?)
     # cos(A) = (sin(δ) - sin(φ) * sin(m)) / (cos(φ) * cos(m))
@@ -1217,7 +1233,7 @@ def SundialParametersCalc(Latitude, LocalHourAngle, DeclinationSun):
         Azimuth = Azimuth1
 
     else:
-        Azimuth = Azimuth2
+        Azimuth = Azimuth2'''
 
     # Normalize Azimuth
     # Azimuth: [0,+2π[
@@ -2682,7 +2698,8 @@ while(True):
             else:
                 print(">>>> ERROR: Invalid option! Try Again!")
 
-            if(SundialMode == '1' or '2'):
+
+            if(SundialMode == '1' or SundialMode == '2'):
                 print(">> For which Year would You like to Draw the Sundial?")
                 while(True):
                     SunDialYear = float(input("> Choosen Year: "))
@@ -2728,6 +2745,9 @@ while(True):
                     else:
                         print(">>>> ERROR: Invalid option! Try Again!")
 
+                MeasureNumber = 1000
+                FineTuned = 100000
+
                 if(SunDialChoose == 'Y' or SunDialChoose == 'y' or SunDialChoose == 'Yes' or SunDialChoose == 'yes' or SunDialChoose == 'YEs' or SunDialChoose == 'yEs' or SunDialChoose == 'yeS' or SunDialChoose == 'YeS' or SunDialChoose == 'yES'):
 
                     ### CHOOSEN DATE ###
@@ -2739,8 +2759,20 @@ while(True):
                     AzimuthsChoosen = []
 
                     # Calculate plot parameters
-                    for LocalHourAngleActual in range(int(LocalHourAngleRiseChoosen * 100000), int(LocalHourAngleSetChoosen * 100000), 300):
+                    for LocalHourAngleActual in range(int(LocalHourAngleSetChoosen * FineTuned), int(23.99999 * FineTuned), 300):
                         
+                        # Calculate parameters by ~10 seconds interval
+                        AltitudeActual, AzimuthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunChoosen)
+
+                        # Append parameters to lists
+                        LocalHourAngleChoosen.append(LocalHourAngleActual)
+                        AltitudesChoosen.append(AltitudeActual)
+                        AzimuthsChoosen.append(AzimuthActual)
+
+                    for LocalHourAngleActual in range(0, int(LocalHourAngleRiseChoosen * 100000), 300):
+
+                        LocalHourAngleActual /= FineTuned
+
                         # Calculate parameters by ~10 seconds interval
                         AltitudeActual, AzimuthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunChoosen)
 
@@ -2754,22 +2786,24 @@ while(True):
                 LocalDateMonthSummer = 6
                 if(SunDialYear%4 == 0):
                     LocalDateDaySummer = 20
-                
+
                 else:
                     LocalDateDaySummer = 21
-                
-                LocalHourAngleRiseSummer, LocalHourAngleSetSummer, DeclinationSunSummer = SundialPrecalculations(Planet, Latitude, Longitude, SunDialYear, LocalDateMonthSummer, LocalDateDaySummer)
 
+                LocalHourAngleRiseSummer, LocalHourAngleSetSummer, DeclinationSunSummer = SundialPrecalculations(Planet, Latitude, Longitude, SunDialYear, LocalDateMonthSummer, LocalDateDaySummer)
+                print(LocalHourAngleRiseSummer, LocalHourAngleSetSummer)
                 # Create lists for plot parameters
                 LocalHourAngleSummer = []
                 AltitudesSummer = []
                 AzimuthsSummer = []
 
+                SummerStep = int((int(LocalHourAngleSetSummer * FineTuned) - int(LocalHourAngleRiseSummer * FineTuned)) / MeasureNumber)
+
                 # Calculate plot parameters
-                for LocalHourAngleActual in range(int(LocalHourAngleRiseSummer * 100000), int(LocalHourAngleSetSummer * 100000), 300):
-                    
+                for LocalHourAngleActual in range(int(LocalHourAngleRiseSummer * FineTuned), int(LocalHourAngleSetSummer * FineTuned), SummerStep):
+
                     # Norm back to normal
-                    LocalHourAngleActual/100000
+                    LocalHourAngleActual /= FineTuned
 
                     # Calculate parameters by ~10 seconds interval
                     AltitudeActual, AzimuthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSummer)
@@ -2780,27 +2814,30 @@ while(True):
                     AzimuthsSummer.append(AzimuthActual)
 
 
+
                 ### WINTER SOLSTICE ###
                 LocalDateMonthWinter = 12
                 if((SunDialYear + 1)%4 == 0):
                     LocalDateDayWinter = 22
-                
+
                 else:
                     LocalDateDayWinter = 21
 
                 LocalHourAngleRiseWinter, LocalHourAngleSetWinter, DeclinationSunWinter = SundialPrecalculations(Planet, Latitude, Longitude, SunDialYear, LocalDateMonthWinter, LocalDateDayWinter)
-
+                print(LocalHourAngleRiseWinter, LocalHourAngleSetWinter)
                 # Create lists for plot parameters
                 LocalHourAngleWinter = []
                 AltitudesWinter = []
                 AzimuthsWinter = []
 
+                WinterStep = int((int(LocalHourAngleSetWinter * FineTuned) - int(LocalHourAngleRiseWinter * FineTuned)) / MeasureNumber)
+
                 # Calculate plot parameters
-                for LocalHourAngleActual in range(int(LocalHourAngleRiseWinter * 100000), int(LocalHourAngleSetWinter * 100000), 300):
-                    
+                for LocalHourAngleActual in range(int(LocalHourAngleRiseWinter * FineTuned), int(LocalHourAngleSetWinter * FineTuned), WinterStep):
+
                     # Norm back to normal
-                    LocalHourAngleActual/100000
-                    
+                    LocalHourAngleActual /= FineTuned
+
                     # Calculate parameters by ~10 seconds interval
                     AltitudeActual, AzimuthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunWinter)
 
@@ -2815,17 +2852,19 @@ while(True):
                 LocalDateDayMarch = 20
 
                 LocalHourAngleRiseMarch, LocalHourAngleSetMarch, DeclinationSunMarch = SundialPrecalculations(Planet, Latitude, Longitude, SunDialYear, LocalDateMonthMarch, LocalDateDayMarch)
-
+                print(LocalHourAngleRiseMarch, LocalHourAngleSetMarch)
                 # Create lists for plot parameters
                 LocalHourAngleMarch = []
                 AltitudesMarch = []
                 AzimuthsMarch = []
 
+                MarchStep = int((int(LocalHourAngleSetMarch * FineTuned) - int(LocalHourAngleRiseMarch * FineTuned)) / MeasureNumber)
+
                 # Calculate plot parameters
-                for LocalHourAngleActual in range(int(LocalHourAngleRiseMarch * 100000), int(LocalHourAngleSetMarch * 100000), 300):
+                for LocalHourAngleActual in range(int(LocalHourAngleRiseMarch * FineTuned), int(LocalHourAngleSetMarch * FineTuned), MarchStep):
                     
                     # Norm back to normal
-                    LocalHourAngleActual/100000
+                    LocalHourAngleActual /= FineTuned
                     
                     # Calculate parameters by ~10 seconds interval
                     AltitudeActual, AzimuthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunMarch)
@@ -2845,20 +2884,21 @@ while(True):
                     LocalDateDaySeptember = 23
 
                 LocalHourAngleRiseSeptember, LocalHourAngleSetSeptember, DeclinationSunSeptember = SundialPrecalculations(Planet, Latitude, Longitude, SunDialYear, LocalDateMonthSeptember, LocalDateDaySeptember)
-
-                print(24-(LocalHourAngleRiseSeptember - LocalHourAngleSetSeptember))
+                print(LocalHourAngleRiseSeptember, LocalHourAngleSetSeptember)
 
                 # Create lists for plot parameters
                 LocalHourAngleSeptember = []
                 AltitudesSeptember = []
                 AzimuthsSeptember = []
 
+                SeptemberStep = int((int(LocalHourAngleSetSeptember * FineTuned) - int(LocalHourAngleRiseSeptember * FineTuned)) / MeasureNumber)
+
                 # Calculate plot parameters
-                for LocalHourAngleActual in range(int(LocalHourAngleRiseSeptember * 100000), int(LocalHourAngleSetSeptember * 100000), 300):
-                    
+                for LocalHourAngleActual in range(int(LocalHourAngleRiseSeptember * FineTuned), int(LocalHourAngleSetSeptember * FineTuned), SeptemberStep):
+
                     # Norm back to normal
-                    LocalHourAngleActual/100000
-                    
+                    LocalHourAngleActual /= FineTuned
+
                     # Calculate parameters by ~10 seconds interval
                     AltitudeActual, AzimuthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSeptember)
 
@@ -2873,6 +2913,11 @@ while(True):
                 print(len(LocalHourAngleMarch), len(AltitudesMarch), len(AzimuthsMarch))
                 print(len(LocalHourAngleSeptember), len(AltitudesSeptember), len(AzimuthsSeptember))
 
+                plt.plot(LocalHourAngleSummer, AltitudesSummer)
+                plt.plot(LocalHourAngleWinter, AltitudesWinter)
+                plt.plot(LocalHourAngleMarch, AltitudesMarch)
+                plt.plot(LocalHourAngleSeptember, AltitudesSeptember)
+                plt.show()
 
     #   _   _                                         _    
     #  | | | |                                       | |   
