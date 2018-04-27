@@ -2916,6 +2916,9 @@ while(True):
         AstroNightMinutes = int((AstroNightLength - AstroNightHours) * 60)
         AstroNightSeconds = int((((AstroNightLength - AstroNightHours) * 60) - AstroNightMinutes) * 60)
 
+        print(">>> Used formulas:")
+        print(">>> ")
+
         astrotimemsg = ">>> The astronomical night's lenght at " + Location + " is\n>>> {0}:{1}:{2} long\n>>> On between {3}.{4}.{5}, and {6} evening.\n"
         print(astrotimemsg.format(AstroNightHours, AstroNightMinutes, AstroNightSeconds, LocalDateYear, LocalDateMonth, LocalDateDay1, LocalDateDay2))
         print("_________________________________________________________________________")
@@ -2962,8 +2965,18 @@ while(True):
         LocalHourAngleMinutes = int((LocalHourAngle - LocalHourAngleHours) * 60)
         LocalHourAngleSeconds = int((((LocalHourAngle - LocalHourAngleHours) * 60) - LocalHourAngleMinutes) * 60)
 
+        AzimuthHours = int(Azimuth)
+        AzimuthMinutes = int((Azimuth - AzimuthHours) * 60)
+        AzimuthSeconds = int((((Azimuth - AzimuthHours) * 60) - AzimuthMinutes) * 60)
+
+        AltitudeHours = int(Altitude)
+        AltitudeMinutes = int((Altitude - AltitudeHours) * 60)
+        AltitudeSeconds = int((((Altitude - AltitudeHours) * 60) - AltitudeMinutes) * 60)
+
         print(">>> Used formulas:\n>>> 1. S_0 (Greenwich Mean Sidereal Time) at 00:00 UT was calculated\n>>> 2. S (Local Mean Sidereal Time) = S_0 + Longitude/15 + dS * UnitedTime\n>>> 3. S - α = t; H = 15*t")
-        print(">>> 4. sin(m) = sin(δ) * sin(φ) + cos(δ) * cos(φ) * cos(H); Altitude (m) should been between [-π/2,+π/2]\n>>> 5. sin(A) = - sin(H) * cos(δ) / cos(m), Azimuth at given H hour angle\n>>> Also cos(A) = (sin(δ) - sin(φ) sin(a)) / cos(φ) cos(a)\n")
+        print(">>> 4. sin(m) = sin(δ) * sin(φ) + cos(δ) * cos(φ) * cos(H); Altitude (m) should been between [-π/2,+π/2]")
+        print(">>> 5. sin(A) = - sin(H) * cos(δ) / cos(m), Azimuth at given H hour angle\n>>> Also cos(A) = (sin(δ) - sin(φ) sin(m)) / cos(φ) cos(m)")
+        print(">>> These 2 equation outputs 2-2 values for Azimuth. 1-1 from both these outputs\n>>> will be equal, that's the correct value for Azimuth.")
 
         # Print Results
         timemsg = ">>> Altitude and Azimuth of Altair from Baja On {0}.{1}.{2}"
@@ -2974,12 +2987,12 @@ while(True):
         print(">>> Calculated Parameters in Horizontal Coord. Sys.:")
         locsidmsg = ">>> Local Mean Siderel Time (S): {0}:{1}:{2}"
         lhamsg = ">>> Local Hour Angle (t): {0}h {1}m {2}s"
-        azimmsg = ">>> Azimuth (A):  {0}°"
-        altitmsg = ">>> Altitude (m): {0}°\n"
+        azimmsg = ">>> Azimuth (A):  {0}° {1}' {2}\""
+        altitmsg = ">>> Altitude (m): {0}° {1}' {2}\"\n"
         print(locsidmsg.format(LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeconds))
         print(lhamsg.format(LocalHourAngleHours, LocalHourAngleMinutes, LocalHourAngleSeconds))
-        print(azimmsg.format(Azimuth))
-        print(altitmsg.format(Altitude))
+        print(azimmsg.format(AzimuthHours, AzimuthMinutes, AzimuthSeconds))
+        print(altitmsg.format(AltitudeHours, AltitudeMinutes, AltitudeSeconds))
 
         print("_________________________________________________________________________")
 
