@@ -57,12 +57,13 @@
 #pip install matplotlib --upgrade
 #pip install numpy --upgrade
 
+import sys
 import math
 import matplotlib.pyplot as plt
 #import numpy as np
 
 # Current Version of the Csillész II Problem Solver
-ActualVersion = 'v1.25'
+ActualVersion = 'v1.26'
 
 
 
@@ -457,10 +458,14 @@ def HorToEquI(Latitude, Altitude, Azimuth, LocalSiderealTime=None):
 
     # Check correct value
     # cos(H) = (sin(m) - sin(δ) * sin(φ)) / cos(δ) * cos(φ)
-    LocalHourAngleDegrees2_1 = math.degrees(math.acos(
-                            (math.sin(math.radians(Altitude)) - math.sin(math.radians(Declination)) * math.sin(math.radians(Latitude))) /
-                            (math.cos(math.radians(Declination)) * math.cos(math.radians(Latitude)))
-                            ))
+    LHAcos2_1 = (math.sin(math.radians(Altitude)) - math.sin(math.radians(Declination)) * math.sin(math.radians(Latitude))) / (math.cos(math.radians(Declination)) * math.cos(math.radians(Latitude)))
+
+    if(LHAcos2_1 <= 1 and LHAcos2_1 >= -1):
+        LocalHourAngleDegrees2_1 = math.degrees(math.acos(LHAcos2_1))
+    elif(LHAcos2_1 > 1):
+        LocalHourAngleDegrees2_1 = math.degrees(math.acos(1))
+    elif(LHAcos2_1 < -1):
+        LocalHourAngleDegrees2_1 = math.degrees(math.acos(-1))
 
     LocalHourAngleDegrees2_2 = - LocalHourAngleDegrees2_1
 
@@ -586,10 +591,14 @@ def EquIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSid
         # We can calculate eg. setting/rising with the available data (m = 0°), or other things...
         # First let's calculate LHA:
         # cos(H) = (sin(m) - sin(δ) * sin(φ)) / cos(δ) * cos(φ)
-        LocalHourAngleDegrees1 = math.degrees(math.acos(
-                                (math.sin(math.radians(Altitude)) - math.sin(math.radians(Declination)) * math.sin(math.radians(Latitude))) /
-                                (math.cos(math.radians(Declination)) * math.cos(math.radians(Latitude)))
-                                ))
+        LHAcos = (math.sin(math.radians(Altitude)) - math.sin(math.radians(Declination)) * math.sin(math.radians(Latitude))) / (math.cos(math.radians(Declination)) * math.cos(math.radians(Latitude)))
+        if(LHAcos <= 1 and LHAcos >= -1):
+            LocalHourAngleDegrees1 = math.degrees(math.acos(LHAcos))
+        elif(LHAcos > 1):
+            LocalHourAngleDegrees1 = math.degrees(math.acos(1))
+        elif(LHAcos < -1):
+            LocalHourAngleDegrees1 = math.degrees(math.acos(-1))
+        
 
         # acos(x) has two correct output on this interval
         LocalHourAngleDegrees2 = - LocalHourAngleDegrees1
@@ -624,14 +633,20 @@ def EquIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSid
         Azimuth1_4 = - Azimuth1_3
 
         # Compare Azimuth values
-        if(int(Azimuth1_1) == int(Azimuth1_3)):
-            Azimuth = Azimuth1
-
-        elif(int(Azimuth1_1) == int(Azimuth1_4)):
+        if(Azimuth1_1 + 3 > Azimuth1_3 or Azimuth1_1 - 3 < Azimuth1_3):
             Azimuth1 = Azimuth1_1
 
-        else:
+        elif(Azimuth1_1 + 3 > Azimuth1_4 or Azimuth1_1 - 3 < Azimuth1_4):
+            Azimuth1 = Azimuth1_1
+
+        elif(Azimuth1_2 + 3 > Azimuth1_3 or Azimuth1_2 - 3 < Azimuth1_3):
             Azimuth1 = Azimuth1_2
+
+        elif(Azimuth1_2 + 3 > Azimuth1_4 or Azimuth1_2 - 3 < Azimuth1_4):
+            Azimuth1 = Azimuth1_2
+
+        else:
+            print(Azimuth1_1, Azimuth1_2, Azimuth1_3, Azimuth1_4)
 
         # Calculate Azimuth (A) for SECOND LOCAL HOUR ANGLE
         # sin(A) = - sin(H) * cos(δ) / cos(m)
@@ -658,14 +673,20 @@ def EquIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSid
         Azimuth2_4 = - Azimuth2_3
 
         # Compare Azimuth values
-        if(int(Azimuth2_1) == int(Azimuth2_3)):
+        if(Azimuth2_1 + 3 > Azimuth2_3 or Azimuth2_1 - 3 < Azimuth2_3):
             Azimuth2 = Azimuth2_1
 
-        elif(int(Azimuth2_1) == int(Azimuth2_4)):
+        elif(Azimuth2_1 + 3 > Azimuth2_4 or Azimuth2_1 - 3 < Azimuth2_4):
             Azimuth2 = Azimuth2_1
+
+        elif(Azimuth2_2 + 3 > Azimuth2_3 or Azimuth2_2 - 3 < Azimuth2_3):
+            Azimuth2 = Azimuth2_2
+
+        elif(Azimuth2_2 + 3 > Azimuth2_4 or Azimuth2_2 - 3 < Azimuth2_4):
+            Azimuth2 = Azimuth2_2
 
         else:
-            Azimuth2 = Azimuth2_2
+            print(Azimuth2_1, Azimuth2_2, Azimuth2_3, Azimuth2_4)
 
 
         # Calculate time between them
@@ -931,9 +952,14 @@ def SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeOfSun, JulianDays):
     # Latitude (φ) is the North Latitude of the Observer (north is positive, south is negative) on the Earth
     # m_0 = -0.83 is a compensation of Altitude (m) in degrees, for the Sun's distorted shape, and the atmospherical refraction
     # The equation return two value, LHA1 and LHA2. We need that one, which is approximately equals to LHA_Pos
-    LocalHourAngleSun_Orig = math.degrees(math.acos(
-                           ((math.sin(math.radians(AltitudeOfSun - 0.83)) - math.sin(math.radians(Latitude)) * math.sin(math.radians(DeclinationSun))) /
-                           (math.cos(math.radians(Latitude)) * math.cos(math.radians(DeclinationSun)))) ))
+    LHAcos = ((math.sin(math.radians(AltitudeOfSun - 0.83)) - math.sin(math.radians(Latitude)) * math.sin(math.radians(DeclinationSun))) /
+            (math.cos(math.radians(Latitude)) * math.cos(math.radians(DeclinationSun))))
+    if(LHAcos <= 1 and LHAcos >= -1):
+        LocalHourAngleSun_Orig = math.degrees(math.acos(LHAcos))
+    elif(LHAcos > 1):
+        LocalHourAngleSun_Orig = math.degrees(math.acos(1))
+    elif(LHAcos < -1):
+        LocalHourAngleSun_Orig = math.degrees(math.acos(-1))
 
     #LocalHourAngleSun_Orig2 = - LocalHourAngleSun_Orig1
     
@@ -980,10 +1006,10 @@ def CalculateRiseAndSetTime(Planet, Latitude, Longitude, AltitudeOfSun, LocalDat
     JRise = Jtransit - LocalHourAngleSun_Orig / 360
     JSet = Jtransit + LocalHourAngleSun_Orig / 360
 
-    LocalHourAngleSun_PosCorrRise, LocalHourAngleSun_OrigCorrRise, RightAscensionSunCorrRise, DeclinationSunCorrRise, JtransitCorrRise =  CalculateCorrectionsForJ(Planet, Latitude, Longitude, AltitudeOfSun, JRise)
+    '''LocalHourAngleSun_PosCorrRise, LocalHourAngleSun_OrigCorrRise, RightAscensionSunCorrRise, DeclinationSunCorrRise, JtransitCorrRise =  CalculateCorrectionsForJ(Planet, Latitude, Longitude, AltitudeOfSun, JRise)
     LocalHourAngleSun_PosCorrSet, LocalHourAngleSun_OrigCorrSet, RightAscensionSunCorrSet, DeclinationSunCorrSet, JtransitCorrSet = CalculateCorrectionsForJ(Planet, Latitude, Longitude, AltitudeOfSun, JSet)
         
-    '''print("LocalHourAngleSun_PosCorrRise: ", LocalHourAngleSun_PosCorrRise)
+    print("LocalHourAngleSun_PosCorrRise: ", LocalHourAngleSun_PosCorrRise)
     print("LocalHourAngleSun_OrigCorrRise: ", LocalHourAngleSun_OrigCorrRise)
     print("LocalHourAngleSun_PosCorrSet: ", LocalHourAngleSun_PosCorrSet)
     print("LocalHourAngleSun_OrigCorrSet: ", LocalHourAngleSun_OrigCorrSet)'''
@@ -1087,49 +1113,18 @@ def TwilightCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, Loc
 
     # Noon and Midnight
     LocalTimeNoon = LocalTimeRiseDaylight + (LocalTimeSetDaylight - LocalTimeRiseDaylight) / 2
-    #LocalTimeMidnight = LocalTimeSetAstro + (((24 - LocalTimeSetAstro) + LocalTimeRiseAstro2) / 2)
-    LocalTimeMidnight = LocalTimeNoon + 12
-
-    # Calc Midnight Date
-    if(LocalTimeMidnight > 24):
-        LocalDateDayMidnight = LocalDateDayRiseAstro2
-
-        if(LocalDateYear%4 == 0 and (LocalDateYear%100 != 0 or LocalDateYear%400 == 0)):
-            if(LocalDateDayMidnight > MonthLengthListLeapYear[LocalDateMonthSetAstro - 1]):
-                LocalDateDayMidnight = 1
-                LocalDateMonthMidnight = LocalDateMonthSetAstro + 1
-            else:
-                LocalDateDayMidnight = LocalDateDaySetAstro + 1
-                LocalDateMonthMidnight = LocalDateMonthSetAstro
-
-        else:
-            if(LocalDateDayMidnight > MonthLengthList[LocalDateMonthSetAstro - 1]):
-                LocalDateDayMidnight = 1
-                LocalDateMonthMidnight = LocalDateMonthSetAstro + 1
-            else:
-                LocalDateDayMidnight = LocalDateDaySetAstro + 1
-                LocalDateMonthMidnight = LocalDateMonthSetAstro
-        
-        if(LocalDateMonthMidnight > 12):
-            LocalDateMonthMidnight = 1
-            LocalDateYearMidnight = LocalDateYearSetAstro + 1
-
-        else:
-            LocalDateYearMidnight = LocalDateYearSetAstro
-
-    else:
-        LocalDateDayMidnight = LocalDateDaySetAstro
-        LocalDateMonthMidnight = LocalDateMonthSetAstro
-        LocalDateYearMidnight = LocalDateYearSetAstro
+    LocalTimeMidnight = LocalTimeSetAstro + (((24 - LocalTimeSetAstro) + LocalTimeRiseAstro2) / 2) + 12
+    #LocalTimeMidnight = LocalTimeNoon + 12
 
     # Calc Noon Date
     LocalDateDayNoon = LocalDateDayRiseAstro
     LocalDateMonthNoon = LocalDateMonthRiseAstro
     LocalDateYearNoon = LocalDateYearRiseAstro
 
-    # Normalize results
-    #LocalTimeNoon = NormalizeZeroBounded(LocalTimeNoon, 24)
-    #LocalTimeMidnight = NormalizeZeroBounded(LocalTimeMidnight, 24)
+    # Calc initial Midnight Date
+    LocalDateDayMidnight = LocalDateDayRiseAstro
+    LocalDateMonthMidnight = LocalDateMonthRiseAstro
+    LocalDateYearMidnight = LocalDateYearRiseAstro
 
     # LT of Noon and Midnight
     LocalTimeNoon, LocalHoursNoon, LocalMinutesNoon, LocalSecondsNoon, LocalDateYearNoon, LocalDateMonthNoon, LocalDateDayNoon = NormalizeTimeParameters(LocalTimeNoon, LocalDateYearNoon, LocalDateMonthNoon, LocalDateDayNoon)
@@ -1147,9 +1142,156 @@ def TwilightCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, Loc
             LocalHoursSetAstro, LocalMinutesSetAstro, LocalSecondsSetAstro, LocalDateYearRiseAstro, LocalDateMonthRiseAstro, LocalDateDayRiseAstro)
 
 
+
 ################################################################
 ########                                                ########
-########   6. DRAW THE SUN'S ANNUAL PATH ON A SUNDIAL   ########
+########        6. SOLVE ASTRONOMICAL TRIANGLES         ########
+########                                                ########
+################################################################
+
+def AstroTriangles(aValue, bValue, cValue, alphaValue, betaValue, gammaValue):
+
+    if(aValue != 0 and bValue != 0 and cValue != 0):
+        
+        if(((aValue + bValue) > cValue) and ((aValue + cValue) > bValue) and ((bValue + cValue) > aValue) and 
+            (abs(aValue - bValue) < cValue) and (abs(aValue - cValue) < bValue) and (abs(bValue - cValue) < aValue) and
+            ((aValue + bValue + cValue) < 360)):
+            
+            # Calculate angle Alpha
+            alphaValue = math.degrees(math.acos(
+                (math.cos(math.radians(aValue)) - math.cos(math.radians(bValue)) * math.cos(math.radians(cValue))) /
+                (math.sin(math.radians(bValue)) * math.sin(math.radians(cValue)))
+            ))
+
+            # Calculate angle Beta
+            betaValue = math.degrees(math.acos(
+                (math.cos(math.radians(bValue)) - math.cos(math.radians(cValue)) * math.cos(math.radians(aValue))) /
+                (math.sin(math.radians(cValue)) * math.sin(math.radians(aValue)))
+            ))
+
+            # Calculate angle Gamma
+            gammaValue = math.degrees(math.acos(
+                (math.cos(math.radians(cValue)) - math.cos(math.radians(aValue)) * math.cos(math.radians(bValue))) /
+                (math.sin(math.radians(aValue)) * math.sin(math.radians(bValue)))
+            ))
+
+        else:
+            print(">> Length of the sides are invalid!\n>> They violate the triangle inequality!")
+
+
+    elif(aValue != 0 and bValue != 0 and gammaValue != 0):
+
+        # Calculate side C 
+        cValue = math.degrees(math.atan(
+            math.sqrt((math.sin(math.radians(aValue)) * math.cos(math.radians(bValue)) -
+            math.cos(math.radians(aValue)) * math.sin(math.radians(bValue)) * math.cos(math.radians(gammaValue)))**2 + 
+            (math.sin(math.radians(bValue)) * math.sin(math.radians(gammaValue)))**2) /
+            (math.cos(math.radians(aValue)) * math.cos(math.radians(bValue)) + 
+            math.sin(math.radians(aValue)) * math.sin(math.radians(aValue)) * math.cos(math.radians(gammaValue)))
+        ))
+
+        # calculate angle Alpha
+        alphaValue = math.degrees(math.atan(
+            (math.sin(math.radians(aValue) * math.sin(math.radians(gammaValue)))) /
+            (math.sin(math.radians(bValue)) * math.cos(math.radians(aValue)) - 
+            math.cos(math.radians(bValue)) * math.sin(math.radians(aValue)) * math.cos(math.radians(gammaValue)))
+        ))
+
+        # Calculate angle Beta
+        betaValue = math.degrees(math.atan(
+            (math.sin(math.radians(bValue) * math.sin(math.radians(gammaValue)))) /
+            (math.sin(math.radians(aValue)) * math.cos(math.radians(bValue)) - 
+            math.cos(math.radians(aValue)) * math.sin(math.radians(bValue)) * math.cos(math.radians(gammaValue)))
+        ))
+
+    elif(bValue != 0 and cValue != 0 and alphaValue != 0): 
+
+        # Calculate side A 
+        aValue = math.degrees(math.atan(
+            math.sqrt((math.sin(math.radians(bValue)) * math.cos(math.radians(cValue)) -
+            math.cos(math.radians(bValue)) * math.sin(math.radians(cValue)) * math.cos(math.radians(alphaValue)))**2 + 
+            (math.sin(math.radians(cValue)) * math.sin(math.radians(alphaValue)))**2) /
+            (math.cos(math.radians(bValue)) * math.cos(math.radians(cValue)) + 
+            math.sin(math.radians(bValue)) * math.sin(math.radians(bValue)) * math.cos(math.radians(alphaValue)))
+        ))
+
+        # calculate angle Gamma
+        betaValue = math.degrees(math.atan(
+            (math.sin(math.radians(bValue) * math.sin(math.radians(alphaValue)))) /
+            (math.sin(math.radians(cValue)) * math.cos(math.radians(bValue)) - 
+            math.cos(math.radians(cValue)) * math.sin(math.radians(bValue)) * math.cos(math.radians(alphaValue)))
+        ))
+
+        # Calculate angle Alpha
+        gammaValue = math.degrees(math.atan(
+            (math.sin(math.radians(cValue) * math.sin(math.radians(alphaValue)))) /
+            (math.sin(math.radians(bValue)) * math.cos(math.radians(cValue)) - 
+            math.cos(math.radians(bValue)) * math.sin(math.radians(cValue)) * math.cos(math.radians(alphaValue)))
+        ))
+    
+    elif(aValue != 0 and cValue != 0 and betaValue != 0):
+
+        # Calculate side C 
+        bValue = math.degrees(math.atan(
+            math.sqrt((math.sin(math.radians(cValue)) * math.cos(math.radians(aValue)) -
+            math.cos(math.radians(cValue)) * math.sin(math.radians(aValue)) * math.cos(math.radians(betaValue)))**2 + 
+            (math.sin(math.radians(aValue)) * math.sin(math.radians(betaValue)))**2) /
+            (math.cos(math.radians(cValue)) * math.cos(math.radians(aValue)) + 
+            math.sin(math.radians(cValue)) * math.sin(math.radians(cValue)) * math.cos(math.radians(betaValue)))
+        ))
+
+        # calculate angle Alpha
+        gammaValue = math.degrees(math.atan(
+            (math.sin(math.radians(cValue) * math.sin(math.radians(betaValue)))) /
+            (math.sin(math.radians(aValue)) * math.cos(math.radians(cValue)) - 
+            math.cos(math.radians(aValue)) * math.sin(math.radians(cValue)) * math.cos(math.radians(betaValue)))
+        ))
+
+        # Calculate angle Beta
+        alphaValue = math.degrees(math.atan(
+            (math.sin(math.radians(aValue) * math.sin(math.radians(betaValue)))) /
+            (math.sin(math.radians(cValue)) * math.cos(math.radians(aValue)) - 
+            math.cos(math.radians(cValue)) * math.sin(math.radians(aValue)) * math.cos(math.radians(betaValue)))
+        ))
+
+
+    elif((aValue != 0 and bValue != 0 and alphaValue != 0) or (aValue != 0 and bValue != 0 and betaValue != 0) or 
+        (bValue != 0 and cValue != 0 and betaValue != 0) or (bValue != 0 and cValue != 0 and gammaValue != 0) or
+        (aValue != 0 and cValue != 0 and betaValue != 0) or (aValue != 0 and cValue != 0 and gammaValue != 0)):
+        pass
+
+
+    elif((aValue != 0 and betaValue != 0 and gammaValue != 0) or 
+        (bValue != 0 and alphaValue != 0 and gammaValue != 0) or
+        (cValue != 0 and alphaValue != 0 and betaValue != 0)):
+        pass
+
+    
+    elif((aValue != 0 and alphaValue != 0 and betaValue != 0) or (aValue != 0 and alphaValue != 0 and gammaValue != 0) or
+        (bValue != 0 and betaValue != 0 and alphaValue != 0) or (bValue != 0 and betaValue != 0 and gammaValue != 0) or
+        (cValue != 0 and gammaValue != 0 and alphaValue != 0) or (aValue != 0 and gammaValue != 0 and betaValue != 0)):
+        pass
+
+
+    elif(alphaValue != 0 and betaValue != 0 and gammaValue != 0):
+        pass
+
+
+    else:
+        aValue = None
+        bValue = None
+        cValue = None
+        alphaValue = None
+        betaValue = None
+        gammaValue = None
+
+
+    return(aValue, bValue, cValue, alphaValue, betaValue, gammaValue)
+
+
+################################################################
+########                                                ########
+########   7. DRAW THE SUN'S ANNUAL PATH ON A SUNDIAL   ########
 ########                                                ########
 ################################################################
 
@@ -1181,12 +1323,20 @@ def SundialPrecalculations(Planet, Latitude, Longitude, LocalDateYear, LocalDate
     LocalSiderealTimeSet = LocalSiderealHoursSet + LocalSiderealMinutesSet/60 + LocalSiderealSecondsSet/3600
 
     # Calculate Hour Angle of Rising and Setting Sun
-    LocalHourAngleRise = (LocalSiderealTimeRise - RightAscensionSun)
-    LocalHourAngleSet = (LocalSiderealTimeSet - RightAscensionSun)
+    LocalHourAngleRise = LocalSiderealTimeRise - RightAscensionSun
+    LocalHourAngleSet = LocalSiderealTimeSet - RightAscensionSun
+
+    print("Rise/Set LT: ", LocalTimeRiseDaylight, LocalTimeSetDaylight)
+    print("Rise/Set ST: ", LocalSiderealTimeRise, LocalSiderealTimeSet)
+    print("Rise/Set LHA: ", LocalHourAngleRise, LocalHourAngleSet)
+
 
     # Normalize Results
     LocalHourAngleRise = NormalizeZeroBounded(LocalHourAngleRise, 24)
     LocalHourAngleSet = NormalizeZeroBounded(LocalHourAngleSet, 24)
+
+    print("Rise/Set LHA Nor: ", LocalHourAngleRise, LocalHourAngleSet)
+    print("\n")    
 
     return(LocalHourAngleRise, LocalHourAngleSet, DeclinationSun)
 
@@ -1197,23 +1347,31 @@ def SundialParametersCalc(Latitude, LocalHourAngle, DeclinationSun):
 
     # Calculate Altitude (m)
     # sin(m) = sin(δ) * sin(φ) + cos(δ) * cos(φ) * cos(H)
-    Altitude = math.degrees(math.asin(
-            math.sin(math.radians(DeclinationSun)) * math.cos(math.radians(Latitude)) +
-            math.cos(math.radians(DeclinationSun)) * math.cos(math.radians(Latitude)) * math.cos(math.radians(LocalHourAngleDegrees))
-            ))
+    Altsin = math.sin(math.radians(DeclinationSun)) * math.cos(math.radians(Latitude)) + math.cos(math.radians(DeclinationSun)) * math.cos(math.radians(Latitude)) * math.cos(math.radians(LocalHourAngleDegrees))
+    if(Altsin <= 1):
+        Altitude = math.degrees(math.asin(Altsin))
+        #print(Altitude)
+    else:
+        Altitude = math.degrees(math.asin(2 - Altsin))
     # Normalize Altitude
     # Altitude: [-π/2,+π/2]
     Altitude = NormalizeSymmetricallyBoundedPI_2(Altitude)
 
     # We should draw 1/tan(m) of the function of (AzimuthMax - AzimuthMin)
-    ShadowLength = 1/math.tan(math.radians(Altitude))
+    ShadowLength = math.tan(math.radians(Altitude))
 
     '''# Calculate Azimuth (A)
     # sin(A) = - sin(H) * cos(δ) / cos(m)
     # Azimuth at given H Local Hour Angle
-    Azimuth1 = math.degrees(math.asin(
-            - math.sin(math.radians(LocalHourAngleDegrees)) * math.cos(math.radians(DeclinationSun)) / math.cos(math.radians(Altitude))
-            ))
+    Azsin = - math.sin(math.radians(LocalHourAngleDegrees)) * math.cos(math.radians(DeclinationSun)) / math.cos(math.radians(Altitude))
+    if(Azsin <= 1 and Azsin >= -1):
+        Azimuth1 = math.degrees(math.asin(Azsin))
+    elif(Azsin > 1):
+        print(Azsin)
+        Azimuth1 = 180 - math.degrees(math.asin(2 - Azsin))
+    else:
+        print(Azsin)
+        Azimuth1 = - 180 + math.degrees(math.asin(2 + Azsin))
 
     Azimuth1 = NormalizeZeroBounded(Azimuth1, 360)
 
@@ -1225,22 +1383,33 @@ def SundialParametersCalc(Latitude, LocalHourAngle, DeclinationSun):
 
     # Calculate Azimuth (A) with a second method, to determine which one is the correct (A_1 or A_2?)
     # cos(A) = (sin(δ) - sin(φ) * sin(m)) / (cos(φ) * cos(m))
-    Azimuth3 = math.degrees(math.acos(
-            (math.sin(math.radians(DeclinationSun)) - math.sin(math.radians(Latitude)) * math.sin(math.radians(Altitude))) / 
-            (math.cos(math.radians(Latitude)) * math.cos(math.radians(Altitude)))
-    ))
+    Azcos = (math.sin(math.radians(DeclinationSun)) - math.sin(math.radians(Latitude)) * math.sin(math.radians(Altitude))) / (math.cos(math.radians(Latitude)) * math.cos(math.radians(Altitude)))
+    if(Azcos <= 1 and Azcos >= -1):
+        Azimuth3 = math.degrees(math.acos(Azcos))
+
+    elif(Azcos < -1):
+        Azimuth3 = 180 + math.degrees(math.asin(2 + Azcos))
+
+    else:
+        Azimuth3 = math.degrees(math.asin(2 - Azcos))
 
     Azimuth4 = - Azimuth3
 
     # Compare Azimuth values
-    if(int(Azimuth1) == int(Azimuth3)):
+    if(Azimuth1 + 3 > Azimuth3 or Azimuth1 - 3 < Azimuth3):
         Azimuth = Azimuth1
 
-    elif(int(Azimuth1) == int(Azimuth4)):
+    elif(Azimuth1 + 3 > Azimuth4 or Azimuth1 - 3 < Azimuth4):
         Azimuth = Azimuth1
 
-    else:
+    elif(Azimuth2 + 3 > Azimuth3 or Azimuth2 - 3 < Azimuth3):
         Azimuth = Azimuth2
+
+    elif(Azimuth2 + 3 > Azimuth4 or Azimuth2 - 3 < Azimuth4):
+        Azimuth = Azimuth2
+    
+    else:
+        print(Azimuth1, Azimuth2, Azimuth3, Azimuth4)
 
     # Normalize Azimuth
     # Azimuth: [0,+2π[
@@ -1286,7 +1455,8 @@ while(True):
     print("(3) Local Mean Sidereal Time")
     print("(4) Datetimes of Sunsets and Sunrises")
     print("(5) Datetimes of Twilights")
-    print("(6) Plot Sun's Path on Sundial")
+    print("(6) Solve Astronomical Triangles")
+    print("(7) Plot Sun's Path on Sundial")
     print("(H) Solve End-Semester Homework")
     print("(Q) Quit Program\n")
 
@@ -2638,6 +2808,64 @@ while(True):
 
 
 
+    #    ___      _               _____    _                   _           
+    #   / _ \    | |             |_   _|  (_)                 | |          
+    #  / /_\ \___| |_ _ __ ___     | |_ __ _  __ _ _ __   __ _| | ___  ___ 
+    #  |  _  / __| __| '__/ _ \    | | '__| |/ _` | '_ \ / _` | |/ _ \/ __|
+    #  | | | \__ \ |_| | | (_) |   | | |  | | (_| | | | | (_| | |  __/\__ \
+    #  \_| |_/___/\__|_|  \___/    \_/_|  |_|\__,_|_| |_|\__, |_|\___||___/
+    #                                                     __/ |            
+    #                                                    |___/             
+    # Calculate Astronomical Triangles Parameters
+    elif(mode == '6'):
+        while(True):
+            print(">> Calculate Astronomical Triangles Parameters from given Ones")
+            print(">> Please choose a mode you'd like to use!")
+            print("(1) Parameters from User Input")
+            print("(Q) Quit to Main Menu")
+
+            TrigMode = input("> Choose a mode and press enter...: ")
+
+            print('\n')
+
+            if(TrigMode == '1'):
+                print("\n>> Please Give Parameters' Values!")
+                print(">>> HINT: You should give Parameters in angular units. You can press enter for\n>> A blank input too. Doing like this will mark the actual parameter\n>> As a missing one.")
+                aValue = float(input("> Value for side \'A\': ") or "0")
+                bValue = float(input("> Value for side \'B\': ") or "0")
+                cValue = float(input("> Value for side \'C\': ") or "0")
+                alphaValue = float(input("> Value for angle \'α\': ") or "0")
+                betaValue = float(input("> Value for angle \'β\': ") or "0")
+                gammaValue = float(input("> Value for angle \'γ\': ") or "0")
+
+            elif(TrigMode == '2'):
+                pass
+            
+            elif(TrigMode == 'Q' or TrigMode == 'q'):
+                break
+
+            else:
+                print(">>>> ERROR: Invalid option! Try Again!")
+
+            
+            if(TrigMode == '1'):
+                
+                aValue, bValue, cValue, alphaValue, betaValue, gammaValue = AstroTriangles(aValue, bValue, cValue, alphaValue, betaValue, gammaValue)
+
+                if(aValue == 0 or bValue == 0 or cValue == 0 or alphaValue == 0 or betaValue == 0 or gammaValue == 0):
+                    print("Given Data are\'nt enough to calculate the Triangle's Parameters!")
+
+
+                print(">> Calculated Parameters of the Triangle:")
+                print("Side \'A\': ", aValue)
+                print("Side \'B\': ", bValue)
+                print("Side \'C\': ", cValue)
+                print("Angle \'α\': ", alphaValue)
+                print("Angle \'β\': ", betaValue)
+                print("Angle \'γ\': ", gammaValue)
+                print("\n")
+
+
     #   _____                 _ _       _ 
     #  /  ___|               | (_)     | |
     #  \ `--. _   _ _ __   __| |_  __ _| |
@@ -2645,7 +2873,7 @@ while(True):
     #  /\__/ / |_| | | | | (_| | | (_| | |
     #  \____/ \__,_|_| |_|\__,_|_|\__,_|_|
     # Plot Sundial for Choosen Locations
-    elif(mode == '6'):
+    elif(mode == '7'):
         while(True):
             print(">> Plot Sun's Path on a Sundial at Choosen Location on Earth")
             print(">> Please choose a mode you'd like to use!")
@@ -2661,7 +2889,7 @@ while(True):
             Planet = "Earth"
 
             if(SundialMode == '1'):
-                print(">> Calculate Twilights from given Parameters\n")
+                print(">> Plot a Sundial on a User-defined Location\n")
                 print(">> Give Parameters!")
 
                 # Input Positional Parameters
@@ -2679,7 +2907,7 @@ while(True):
 
 
             elif(SundialMode == '2'):
-                print(">> Calculate Datetimes of Twilights from the Coordinates of a Predefined Location")
+                print(">> Plot a Sundial on a Predefined Location's Coordinates")
                 print(">> Write the Name of a Choosen Location to the Input!")
 
                 # Input Choosen Location's Name
@@ -2761,6 +2989,7 @@ while(True):
 
                 if(SunDialChoose == 'Y' or SunDialChoose == 'y' or SunDialChoose == 'Yes' or SunDialChoose == 'yes' or SunDialChoose == 'YEs' or SunDialChoose == 'yEs' or SunDialChoose == 'yeS' or SunDialChoose == 'YeS' or SunDialChoose == 'yES'):
 
+                    print("Choosen Date:")
                     ### CHOOSEN DATE ###
                     LocalHourAngleRiseChoosen, LocalHourAngleSetChoosen, DeclinationSunChoosen = SundialPrecalculations(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, LocalDateDay)
 
@@ -2769,11 +2998,6 @@ while(True):
                     AltitudesChoosen = []
                     AzimuthsChoosen = []
                     ShadowsChoosen = []
-
-                    RightAscension = None
-                    Altitude=None
-                    Azimuth = None
-                    SiderealTime = None
 
                     if(LocalHourAngleRiseChoosen > LocalHourAngleSetChoosen):
 
@@ -2789,6 +3013,7 @@ while(True):
                             # Calculate parameters by ~10 seconds interval
                             #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunChoosen)
                             AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunChoosen)
+                            #print(LocalHourAngleActual, AltitudeActual)
 
                             # Append parameters to lists
                             LocalHourAngleActual += 12
@@ -2807,6 +3032,7 @@ while(True):
                             # Calculate parameters by ~10 seconds interval
                             #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunChoosen)
                             AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunChoosen)
+                            #print(LocalHourAngleActual, AltitudeActual)
 
                             # Append parameters to lists
                             LocalHourAngleActual += 12
@@ -2819,10 +3045,10 @@ while(True):
 
                     else:
 
-                        SummerStep = int((int(LocalHourAngleSetChoosen * FineTuned) - int(LocalHourAngleRiseChoosen * FineTuned)) / MeasureNumber)
+                        ChoosenStep = int((int(LocalHourAngleSetChoosen * FineTuned) - int(LocalHourAngleRiseChoosen * FineTuned)) / MeasureNumber)
 
                         # Calculate plot parameters
-                        for LocalHourAngleActual in range(int(LocalHourAngleRiseChoosen * FineTuned), int(LocalHourAngleSetChoosen * FineTuned), SummerStep):
+                        for LocalHourAngleActual in range(int(LocalHourAngleRiseChoosen * FineTuned), int(LocalHourAngleSetChoosen * FineTuned), ChoosenStep):
 
                             # Norm back to normal
                             LocalHourAngleActual /= FineTuned
@@ -2830,6 +3056,7 @@ while(True):
                             # Calculate parameters by ~10 seconds interval
                             #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunChoosen)
                             AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunChoosen)
+                            #print(LocalHourAngleActual, AltitudeActual)
 
                             # Append parameters to lists
                             LocalHourAngleActual += 12
@@ -2840,6 +3067,8 @@ while(True):
                             ShadowsChoosen.append(ShadowsLengthActual)
 
 
+
+                print("Summer Solstice:")
                 ### SUMMER SOLSTICE ###
                 LocalDateMonthSummer = 6
                 if(SunDialYear%4 == 0):
@@ -2849,7 +3078,6 @@ while(True):
                     LocalDateDaySummer = 21
 
                 LocalHourAngleRiseSummer, LocalHourAngleSetSummer, DeclinationSunSummer = SundialPrecalculations(Planet, Latitude, Longitude, SunDialYear, LocalDateMonthSummer, LocalDateDaySummer)
-                print(LocalHourAngleRiseSummer, LocalHourAngleSetSummer)
 
                 # Create lists for plot parameters
                 LocalHourAngleSummer = []
@@ -2857,10 +3085,7 @@ while(True):
                 AzimuthsSummer = []
                 ShadowsSummer = []
 
-                RightAscension = None
-                Altitude=None
-                Azimuth = None
-                SiderealTime = None
+                DeclinationSunSummer = 23.5
 
                 if(LocalHourAngleRiseSummer > LocalHourAngleSetSummer):
 
@@ -2876,6 +3101,7 @@ while(True):
                         # Calculate parameters by ~10 seconds interval
                         #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSummer)
                         AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSummer)
+                        #print(LocalHourAngleActual, AltitudeActual)
 
                         # Append parameters to lists
                         LocalHourAngleActual += 12
@@ -2894,6 +3120,7 @@ while(True):
                         # Calculate parameters by ~10 seconds interval
                         #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSummer)
                         AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSummer)
+                        #print(LocalHourAngleActual, AltitudeActual)
 
                         # Append parameters to lists
                         LocalHourAngleActual += 12
@@ -2917,6 +3144,7 @@ while(True):
                         # Calculate parameters by ~10 seconds interval
                         #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSummer)
                         AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSummer)
+                        #print(LocalHourAngleActual, AltitudeActual)
 
                         # Append parameters to lists
                         LocalHourAngleActual += 12
@@ -2927,7 +3155,7 @@ while(True):
                         ShadowsSummer.append(ShadowsLengthActual)
 
 
-
+                print("Winter Solstice:")
                 ### WINTER SOLSTICE ###
                 LocalDateMonthWinter = 12
                 if((SunDialYear + 1)%4 == 0):
@@ -2937,17 +3165,12 @@ while(True):
                     LocalDateDayWinter = 21
 
                 LocalHourAngleRiseWinter, LocalHourAngleSetWinter, DeclinationSunWinter = SundialPrecalculations(Planet, Latitude, Longitude, SunDialYear, LocalDateMonthWinter, LocalDateDayWinter)
-                print(LocalHourAngleRiseWinter, LocalHourAngleSetWinter)
+
                 # Create lists for plot parameters
                 LocalHourAngleWinter = []
                 AltitudesWinter = []
                 AzimuthsWinter = []
                 ShadowsWinter = []
-
-                RightAscension = None
-                Altitude=None
-                Azimuth = None
-                SiderealTime = None
 
                 if(LocalHourAngleRiseWinter > LocalHourAngleSetWinter):
 
@@ -2963,7 +3186,7 @@ while(True):
                         # Calculate parameters by ~10 seconds interval
                         #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunWinter)
                         AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunWinter)
-                        print(LocalHourAngleActual, AltitudeActual)
+                        #print(LocalHourAngleActual, AltitudeActual)
 
                         # Append parameters to lists
                         LocalHourAngleActual += 12
@@ -2982,7 +3205,7 @@ while(True):
                         # Calculate parameters by ~10 seconds interval
                         #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunWinter)
                         AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunWinter)
-                        print(LocalHourAngleActual, AltitudeActual)
+                        #print(LocalHourAngleActual, AltitudeActual)
 
                         # Append parameters to lists
                         LocalHourAngleActual += 12
@@ -3006,6 +3229,7 @@ while(True):
                         # Calculate parameters by ~10 seconds interval
                         #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunWinter)
                         AltitudeActual, AzimuthAShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunWinter)
+                        #print(LocalHourAngleActual, AltitudeActual)
 
                         # Append parameters to lists
                         LocalHourAngleActual += 12
@@ -3016,23 +3240,18 @@ while(True):
                         ShadowsWinter.append(ShadowsLengthActual)
 
 
-
+                print("March Equinox:")
                 ### MARCH EQUINOX ###
                 LocalDateMonthMarch = 3
                 LocalDateDayMarch = 20
 
                 LocalHourAngleRiseMarch, LocalHourAngleSetMarch, DeclinationSunMarch = SundialPrecalculations(Planet, Latitude, Longitude, SunDialYear, LocalDateMonthMarch, LocalDateDayMarch)
-                print(LocalHourAngleRiseMarch, LocalHourAngleSetMarch)
+
                 # Create lists for plot parameters
                 LocalHourAngleMarch = []
                 AltitudesMarch = []
                 AzimuthsMarch = []
                 ShadowsMarch = []
-
-                RightAscension = None
-                Altitude=None
-                Azimuth = None
-                SiderealTime = None
 
                 if(LocalHourAngleRiseMarch > LocalHourAngleSetMarch):
 
@@ -3048,6 +3267,7 @@ while(True):
                         # Calculate parameters by ~10 seconds interval
                         #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunMarch)
                         AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunMarch)
+                        #print(LocalHourAngleActual, AltitudeActual)
 
                         # Append parameters to lists
                         LocalHourAngleActual += 12
@@ -3066,7 +3286,7 @@ while(True):
                         # Calculate parameters by ~10 seconds interval
                         #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunMarch)
                         AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunMarch)
-
+                        #print(LocalHourAngleActual, AltitudeActual)
 
                         # Append parameters to lists
                         LocalHourAngleActual += 12
@@ -3090,7 +3310,7 @@ while(True):
                         # Calculate parameters by ~10 seconds interval
                         #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunMarch)
                         AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunMarch)
-
+                        #print(LocalHourAngleActual, AltitudeActual)
 
                         # Append parameters to lists
                         LocalHourAngleActual += 12
@@ -3101,7 +3321,7 @@ while(True):
                         ShadowsMarch.append(ShadowsLengthActual)
 
 
-
+                print("September Equinox:")
                 ### SEPTEMBER EQIUNOX ###
                 LocalDateMonthSeptember = 9
                 if(SunDialYear%4 == 0 or (SunDialYear - 1)%4 == 0):
@@ -3111,17 +3331,12 @@ while(True):
                     LocalDateDaySeptember = 23
 
                 LocalHourAngleRiseSeptember, LocalHourAngleSetSeptember, DeclinationSunSeptember = SundialPrecalculations(Planet, Latitude, Longitude, SunDialYear, LocalDateMonthSeptember, LocalDateDaySeptember)
-                print(LocalHourAngleRiseSeptember, LocalHourAngleSetSeptember)
+
                 # Create lists for plot parameters
                 LocalHourAngleSeptember = []
                 AltitudesSeptember = []
                 AzimuthsSeptember = []
                 ShadowsSeptember = []
-
-                RightAscension = None
-                Altitude=None
-                Azimuth = None
-                SiderealTime = None
 
                 if(LocalHourAngleRiseSeptember > LocalHourAngleSetSeptember):
 
@@ -3135,8 +3350,9 @@ while(True):
                         LocalHourAngleActual /= FineTuned
 
                         # Calculate parameters by ~10 seconds interval
-                        #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunWinter)
+                        #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSeptember)
                         AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSeptember)
+                        #print(LocalHourAngleActual, AltitudeActual)
 
                         # Append parameters to lists
                         LocalHourAngleActual += 12
@@ -3155,6 +3371,7 @@ while(True):
                         # Calculate parameters by ~10 seconds interval
                         #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSeptember)
                         AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSeptember)
+                        #print(LocalHourAngleActual, AltitudeActual)
 
                         # Append parameters to lists
                         LocalHourAngleActual += 12
@@ -3178,6 +3395,7 @@ while(True):
                         # Calculate parameters by ~10 seconds interval
                         #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSeptember)
                         AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSeptember)
+                        #print(LocalHourAngleActual, AltitudeActual)
 
                         # Append parameters to lists
                         LocalHourAngleActual += 12
@@ -3195,6 +3413,20 @@ while(True):
                 plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
                 plt.show()
 
+                '''plt.plot(AzimuthsSummer, AltitudesSummer, '.', label="Summer Solstice")
+                plt.plot(AzimuthsWinter, AltitudesWinter, '.', label="Winter Solstice")
+                plt.plot(AzimuthsMarch, AltitudesMarch, '.', label="March Equinox")
+                plt.plot(AzimuthsSeptember, AltitudesSeptember, '.', label="Sept. Equinox")
+                plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
+                plt.show()'''
+
+                '''plt.plot(AzimuthsSummer, ShadowsSummer, '.', label="Summer Solstice")
+                plt.plot(AzimuthsWinter, ShadowsWinter, '.', label="Winter Solstice")
+                plt.plot(AzimuthsMarch, ShadowsMarch, '.', label="March Equinox")
+                plt.plot(AzimuthsSeptember, ShadowsSeptember, '.', label="Sept. Equinox")
+                plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
+                plt.show()'''
+
                 plt.plot(LocalHourAngleSummer, ShadowsSummer, '.', label="Summer Solstice")
                 plt.plot(LocalHourAngleWinter, ShadowsWinter, '.', label="Winter Solstice")
                 plt.plot(LocalHourAngleMarch, ShadowsMarch, '.', label="March Equinox")
@@ -3209,7 +3441,7 @@ while(True):
     #  | | | | (_) | | | | | |  __/\ V  V / (_) | |  |   < 
     #  \_| |_/\___/|_| |_| |_|\___| \_/\_/ \___/|_|  |_|\_\
     # HOMEWORK MODE
-    elif(mode == 'Home' or mode == 'home' or mode == 'H' or mode == 'h'):
+    elif(mode == 'Home' or mode == 'home' or mode == 'H' or mode == 'h' or sys.argv[0] == "H" or sys.argv[0] == "h"):
 
         print("###  Csillesz II end-semester homework results, solved by the program  ###")
         print("_________________________________________________________________________")
@@ -3229,9 +3461,9 @@ while(True):
         print(">>> Calculate LMST at " + Location + ", at " + str(LocalHours) + ":" + str(LocalMinutes) + ":" + str(LocalSeconds) + " LT, " + str(LocalDateYear) + "." + str(LocalDateMonth) + "." + str(LocalDateDay))
         print(">>> Used formulas:")
         print(">>> 1. S_0 (Greenwich Mean Sidereal Time) at 00:00 UT was calculated")
-        print(">>> 2. S (Local Mean Sidereal Time) = S_0 + Longitude/15 + dS * UnitedTime")
+        print(">>> 2. S (Local Mean Sidereal Time) = S_0 + Longitude/15 + dS * UnitedTime\n")
 
-        sidmsg = "\n>>> The Local Mean Sidereal Time at {0}:{1}:{2} UT\n>>> in {3} with\n>>> {4}:{5}:{6} GMST at 00:00:00 UT\n>>> is {7}:{8}:{9}\n\n"
+        sidmsg = ">>> The Local Mean Sidereal Time at {0}:{1}:{2} UT\n>>> in {3} with\n>>> {4}:{5}:{6} GMST at 00:00:00 UT\n>>> is {7}:{8}:{9}\n"
         print(sidmsg.format(UnitedHours, UnitedMinutes, UnitedSeconds, Location, GreenwichSiderealHours, GreenwichSiderealMinutes, GreenwichSiderealSeconds, LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeconds))
         print("_________________________________________________________________________")
 
@@ -3255,9 +3487,9 @@ while(True):
         print(">>> INFO: Available Data are only suited for Calculating Rising or\n>>> Setting Altitudes!")
         print("\n>>> Calculated Parameter of Rising/Setting Object in Horizontal Coord. Sys.:")
 
-        azimmsg = ">>> Rising and Setting Azimuths (A) are:\n>>> {0:.4f}° and {1:.4f}°"
-        timemsg = ">>> Elapsed time between them: is {0:.2f}h\n"
-        print(azimmsg.format(Azimuth2, Azimuth1))
+        azimmsg = "Rising and Setting Azimuths (A) are:\n>>> {0:.4f}° and {1:.4f}°"
+        timemsg = "Elapsed time between them: is {0:.2f}h\n"
+        print(azimmsg.format(Azimuth1, Azimuth2))
         print(timemsg.format(H_dil/15))
         print("_________________________________________________________________________")
 
@@ -3311,13 +3543,37 @@ while(True):
 
         astrosetmsg = ">>> End of Astronomical Twilight on {0}.{1}.{2} is at {3}:{4}:{5}"
         astrorisemsg = ">>> Begin of Astronomical Twilight on {0}.{1}.{2} is at {3}:{4}:{5}"
-        astrotimemsg = ">>> The astronomical night's lenght at " + Location + " is\n>>> {0}:{1}:{2} long\n>>> In the night, between {3}.{4}.{5}, and {6}.\n"
+        astrotimemsg = ">>> The astronomical night's lenght at " + Location + " is {0}:{1}:{2} long\n>>> In the night, between {3}.{4}.{5}, and {6}.\n"
         print(astrosetmsg.format(LocalDateYear, LocalDateMonth, LocalDateDay1, LocalHoursSetAstro1, LocalMinutesSetAstro1, LocalSecondsSetAstro1))
         print(astrorisemsg.format(LocalDateYear, LocalDateMonth, LocalDateDay2, LocalHoursRiseAstro2, LocalMinutesRiseAstro2, LocalSecondsRiseAstro2))
         print(astrotimemsg.format(AstroNightHours, AstroNightMinutes, AstroNightSeconds, LocalDateYear, LocalDateMonth, LocalDateDay1, LocalDateDay2))
         print("_________________________________________________________________________")
 
         print("1.2/1.")
+
+        aValue = 54.3666666
+        bValue = 72.2
+        cValue = 0
+        alphaValue = 0
+        betaValue = 0
+        gammaValue = 94.01666666
+
+        aValue, bValue, cValue, alphaValue, betaValue, gammaValue = AstroTriangles(aValue, bValue, cValue, alphaValue, betaValue, gammaValue)
+
+        print(">>> Used formulas:")
+        print(">>> The program uses formulas, which may be derived using vector algebra")
+        print(">>> Given parameters: side \'A\', side \'B\' and angle \'γ\'")
+        print(">>> C = arctan( sqrt(\n    (sin(A) * cos(B) - cos(A) * sin(B) * cos(γ))^2 + (sin(B) * sin(γ))^2 ) /\n    (cos(A) * cos(B) + sin(A) * sin(B) * cos(γ)) )")
+        print()
+
+        print(">>> Calculated Parameters of the Triangle:")
+        print(">>> Side \'A\': ", aValue)
+        print(">>> Side \'B\': ", bValue)
+        print(">>> Side \'C\': ", cValue)
+        print(">>> Angle \'α\': ", alphaValue)
+        print(">>> Angle \'β\': ", betaValue)
+        print(">>> Angle \'γ\': ", gammaValue)
+        print("\n")
 
         print("_________________________________________________________________________")
 
@@ -3448,10 +3704,10 @@ while(True):
         equIImsg = "\n>>> Calculated Parameters of the Star in Equatorial II Coord. Sys. from {0}:"
         print(equIImsg.format(Location))
 
-        grwmsg = ">>> GMST: {0}:{1}:{2}" 
-        declinmsg = ">>> Declination (δ): {0}° {1}\' {2}\""
-        RAmsg = ">>> Right Ascension (α): {0}h {1}m {2}s"
-        sidermsg = ">>> Local Mean Sidereal Time (S): {0}:{1}:{2}\n"
+        grwmsg = "GMST: {0}:{1}:{2}" 
+        declinmsg = "Declination (δ): {0}° {1}\' {2}\""
+        RAmsg = "Right Ascension (α): {0}h {1}m {2}s"
+        sidermsg = "Local Mean Sidereal Time (S): {0}:{1}:{2}\n"
         print(grwmsg.format(GreenwichSiderealHours, GreenwichSiderealMinutes, GreenwichSiderealSeconds))
         print(declinmsg.format(DeclinationHours, DeclinationMinutes, DeclinationSeconds))
         print(RAmsg.format(RightAscensionHours, RightAscensionMinutes, RightAscensionSeconds))
