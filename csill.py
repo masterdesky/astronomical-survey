@@ -3016,8 +3016,8 @@ while(True):
                     else:
                         print(">>>> ERROR: Invalid option! Try Again!")
 
-                MeasureNumber = 100
-                FineTuned = 100
+                MeasureNumber = 1000
+                FineTuned = 1000
 
                 if(SunDialChoose == 'Y' or SunDialChoose == 'y' or SunDialChoose == 'Yes' or SunDialChoose == 'yes' or SunDialChoose == 'YEs' or SunDialChoose == 'yEs' or SunDialChoose == 'yeS' or SunDialChoose == 'YeS' or SunDialChoose == 'yES'):
 
@@ -3438,14 +3438,15 @@ while(True):
                         ShadowsSeptember.append(ShadowsLengthActual)
 
                 plt.title("Sun's path on the Sky")
-                plt.grid()
                 plt.plot(LocalHourAngleSummer, AltitudesSummer, '.', label="Summer Solstice")
                 plt.plot(LocalHourAngleWinter, AltitudesWinter, '.', label="Winter Solstice")
                 plt.plot(LocalHourAngleMarch, AltitudesMarch, '.', label="March Equinox")
                 plt.plot(LocalHourAngleSeptember, AltitudesSeptember, '.', label="Sept. Equinox")
+                
                 plt.xlabel("Hours (h)")
                 plt.ylabel("Altitude of the Sun (°)")
                 plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
+                plt.grid()
                 plt.show()
 
                 '''plt.plot(AzimuthsSummer, AltitudesSummer, '.', label="Summer Solstice")
@@ -3463,16 +3464,17 @@ while(True):
                 plt.show()'''
 
                 plt.title("Sun's path on Sundial")
-                plt.grid()
                 plt.plot(LocalHourAngleSummer, ShadowsSummer, '.', label="Summer Solstice")
                 plt.plot(LocalHourAngleWinter, ShadowsWinter, '.', label="Winter Solstice")
                 plt.plot(LocalHourAngleMarch, ShadowsMarch, '.', label="March Equinox")
                 plt.plot(LocalHourAngleSeptember, ShadowsSeptember, '.', label="Sept. Equinox")
+
                 plt.xlabel("Hours (h)")
                 plt.ylabel("Length of the shadow (m)")
                 plt.xlim((0,24))
                 plt.ylim((0,10))
                 plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
+                plt.grid()
                 plt.show()
 
     #   _   _                                         _    
