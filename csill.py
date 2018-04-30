@@ -63,7 +63,7 @@ import matplotlib.pyplot as plt
 #import numpy as np
 
 # Current Version of the Csillész II Problem Solver
-ActualVersion = 'v1.26'
+ActualVersion = 'v1.28'
 
 
 
@@ -207,7 +207,7 @@ def NormalizeZeroBoundedTime(Time):
         Multiply = int(Time / 24)
         Time = Time - Multiply * 24
 
-    if(Time < 0):
+    elif(Time < 0):
         Multiply = int(Time / 24) - 1
         Time = Time + abs(Multiply) * 24
 
@@ -246,8 +246,7 @@ def NormalizeTimeParameters(Time, Year, Month, Day):
     # Function call: Time, Hours, Minutes, Seconds, Year, Month, Day = NormalizeTimeParameters(Time, Year, Month, Day)
 
     # First normalize Time if abs(Time) >= 24
-    Time, Multiply = NormalizeZeroBoundedTime(Time)
-    
+    Time, Multiply = NormalizeZeroBoundedTime(Time)    
 
     # CORRECTIONS IF MINUTES >= 60 or SECONDS >= 60
     Hours = int(Time)
@@ -1110,10 +1109,14 @@ def TwilightCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, Loc
     (LocalTimeSetAstro2, LocalHoursSetAstro2, LocalMinutesSetAstro2, LocalSecondsSetAstro2, LocalDateYearSetAstro2, LocalDateMonthSetAstro2, LocalDateDaySetAstro2, 
     LocalTimeRiseAstro2, LocalHoursRiseAstro2, LocalMinutesRiseAstro2, LocalSecondsRiseAstro2, LocalDateYearRiseAstro2, LocalDateMonthRiseAstro2, LocalDateDayRiseAstro2) = SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeAstro, LocalDateNextYear, LocalDateNextMonth, LocalDateNextDay)
 
+    print(LocalTimeRiseAstro, LocalTimeSetAstro)
+    print(LocalTimeRiseAstro2, LocalTimeSetAstro2)
 
     # Noon and Midnight
     LocalTimeNoon = LocalTimeRiseDaylight + (LocalTimeSetDaylight - LocalTimeRiseDaylight) / 2
-    LocalTimeMidnight = LocalTimeSetAstro + (((24 - LocalTimeSetAstro) + LocalTimeRiseAstro2) / 2) + 12
+    LocalTimeMidnight = LocalTimeSetAstro + (((24 - LocalTimeSetAstro) + LocalTimeRiseAstro2) / 2)
+
+    print(LocalTimeMidnight)
     #LocalTimeMidnight = LocalTimeNoon + 12
 
     # Calc Noon Date
@@ -1125,6 +1128,8 @@ def TwilightCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, Loc
     LocalDateDayMidnight = LocalDateDayRiseAstro
     LocalDateMonthMidnight = LocalDateMonthRiseAstro
     LocalDateYearMidnight = LocalDateYearRiseAstro
+
+    print(LocalDateDayMidnight)
 
     # LT of Noon and Midnight
     LocalTimeNoon, LocalHoursNoon, LocalMinutesNoon, LocalSecondsNoon, LocalDateYearNoon, LocalDateMonthNoon, LocalDateDayNoon = NormalizeTimeParameters(LocalTimeNoon, LocalDateYearNoon, LocalDateMonthNoon, LocalDateDayNoon)
@@ -3446,7 +3451,7 @@ while(True):
         print("###  Csillesz II end-semester homework results, solved by the program  ###")
         print("_________________________________________________________________________")
 
-        print("1.1/1:")
+        print("1.1/1.\n")
 
         Location = "Szombathely"
         Longitude = LocationDict[Location][1]
@@ -3467,7 +3472,7 @@ while(True):
         print(sidmsg.format(UnitedHours, UnitedMinutes, UnitedSeconds, Location, GreenwichSiderealHours, GreenwichSiderealMinutes, GreenwichSiderealSeconds, LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeconds))
         print("_________________________________________________________________________")
 
-        print("1.1/2:")
+        print("1.1/2.\n")
 
         Location = "Szeged"
         Latitude = LocationDict[Location][0]
@@ -3493,7 +3498,7 @@ while(True):
         print(timemsg.format(H_dil/15))
         print("_________________________________________________________________________")
 
-        print("1.1/3:")
+        print("1.1/3.\n")
 
         Planet = "Earth"
         Location = "Piszkesteto"
@@ -3549,7 +3554,7 @@ while(True):
         print(astrotimemsg.format(AstroNightHours, AstroNightMinutes, AstroNightSeconds, LocalDateYear, LocalDateMonth, LocalDateDay1, LocalDateDay2))
         print("_________________________________________________________________________")
 
-        print("1.2/1.")
+        print("1.2/1.\n")
 
         aValue = 54.3666666
         bValue = 72.2
@@ -3564,7 +3569,7 @@ while(True):
         print(">>> The program uses formulas, which may be derived using vector algebra")
         print(">>> Given parameters: side \'A\', side \'B\' and angle \'γ\'")
         print(">>> C = arctan( sqrt(\n    (sin(A) * cos(B) - cos(A) * sin(B) * cos(γ))^2 + (sin(B) * sin(γ))^2 ) /\n    (cos(A) * cos(B) + sin(A) * sin(B) * cos(γ)) )")
-        print()
+        print(">>> β = arccos(  )")
 
         print(">>> Calculated Parameters of the Triangle:")
         print(">>> Side \'A\': ", aValue)
@@ -3577,7 +3582,7 @@ while(True):
 
         print("_________________________________________________________________________")
 
-        print("1.2/2.")
+        print("1.2/2.\n")
 
         Location = "Baja"
         Star = "Altair"
@@ -3649,7 +3654,7 @@ while(True):
 
         print("_________________________________________________________________________")
 
-        print("1.2/3.")
+        print("1.2/3.\n")
 
         Location = "Rio"
         Latitude = LocationDict[Location][0]
@@ -3715,10 +3720,12 @@ while(True):
 
         print("_________________________________________________________________________")
 
+        print("1.3\n")
+
         print(">>> For the Sundial, do the following:")
         print(">>> 1. Choose mode \'6\'")
-        print(">>> 2. Choose Predefined Locations with option \'2\'")
-        print(">>> 3. Write \'Budapest\'")
+        print(">>> 2. Choose eg. Predefined Locations with option \'2\'")
+        print(">>> 3. Write eg. \'Budapest\'")
         print(">>> 4. Year = 2018")
         print(">>> 5. Select \'N\' for \'Choosen Date\'")
         print(">>> The graph shows the Sun's path on the sky at daylight, which will be\n>>> Projected on the ground, eg. on a Sundial.")
@@ -3728,7 +3735,7 @@ while(True):
     # MAIN MENU MODE
     # QUIT PROGRAM
     elif(mode == 'Q' or mode == 'q'):
-        print("#### All Rights Reserved to Balage Paliere Co.! ####")
+        print("####    Developed by Balazs Pal, ELTE    ####")
         exit()
 
     else:
