@@ -63,7 +63,7 @@ import matplotlib.pyplot as plt
 #import numpy as np
 
 # Current Version of the Csillész II Problem Solver
-ActualVersion = 'v1.28'
+ActualVersion = 'v1.30'
 
 
 
@@ -537,7 +537,7 @@ def EquIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSid
         # Calculate Altitude (m)
         # sin(m) = sin(δ) * sin(φ) + cos(δ) * cos(φ) * cos(H)
         Altitude = math.degrees(math.asin(
-                math.sin(math.radians(Declination)) * math.cos(math.radians(Latitude)) +
+                math.sin(math.radians(Declination)) * math.sin(math.radians(Latitude)) +
                 math.cos(math.radians(Declination)) * math.cos(math.radians(Latitude)) * math.cos(math.radians(LocalHourAngleDegrees))
                 ))
         # Normalize Altitude
@@ -568,15 +568,25 @@ def EquIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSid
 
         Azimuth4 = - Azimuth3
 
+        # Normalize negative result
+        # Azimuth: [0,+2π[
+        Azimuth4 = NormalizeZeroBounded(Azimuth4, 360)
+
         # Compare Azimuth values
-        if(int(Azimuth1) == int(Azimuth3)):
+        if(Azimuth1 + 3 > Azimuth3 and Azimuth1 - 3 < Azimuth3):
             Azimuth = Azimuth1
 
-        elif(int(Azimuth1) == int(Azimuth4)):
+        elif(Azimuth1 + 3 > Azimuth4 and Azimuth1 - 3 < Azimuth4):
             Azimuth = Azimuth1
+
+        elif(Azimuth2 + 3 > Azimuth3 and Azimuth2 - 3 < Azimuth3):
+            Azimuth = Azimuth2
+
+        elif(Azimuth2 + 3 > Azimuth4 and Azimuth2 - 3 < Azimuth4):
+            Azimuth = Azimuth2
 
         else:
-            Azimuth = Azimuth2
+            print(Azimuth1, Azimuth2, Azimuth3, Azimuth4)
 
         # Normalize Azimuth
         # Azimuth: [0,+2π[
@@ -611,7 +621,7 @@ def EquIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSid
         # sin(A) = - sin(H) * cos(δ) / cos(m)
         # Azimuth at given H Local Hour Angle
         Azimuth1_1 = math.degrees(math.asin(
-                - math.sin(math.radians(LocalHourAngleDegrees1)) * math.cos(math.radians(Declination)) / math.cos(math.radians(Altitude))
+                - math.sin(math.radians(LocalHourAngleDegrees2)) * math.cos(math.radians(Declination)) / math.cos(math.radians(Altitude))
                 ))
 
         Azimuth1_1 = NormalizeZeroBounded(Azimuth1_1, 360)
@@ -631,17 +641,21 @@ def EquIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSid
 
         Azimuth1_4 = - Azimuth1_3
 
+        # Normalize negative result
+        # Azimuth: [0,+2π[
+        Azimuth1_4 = NormalizeZeroBounded(Azimuth1_4, 360)
+
         # Compare Azimuth values
-        if(Azimuth1_1 + 3 > Azimuth1_3 or Azimuth1_1 - 3 < Azimuth1_3):
+        if(Azimuth1_1 + 3 > Azimuth1_3 and Azimuth1_1 - 3 < Azimuth1_3):
             Azimuth1 = Azimuth1_1
 
-        elif(Azimuth1_1 + 3 > Azimuth1_4 or Azimuth1_1 - 3 < Azimuth1_4):
+        elif(Azimuth1_1 + 3 > Azimuth1_4 and Azimuth1_1 - 3 < Azimuth1_4):
             Azimuth1 = Azimuth1_1
 
-        elif(Azimuth1_2 + 3 > Azimuth1_3 or Azimuth1_2 - 3 < Azimuth1_3):
+        elif(Azimuth1_2 + 3 > Azimuth1_3 and Azimuth1_2 - 3 < Azimuth1_3):
             Azimuth1 = Azimuth1_2
 
-        elif(Azimuth1_2 + 3 > Azimuth1_4 or Azimuth1_2 - 3 < Azimuth1_4):
+        elif(Azimuth1_2 + 3 > Azimuth1_4 and Azimuth1_2 - 3 < Azimuth1_4):
             Azimuth1 = Azimuth1_2
 
         else:
@@ -651,7 +665,7 @@ def EquIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSid
         # sin(A) = - sin(H) * cos(δ) / cos(m)
         # Azimuth at given H Local Hour Angle
         Azimuth2_1 = math.degrees(math.asin(
-                - math.sin(math.radians(LocalHourAngleDegrees2)) * math.cos(math.radians(Declination)) / math.cos(math.radians(Altitude))
+                - math.sin(math.radians(LocalHourAngleDegrees1)) * math.cos(math.radians(Declination)) / math.cos(math.radians(Altitude))
                 ))
 
         Azimuth2_1 = NormalizeZeroBounded(Azimuth2_1, 360)
@@ -671,17 +685,21 @@ def EquIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSid
 
         Azimuth2_4 = - Azimuth2_3
 
+        # Normalize negative result
+        # Azimuth: [0,+2π[
+        Azimuth2_4 = NormalizeZeroBounded(Azimuth2_4, 360)
+
         # Compare Azimuth values
-        if(Azimuth2_1 + 3 > Azimuth2_3 or Azimuth2_1 - 3 < Azimuth2_3):
+        if(Azimuth2_1 + 3 > Azimuth2_3 and Azimuth2_1 - 3 < Azimuth2_3):
             Azimuth2 = Azimuth2_1
 
-        elif(Azimuth2_1 + 3 > Azimuth2_4 or Azimuth2_1 - 3 < Azimuth2_4):
+        elif(Azimuth2_1 + 3 > Azimuth2_4 and Azimuth2_1 - 3 < Azimuth2_4):
             Azimuth2 = Azimuth2_1
 
-        elif(Azimuth2_2 + 3 > Azimuth2_3 or Azimuth2_2 - 3 < Azimuth2_3):
+        elif(Azimuth2_2 + 3 > Azimuth2_3 and Azimuth2_2 - 3 < Azimuth2_3):
             Azimuth2 = Azimuth2_2
 
-        elif(Azimuth2_2 + 3 > Azimuth2_4 or Azimuth2_2 - 3 < Azimuth2_4):
+        elif(Azimuth2_2 + 3 > Azimuth2_4 and Azimuth2_2 - 3 < Azimuth2_4):
             Azimuth2 = Azimuth2_2
 
         else:
@@ -690,7 +708,8 @@ def EquIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSid
 
         # Calculate time between them
         # Use precalculated LHAs
-        H_dil = LocalHourAngleDegrees2 - LocalHourAngleDegrees1
+        # H_dil is the time, as long as the Object stays above the Horizon
+        H_dil = abs(LocalHourAngleDegrees1 - LocalHourAngleDegrees2)
 
         return(Altitude, Azimuth1, Azimuth2, H_dil)
 
@@ -1109,14 +1128,14 @@ def TwilightCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, Loc
     (LocalTimeSetAstro2, LocalHoursSetAstro2, LocalMinutesSetAstro2, LocalSecondsSetAstro2, LocalDateYearSetAstro2, LocalDateMonthSetAstro2, LocalDateDaySetAstro2, 
     LocalTimeRiseAstro2, LocalHoursRiseAstro2, LocalMinutesRiseAstro2, LocalSecondsRiseAstro2, LocalDateYearRiseAstro2, LocalDateMonthRiseAstro2, LocalDateDayRiseAstro2) = SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeAstro, LocalDateNextYear, LocalDateNextMonth, LocalDateNextDay)
 
-    print(LocalTimeRiseAstro, LocalTimeSetAstro)
-    print(LocalTimeRiseAstro2, LocalTimeSetAstro2)
+    #print(LocalTimeRiseAstro, LocalTimeSetAstro)
+    #print(LocalTimeRiseAstro2, LocalTimeSetAstro2)
 
     # Noon and Midnight
     LocalTimeNoon = LocalTimeRiseDaylight + (LocalTimeSetDaylight - LocalTimeRiseDaylight) / 2
     LocalTimeMidnight = LocalTimeSetAstro + (((24 - LocalTimeSetAstro) + LocalTimeRiseAstro2) / 2)
 
-    print(LocalTimeMidnight)
+    #print(LocalTimeMidnight)
     #LocalTimeMidnight = LocalTimeNoon + 12
 
     # Calc Noon Date
@@ -1129,7 +1148,7 @@ def TwilightCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, Loc
     LocalDateMonthMidnight = LocalDateMonthRiseAstro
     LocalDateYearMidnight = LocalDateYearRiseAstro
 
-    print(LocalDateDayMidnight)
+    #print(LocalDateDayMidnight)
 
     # LT of Noon and Midnight
     LocalTimeNoon, LocalHoursNoon, LocalMinutesNoon, LocalSecondsNoon, LocalDateYearNoon, LocalDateMonthNoon, LocalDateDayNoon = NormalizeTimeParameters(LocalTimeNoon, LocalDateYearNoon, LocalDateMonthNoon, LocalDateDayNoon)
@@ -1352,7 +1371,7 @@ def SundialParametersCalc(Latitude, LocalHourAngle, DeclinationSun):
 
     # Calculate Altitude (m)
     # sin(m) = sin(δ) * sin(φ) + cos(δ) * cos(φ) * cos(H)
-    Altsin = math.sin(math.radians(DeclinationSun)) * math.cos(math.radians(Latitude)) + math.cos(math.radians(DeclinationSun)) * math.cos(math.radians(Latitude)) * math.cos(math.radians(LocalHourAngleDegrees))
+    Altsin = math.sin(math.radians(DeclinationSun)) * math.sin(math.radians(Latitude)) + math.cos(math.radians(DeclinationSun)) * math.cos(math.radians(Latitude)) * math.cos(math.radians(LocalHourAngleDegrees))
     if(Altsin <= 1):
         Altitude = math.degrees(math.asin(Altsin))
         #print(Altitude)
@@ -1363,7 +1382,7 @@ def SundialParametersCalc(Latitude, LocalHourAngle, DeclinationSun):
     Altitude = NormalizeSymmetricallyBoundedPI_2(Altitude)
 
     # We should draw 1/tan(m) of the function of (AzimuthMax - AzimuthMin)
-    ShadowLength = math.tan(math.radians(Altitude))
+    ShadowLength = 1/math.tan(math.radians(Altitude))
 
     '''# Calculate Azimuth (A)
     # sin(A) = - sin(H) * cos(δ) / cos(m)
@@ -1398,19 +1417,25 @@ def SundialParametersCalc(Latitude, LocalHourAngle, DeclinationSun):
     else:
         Azimuth3 = math.degrees(math.asin(2 - Azcos))
 
+    Azimuth3 = NormalizeZeroBounded(Azimuth3, 360)
+
     Azimuth4 = - Azimuth3
 
+    # Normalize negative result
+    # Azimuth: [0,+2π[
+    Azimuth4 = NormalizeZeroBounded(Azimuth4, 360)
+
     # Compare Azimuth values
-    if(Azimuth1 + 3 > Azimuth3 or Azimuth1 - 3 < Azimuth3):
+    if(Azimuth1 + 3 > Azimuth3 and Azimuth1 - 3 < Azimuth3):
         Azimuth = Azimuth1
 
-    elif(Azimuth1 + 3 > Azimuth4 or Azimuth1 - 3 < Azimuth4):
+    elif(Azimuth1 + 3 > Azimuth4 and Azimuth1 - 3 < Azimuth4):
         Azimuth = Azimuth1
 
-    elif(Azimuth2 + 3 > Azimuth3 or Azimuth2 - 3 < Azimuth3):
+    elif(Azimuth2 + 3 > Azimuth3 and Azimuth2 - 3 < Azimuth3):
         Azimuth = Azimuth2
 
-    elif(Azimuth2 + 3 > Azimuth4 or Azimuth2 - 3 < Azimuth4):
+    elif(Azimuth2 + 3 > Azimuth4 and Azimuth2 - 3 < Azimuth4):
         Azimuth = Azimuth2
     
     else:
@@ -1418,11 +1443,13 @@ def SundialParametersCalc(Latitude, LocalHourAngle, DeclinationSun):
 
     # Normalize Azimuth
     # Azimuth: [0,+2π[
-    Azimuth = NormalizeZeroBounded(Azimuth, 360)
+    Azimuth = NormalizeZeroBounded(Azimuth, 360)'''
 
-    return(Altitude, Azimuth, ShadowLength)'''
+    Azimuth = 0
 
-    return(Altitude, ShadowLength)
+    return(Altitude, Azimuth, ShadowLength)
+
+    #return(Altitude, ShadowLength)
 
 
 
@@ -1924,7 +1951,7 @@ while(True):
                     print("\n> Calculated Parameter of Rising/Setting Object in Horizontal Coord. Sys.:")
 
                     azimmsg = "- Rising and Setting Azimuths (A) are:\n- {0}° and {1}°"
-                    print(azimmsg.format(Azimuth2, Azimuth1))
+                    print(azimmsg.format(Azimuth1, Azimuth2))
                     print('\n')
                     
             #    ___   
@@ -3016,8 +3043,8 @@ while(True):
                             LocalHourAngleActual /= FineTuned
 
                             # Calculate parameters by ~10 seconds interval
-                            #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunChoosen)
-                            AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunChoosen)
+                            AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunChoosen)
+                            #AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunChoosen)
                             #print(LocalHourAngleActual, AltitudeActual)
 
                             # Append parameters to lists
@@ -3025,7 +3052,7 @@ while(True):
                             LocalHourAngleActual = NormalizeZeroBounded(LocalHourAngleActual, 24)
                             LocalHourAngleChoosen.append(LocalHourAngleActual)
                             AltitudesChoosen.append(AltitudeActual)
-                            #AzimuthsChoosen.append(AzimuthActual)
+                            AzimuthsChoosen.append(AzimuthActual)
                             ShadowsChoosen.append(ShadowsLengthActual)
 
                         # Calculate plot parameters
@@ -3035,8 +3062,8 @@ while(True):
                             LocalHourAngleActual /= FineTuned
 
                             # Calculate parameters by ~10 seconds interval
-                            #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunChoosen)
-                            AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunChoosen)
+                            AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunChoosen)
+                            #AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunChoosen)
                             #print(LocalHourAngleActual, AltitudeActual)
 
                             # Append parameters to lists
@@ -3044,7 +3071,7 @@ while(True):
                             LocalHourAngleActual = NormalizeZeroBounded(LocalHourAngleActual, 24)
                             LocalHourAngleChoosen.append(LocalHourAngleActual)
                             AltitudesChoosen.append(AltitudeActual)
-                            #AzimuthsChoosen.append(AzimuthActual)
+                            AzimuthsChoosen.append(AzimuthActual)
                             ShadowsChoosen.append(ShadowsLengthActual)
 
 
@@ -3059,8 +3086,8 @@ while(True):
                             LocalHourAngleActual /= FineTuned
 
                             # Calculate parameters by ~10 seconds interval
-                            #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunChoosen)
-                            AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunChoosen)
+                            AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunChoosen)
+                            #AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunChoosen)
                             #print(LocalHourAngleActual, AltitudeActual)
 
                             # Append parameters to lists
@@ -3068,7 +3095,7 @@ while(True):
                             LocalHourAngleActual = NormalizeZeroBounded(LocalHourAngleActual, 24)
                             LocalHourAngleChoosen.append(LocalHourAngleActual)
                             AltitudesChoosen.append(AltitudeActual)
-                            #AzimuthsChoosen.append(AzimuthActual)
+                            AzimuthsChoosen.append(AzimuthActual)
                             ShadowsChoosen.append(ShadowsLengthActual)
 
 
@@ -3104,8 +3131,8 @@ while(True):
                         LocalHourAngleActual /= FineTuned
 
                         # Calculate parameters by ~10 seconds interval
-                        #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSummer)
-                        AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSummer)
+                        AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSummer)
+                        #AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSummer)
                         #print(LocalHourAngleActual, AltitudeActual)
 
                         # Append parameters to lists
@@ -3113,7 +3140,7 @@ while(True):
                         LocalHourAngleActual = NormalizeZeroBounded(LocalHourAngleActual, 24)
                         LocalHourAngleSummer.append(LocalHourAngleActual)
                         AltitudesSummer.append(AltitudeActual)
-                        #AzimuthsSummer.append(AzimuthActual)
+                        AzimuthsSummer.append(AzimuthActual)
                         ShadowsSummer.append(ShadowsLengthActual)
 
                     # Calculate plot parameters
@@ -3123,8 +3150,8 @@ while(True):
                         LocalHourAngleActual /= FineTuned
 
                         # Calculate parameters by ~10 seconds interval
-                        #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSummer)
-                        AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSummer)
+                        AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSummer)
+                        #AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSummer)
                         #print(LocalHourAngleActual, AltitudeActual)
 
                         # Append parameters to lists
@@ -3132,7 +3159,7 @@ while(True):
                         LocalHourAngleActual = NormalizeZeroBounded(LocalHourAngleActual, 24)
                         LocalHourAngleSummer.append(LocalHourAngleActual)
                         AltitudesSummer.append(AltitudeActual)
-                        #AzimuthsSummer.append(AzimuthActual)
+                        AzimuthsSummer.append(AzimuthActual)
                         ShadowsSummer.append(ShadowsLengthActual)
 
 
@@ -3147,8 +3174,8 @@ while(True):
                         LocalHourAngleActual /= FineTuned
 
                         # Calculate parameters by ~10 seconds interval
-                        #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSummer)
-                        AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSummer)
+                        AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSummer)
+                        #AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSummer)
                         #print(LocalHourAngleActual, AltitudeActual)
 
                         # Append parameters to lists
@@ -3156,7 +3183,7 @@ while(True):
                         LocalHourAngleActual = NormalizeZeroBounded(LocalHourAngleActual, 24)
                         LocalHourAngleSummer.append(LocalHourAngleActual)
                         AltitudesSummer.append(AltitudeActual)
-                        #AzimuthsSummer.append(AzimuthActual)
+                        AzimuthsSummer.append(AzimuthActual)
                         ShadowsSummer.append(ShadowsLengthActual)
 
 
@@ -3189,8 +3216,8 @@ while(True):
                         LocalHourAngleActual /= FineTuned
 
                         # Calculate parameters by ~10 seconds interval
-                        #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunWinter)
-                        AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunWinter)
+                        AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunWinter)
+                        #AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunWinter)
                         #print(LocalHourAngleActual, AltitudeActual)
 
                         # Append parameters to lists
@@ -3208,8 +3235,8 @@ while(True):
                         LocalHourAngleActual /= FineTuned
 
                         # Calculate parameters by ~10 seconds interval
-                        #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunWinter)
-                        AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunWinter)
+                        AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunWinter)
+                        #AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunWinter)
                         #print(LocalHourAngleActual, AltitudeActual)
 
                         # Append parameters to lists
@@ -3217,7 +3244,7 @@ while(True):
                         LocalHourAngleActual = NormalizeZeroBounded(LocalHourAngleActual, 24)
                         LocalHourAngleWinter.append(LocalHourAngleActual)
                         AltitudesWinter.append(AltitudeActual)
-                        #AzimuthsWinter.append(AzimuthActual)
+                        AzimuthsWinter.append(AzimuthActual)
                         ShadowsWinter.append(ShadowsLengthActual)
 
 
@@ -3232,8 +3259,8 @@ while(True):
                         LocalHourAngleActual /= FineTuned
 
                         # Calculate parameters by ~10 seconds interval
-                        #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunWinter)
-                        AltitudeActual, AzimuthAShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunWinter)
+                        AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunWinter)
+                        #AltitudeActual, AzimuthAShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunWinter)
                         #print(LocalHourAngleActual, AltitudeActual)
 
                         # Append parameters to lists
@@ -3241,7 +3268,7 @@ while(True):
                         LocalHourAngleActual = NormalizeZeroBounded(LocalHourAngleActual, 24)
                         LocalHourAngleWinter.append(LocalHourAngleActual)
                         AltitudesWinter.append(AltitudeActual)
-                        #AzimuthsWinter.append(AzimuthActual)
+                        AzimuthsWinter.append(AzimuthActual)
                         ShadowsWinter.append(ShadowsLengthActual)
 
 
@@ -3270,8 +3297,8 @@ while(True):
                         LocalHourAngleActual /= FineTuned
 
                         # Calculate parameters by ~10 seconds interval
-                        #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunMarch)
-                        AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunMarch)
+                        AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunMarch)
+                        #AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunMarch)
                         #print(LocalHourAngleActual, AltitudeActual)
 
                         # Append parameters to lists
@@ -3279,7 +3306,7 @@ while(True):
                         LocalHourAngleActual = NormalizeZeroBounded(LocalHourAngleActual, 24)
                         LocalHourAngleMarch.append(LocalHourAngleActual)
                         AltitudesMarch.append(AltitudeActual)
-                        #AzimuthsMarch.append(AzimuthActual)
+                        AzimuthsMarch.append(AzimuthActual)
                         ShadowsMarch.append(ShadowsLengthActual)
 
                     # Calculate plot parameters
@@ -3289,8 +3316,8 @@ while(True):
                         LocalHourAngleActual /= FineTuned
 
                         # Calculate parameters by ~10 seconds interval
-                        #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunMarch)
-                        AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunMarch)
+                        AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunMarch)
+                        #AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunMarch)
                         #print(LocalHourAngleActual, AltitudeActual)
 
                         # Append parameters to lists
@@ -3298,7 +3325,7 @@ while(True):
                         LocalHourAngleActual = NormalizeZeroBounded(LocalHourAngleActual, 24)
                         LocalHourAngleMarch.append(LocalHourAngleActual)
                         AltitudesMarch.append(AltitudeActual)
-                        #AzimuthsMarch.append(AzimuthActual)
+                        AzimuthsMarch.append(AzimuthActual)
                         ShadowsMarch.append(ShadowsLengthActual)
 
 
@@ -3313,8 +3340,8 @@ while(True):
                         LocalHourAngleActual /= FineTuned
 
                         # Calculate parameters by ~10 seconds interval
-                        #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunMarch)
-                        AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunMarch)
+                        AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunMarch)
+                        #AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunMarch)
                         #print(LocalHourAngleActual, AltitudeActual)
 
                         # Append parameters to lists
@@ -3322,7 +3349,7 @@ while(True):
                         LocalHourAngleActual = NormalizeZeroBounded(LocalHourAngleActual, 24)
                         LocalHourAngleMarch.append(LocalHourAngleActual)
                         AltitudesMarch.append(AltitudeActual)
-                        #AzimuthsMarch.append(AzimuthActual)
+                        AzimuthsMarch.append(AzimuthActual)
                         ShadowsMarch.append(ShadowsLengthActual)
 
 
@@ -3355,8 +3382,8 @@ while(True):
                         LocalHourAngleActual /= FineTuned
 
                         # Calculate parameters by ~10 seconds interval
-                        #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSeptember)
-                        AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSeptember)
+                        AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSeptember)
+                        #AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSeptember)
                         #print(LocalHourAngleActual, AltitudeActual)
 
                         # Append parameters to lists
@@ -3364,7 +3391,7 @@ while(True):
                         LocalHourAngleActual = NormalizeZeroBounded(LocalHourAngleActual, 24)
                         LocalHourAngleSeptember.append(LocalHourAngleActual)
                         AltitudesSeptember.append(AltitudeActual)
-                        #AzimuthsSeptember.append(AzimuthActual)
+                        AzimuthsSeptember.append(AzimuthActual)
                         ShadowsSeptember.append(ShadowsLengthActual)
 
                     # Calculate plot parameters
@@ -3374,8 +3401,8 @@ while(True):
                         LocalHourAngleActual /= FineTuned
 
                         # Calculate parameters by ~10 seconds interval
-                        #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSeptember)
-                        AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSeptember)
+                        AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSeptember)
+                        #AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSeptember)
                         #print(LocalHourAngleActual, AltitudeActual)
 
                         # Append parameters to lists
@@ -3383,7 +3410,7 @@ while(True):
                         LocalHourAngleActual = NormalizeZeroBounded(LocalHourAngleActual, 24)
                         LocalHourAngleSeptember.append(LocalHourAngleActual)
                         AltitudesSeptember.append(AltitudeActual)
-                        #AzimuthsSeptember.append(AzimuthActual)
+                        AzimuthsSeptember.append(AzimuthActual)
                         ShadowsSeptember.append(ShadowsLengthActual)
 
 
@@ -3398,8 +3425,8 @@ while(True):
                         LocalHourAngleActual /= FineTuned
 
                         # Calculate parameters by ~10 seconds interval
-                        #AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSeptember)
-                        AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSeptember)
+                        AltitudeActual, AzimuthActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSeptember)
+                        #AltitudeActual, ShadowsLengthActual = SundialParametersCalc(Latitude, LocalHourAngleActual, DeclinationSunSeptember)
                         #print(LocalHourAngleActual, AltitudeActual)
 
                         # Append parameters to lists
@@ -3407,14 +3434,17 @@ while(True):
                         LocalHourAngleActual = NormalizeZeroBounded(LocalHourAngleActual, 24)
                         LocalHourAngleSeptember.append(LocalHourAngleActual)
                         AltitudesSeptember.append(AltitudeActual)
-                        #AzimuthsSeptember.append(AzimuthActual)
+                        AzimuthsSeptember.append(AzimuthActual)
                         ShadowsSeptember.append(ShadowsLengthActual)
 
-
+                plt.title("Sun's path on the Sky")
+                plt.grid()
                 plt.plot(LocalHourAngleSummer, AltitudesSummer, '.', label="Summer Solstice")
                 plt.plot(LocalHourAngleWinter, AltitudesWinter, '.', label="Winter Solstice")
                 plt.plot(LocalHourAngleMarch, AltitudesMarch, '.', label="March Equinox")
                 plt.plot(LocalHourAngleSeptember, AltitudesSeptember, '.', label="Sept. Equinox")
+                plt.xlabel("Hours (h)")
+                plt.ylabel("Altitude of the Sun (°)")
                 plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
                 plt.show()
 
@@ -3423,19 +3453,25 @@ while(True):
                 plt.plot(AzimuthsMarch, AltitudesMarch, '.', label="March Equinox")
                 plt.plot(AzimuthsSeptember, AltitudesSeptember, '.', label="Sept. Equinox")
                 plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
-                plt.show()'''
+                plt.show()
 
-                '''plt.plot(AzimuthsSummer, ShadowsSummer, '.', label="Summer Solstice")
+                plt.plot(AzimuthsSummer, ShadowsSummer, '.', label="Summer Solstice")
                 plt.plot(AzimuthsWinter, ShadowsWinter, '.', label="Winter Solstice")
                 plt.plot(AzimuthsMarch, ShadowsMarch, '.', label="March Equinox")
                 plt.plot(AzimuthsSeptember, ShadowsSeptember, '.', label="Sept. Equinox")
                 plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
                 plt.show()'''
 
+                plt.title("Sun's path on Sundial")
+                plt.grid()
                 plt.plot(LocalHourAngleSummer, ShadowsSummer, '.', label="Summer Solstice")
                 plt.plot(LocalHourAngleWinter, ShadowsWinter, '.', label="Winter Solstice")
                 plt.plot(LocalHourAngleMarch, ShadowsMarch, '.', label="March Equinox")
                 plt.plot(LocalHourAngleSeptember, ShadowsSeptember, '.', label="Sept. Equinox")
+                plt.xlabel("Hours (h)")
+                plt.ylabel("Length of the shadow (m)")
+                plt.xlim((0,24))
+                plt.ylim((0,10))
                 plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
                 plt.show()
 
