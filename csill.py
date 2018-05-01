@@ -3607,7 +3607,8 @@ while(True):
         print(">>> The program uses formulas, which may be derived using vector algebra")
         print(">>> Given parameters: side \'A\', side \'B\' and angle \'γ\'")
         print(">>> C = arctan( sqrt(\n    (sin(A) * cos(B) - cos(A) * sin(B) * cos(γ))^2 + (sin(B) * sin(γ))^2 ) /\n    (cos(A) * cos(B) + sin(A) * sin(B) * cos(γ)) )")
-        print(">>> β = arccos(  )")
+        print(">>> α = arctan(\n    (sin(A) * sin(γ)) / (sin(B) * cos(A) - cos(B) * sin(A) * cos(γ))\n    )")
+        print(">>> β = arctan(\n    (sin(B) * sin(γ)) / (sin(A) * cos(B) - cos(A) * sin(B) * cos(γ))\n    )")
 
         print(">>> Calculated Parameters of the Triangle:")
         print(">>> Side \'A\': ", aValue)
@@ -3761,7 +3762,7 @@ while(True):
         print("1.3\n")
 
         print(">>> For the Sundial, do the following:")
-        print(">>> 1. Choose mode \'6\'")
+        print(">>> 1. Choose mode \'7\'")
         print(">>> 2. Choose eg. Predefined Locations with option \'2\'")
         print(">>> 3. Write eg. \'Budapest\'")
         print(">>> 4. Year = 2018")
