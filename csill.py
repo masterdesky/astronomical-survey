@@ -163,29 +163,79 @@ MonthLengthListLeapYear = [31,29,31,30,31,30,31,31,30,31,30,31]
 # Constants for Planetary Orbits
 # Format:
 # "PlanetNameX": [X_0, X_1, X_2 .., X_E.] or [X_1, X_3, ..., X_E] etc.
-# "PlanetNameOrbit": [Π, ε]
+# "PlanetNameOrbit": [Π, ε, Correction for Refraction and Sun's visible shape]
 OrbitDict = {
-    "Mercury": [],
+    "MercuryM": [],
+    "MercuryC": [],
+    "MercuryA": [],
+    "MercuryD": [],
+    "MercuryJ": [45.3497, 11.4556, 0.00000, 175.9386],
+    "MercuryH": [0.035, 0.00000, 0.00000],
+    "MercuryOrbit": [230.3265, 0.0351, -0.69],
+
     "VenusM": [50.4161, 1.60213034],
     "VenusC": [0.7758, 0.0033, 0.00000, 0.00000, 0.00000, 0.00000, 0.00000],
     "VenusA": [-0.0304, 0.00000, 0.00000, 0.0001],
     "VenusD": [.6367, 0.0009, 0.00000, 0.0036],
     "VenusJ": [52.1268, -0.2516, 0.0099, -116.7505],
     "VenusH": [2.636, 0.001, 0.00000],
-    "VenusOrbit": [73.7576,	2.6376],
+    "VenusOrbit": [73.7576,	2.6376, -0.37],
+
     "EarthM": [357.5291, 0.98560028],
     "EarthJ": [0.0009, 0.0053, -0.0068, 1.0000000],
     "EarthC": [1.9148, 0.0200, 0.0003, 0.00000, 0.00000, 0.00000, 0.00000],
     "EarthA": [-2.4657, 0.0529, -0.0014, 0.0003],
     "EarthD": [22.7908, 0.5991, 0.0492, 0.0003],
     "EarthH": [22.137, 0.599, 0.016],
-    "EarthOrbit": [102.9373, 23.4393],
-    "Mars": [],
-    "Jupyter": [],
-    "Saturn": [],
-    "Neptunus": [],
-    "Uranus": [],
-    "Pluto": []
+    "EarthOrbit": [102.9373, 23.4393, -0.83],
+
+    "MarsM": [],
+    "MarsC": [],
+    "MarsA": [],
+    "MarsD": [],
+    "MarsJ": [0.9047, 0.0305, -0.0082, 1.027491],
+    "MarsH": [23.576, 0.733, 0.024],
+    "MarsOrbit": [71.0041, 25.1918, -0.17],
+
+    "JupiterM": [],
+    "JupiterC": [],
+    "JupiterA": [],
+    "JupiterD": [],
+    "JupiterJ": [0.3345, 0.0064, 0.00000, 0.4135778],
+    "JupiterH": [3.116, 0.002, 0.00000],
+    "JupiterOrbit": [237.1015, 3.1189, -0.05],
+
+    "SaturnM": [],
+    "SaturnC": [],
+    "SaturnA": [],
+    "SaturnD": [],
+    "SaturnJ": [0.0766, 0.0078, -0.0040, 0.4440276],
+    "SaturnH": [24.800, 0.864, 0.032],
+    "SaturnOrbit": [99.4587, 26.7285, -0.03],
+
+    "UranusM": [],
+    "UranusC": [],
+    "UranusA": [],
+    "UranusD": [],
+    "UranusJ": [0.1260, -0.0106, 0.0850, -0.7183165],
+    "UranusH": [28.680, -0.843, 8.722],
+    "UranusOrbit": [5.4634, 82.2298, -0.01],
+
+    "NeptunusM": [],
+    "NeptunusC": [],
+    "NeptunusA": [],
+    "NeptunusD": [],
+    "NeptunusJ": [0.3841, 0.0019, -0.0066, 0.6712575],
+    "NeptunusH": [26.668, 0.967, 0.039],
+    "NeptunusOrbit": [182.2100, 27.8477, -0.01],
+
+    "PlutoM": [],
+    "PlutoC": [],
+    "PlutoA": [],
+    "PlutoD": [],
+    "PlutoJ": [4.5635, -0.5024, 0.3429, 6.387672],
+    "PlutoH": [38.648, 4.971, 1.864],
+    "PlutoOrbit": [184.5484, 119.6075, -0.01]
 }
 
 
@@ -890,10 +940,11 @@ def LocalSiderealTimeCalc(Longitude, LocalHours, LocalMinutes, LocalSeconds, Dat
 
 ################################################################
 ########                                                ########
-########  4. CALCULATE DATETIMES OF SUNSETS AND RISES   ########
+########      4. CALCULATE DATETIMES OF TWILIGHTS       ########
 ########                                                ########
 ################################################################
 
+# Calculate actual Julian Date
 def CalculateJulianDate(LocalDateYear, LocalDateMonth, LocalDateDay, UnitedHours, UnitedMinutes, UnitedSeconds):
 
     # JulianDays = UT days since J2000.0, including parts of a day
@@ -909,6 +960,7 @@ def CalculateJulianDate(LocalDateYear, LocalDateMonth, LocalDateDay, UnitedHours
 
     return(JulianDays)
 
+# Calculate Sun's Position
 def SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeOfSun, JulianDays):
 
     # 1. Mean Solar Noon
@@ -934,16 +986,16 @@ def SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeOfSun, JulianDays):
     # 4. Ecliptic Longitude
     # MeanEclLongitudeSun (L_sun) in the Mean Ecliptic Longitude
     # EclLongitudeSun (λ) is the Ecliptic Longitude
-    # 102.9372 is a value for the argument of perihelion
-    MeanEclLongitudeSun = MeanAnomaly + 180 + 102.9372
+    # OrbitDict[Planet + "Orbit"][0] is a value for the argument of perihelion
+    MeanEclLongitudeSun = MeanAnomaly + OrbitDict[Planet + "Orbit"][0] + 180
     EclLongitudeSun = EquationOfCenter + MeanEclLongitudeSun
     MeanEclLongitudeSun = NormalizeZeroBounded(MeanEclLongitudeSun, 360)
     EclLongitudeSun = NormalizeZeroBounded(EclLongitudeSun, 360)
 
     # 5. Right Ascension of Sun (α)
-    # EarthA_2, EarthA_4 and EarthA_6 (measured in degrees) are coefficients in the series expansion of the Sun's Right Ascension
+    # PlanetA_2, PlanetA_4 and PlanetA_6 (measured in degrees) are coefficients in the series expansion of the Sun's Right Ascension
     # They varie for different planets in the Solar System
-    # RightAscensionSun = EclLongitudeSun + S ≈ EclLongitudeSun + EarthA_2 * sin(2 * EclLongitudeSun) + EarthA_4 * sin(4 * EclLongitudeSun) + EarthA_6 * sin(6 * EclLongitudeSun)
+    # RightAscensionSun = EclLongitudeSun + S ≈ EclLongitudeSun + PlanetA_2 * sin(2 * EclLongitudeSun) + PlanetA_4 * sin(4 * EclLongitudeSun) + PlanetA_6 * sin(6 * EclLongitudeSun)
     RightAscensionSun = (EclLongitudeSun + OrbitDict[Planet + "A"][0] * math.sin(math.radians(2 * EclLongitudeSun)) + OrbitDict[Planet + "A"][1] * 
                         math.sin(math.radians(4 * EclLongitudeSun)) + OrbitDict[Planet + "A"][2] * math.sin(math.radians(6 * EclLongitudeSun)))
 
@@ -958,9 +1010,9 @@ def SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeOfSun, JulianDays):
     #DeclinationSun = NormalizeSymmetricallyBoundedPI_2(DeclinationSun)
 
     # 6./b Declination of the Sun (δ) (Astronomy Answers)
-    # EarthD_1, EarthD_3 and EarthD_5 (measured in degrees) are coefficients in the series expansion of the Sun's Declination.
+    # PlanetD_1, PlanetD_3 and PlanetD_5 (measured in degrees) are coefficients in the series expansion of the Sun's Declination.
     # They varie for different planets in the Solar System.
-    # DeclinationSun = EarthD_1 * sin(EclLongitudeSun) + EarthD_3 * (sin(EclLongitudeSun))^3 + EarthD_5 * (sin(EclLongitudeSun))^5
+    # DeclinationSun = PlanetD_1 * sin(EclLongitudeSun) + PlanetD_3 * (sin(EclLongitudeSun))^3 + PlanetD_5 * (sin(EclLongitudeSun))^5
     DeclinationSun = (OrbitDict[Planet + "D"][0] * math.sin(math.radians(EclLongitudeSun)) + OrbitDict[Planet + "D"][1] * 
                      (math.sin(math.radians(EclLongitudeSun)))**3 + OrbitDict[Planet + "D"][2] * (math.sin(math.radians(EclLongitudeSun)))**5)
 
@@ -973,10 +1025,10 @@ def SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeOfSun, JulianDays):
     # 7./b1 Local Hour Angle of Sun (H)
     # cos(H) = (sin(m_0) - sin(φ) * sin(δ)) / (cos(φ) * cos(δ))
     # LocalHourAngleSun (t_0) is the Local Hour Angle from the Observer's Zenith
-    # Latitude (φ) is the North Latitude of the Observer (north is positive, south is negative) on the Earth
-    # m_0 = -0.83 is a compensation of Altitude (m) in degrees, for the Sun's distorted shape, and the atmospherical refraction
+    # Latitude (φ) is the North Latitude of the Observer (north is positive, south is negative)
+    # m_0 = Planet_RefCorr is a compensation of Altitude (m) in degrees, for the Sun's distorted shape, and the atmospherical refraction
     # The equation return two value, LHA1 and LHA2. We need that one, which is approximately equals to LHA_Pos
-    LHAcos = ((math.sin(math.radians(AltitudeOfSun - 0.83)) - math.sin(math.radians(Latitude)) * math.sin(math.radians(DeclinationSun))) /
+    LHAcos = ((math.sin(math.radians(AltitudeOfSun + OrbitDict[Planet + "Orbit"][2])) - math.sin(math.radians(Latitude)) * math.sin(math.radians(DeclinationSun))) /
             (math.cos(math.radians(Latitude)) * math.cos(math.radians(DeclinationSun))))
     if(LHAcos <= 1 and LHAcos >= -1):
         LocalHourAngleSun_Orig = math.degrees(math.acos(LHAcos))
@@ -1021,8 +1073,8 @@ def CalculateRiseAndSetTime(Planet, Latitude, Longitude, AltitudeOfSun, LocalDat
     # Calulate Sun's coordinates on sky
     LocalHourAngleSun_Pos, LocalHourAngleSun_Orig, RightAscensionSun, DeclinationSun, Jtransit = SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeOfSun, JulianDays)
     
-    '''print("LocalHourAngleSun_Pos: ", LocalHourAngleSun_Pos)
-    print("LocalHourAngleSun_Orig: ", LocalHourAngleSun_Orig)'''
+    print("LocalHourAngleSun_Pos: ", LocalHourAngleSun_Pos)
+    print("LocalHourAngleSun_Orig: ", LocalHourAngleSun_Orig)
 
     # Calulate Rising and Setting Datetimes of the Sun
     # JRise is the actual Julian date of sunrise
@@ -1071,11 +1123,6 @@ def SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateY
 
     return(LocalTimeSet, LocalHoursSet, LocalMinutesSet, LocalSecondsSet, LocalDateYearSet, LocalDateMonthSet, LocalDateDaySet, LocalTimeRise, LocalHoursRise, LocalMinutesRise, LocalSecondsRise, LocalDateYearRise, LocalDateMonthRise, LocalDateDayRise)
 
-################################################################
-########                                                ########
-########      5. CALCULATE DATETIMES OF TWILIGHTS       ########
-########                                                ########
-################################################################
 
 def TwilightCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, LocalDateDay):
 
@@ -1491,10 +1538,9 @@ while(True):
     print("(1) Coordinate System Conversion")
     print("(2) Geographical Distances")
     print("(3) Local Mean Sidereal Time")
-    print("(4) Datetimes of Sunsets and Sunrises")
-    print("(5) Datetimes of Twilights")
-    print("(6) Solve Astronomical Triangles")
-    print("(7) Plot Sun's Path on Sundial")
+    print("(4) Datetimes of Twilights")
+    print("(5) Solve Astronomical Triangles")
+    print("(6) Plot Sun's Path on Sundial")
     print("(H) Solve End-Semester Homework")
     print("(Q) Quit Program\n")
 
@@ -1538,7 +1584,7 @@ while(True):
                 print(">> Give Parameters!")
 
                 print(">> Would you like to give Geographical Coordinates by yourself,\n>> or would like to choose a predefined Location's Coordinates?")
-                print("Write \'1\' for User defined Coordinates, and write \'2\' for Predefined Locations' Coordinates!")
+                print(">> Write \'1\' for User defined Coordinates, and write \'2\' for Predefined Locations' Coordinates!")
 
                 HorToEquILocationChoose = input(">> (1) User Defined, (2) Predefined: ")
 
@@ -1556,9 +1602,10 @@ while(True):
                             Location = input("> Location's name (type \'H\' for Help): ")
 
                             if(Location == "Help" or Location == "help" or Location == "H" or Location == "h"):
-                                print("Predefined Locations you can choose from:")
+                                print("\n>> Predefined Locations you can choose from:")
                                 for keys in LocationDict.items():
                                     print(keys)
+                                print('\n')
                             
                             else:
                                 try:
@@ -1660,9 +1707,10 @@ while(True):
                             Location = input("> Location's name (type \'H\' for Help): ")
 
                             if(Location == "Help" or Location == "help" or Location == "H" or Location == "h"):
-                                print(">> Predefined Locations you can choose from:")
+                                print("\n>> Predefined Locations you can choose from:")
                                 for keys in LocationDict.items():
                                     print(keys)
+                                print('\n')
                             
                             else:
                                 try:
@@ -1746,9 +1794,10 @@ while(True):
                             Location = input("> Location's name (type \'H\' for Help): ")
 
                             if(Location == "Help" or Location == "help" or Location == "H" or Location == "h"):
-                                print(">> Predefined Locations you can choose from:")
+                                print("\n>> Predefined Locations you can choose from:")
                                 for keys in LocationDict.items():
                                     print(keys)
+                                print('\n')
                             
                             else:
                                 try:
@@ -1789,7 +1838,7 @@ while(True):
                             break
 
                         elif(RAorDecEquIToHorChoose == 'B' or RAorDecEquIToHorChoose == 'b'):
-                            print("\n>> HINT: You can write RA as a Decimal Fraction. For this you need to\n>> Write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                            print("\n>> HINT: You can write RA and Declination as a Decimal Fraction.\n>> For this you need to write Hours as a float-type value, then\n>> You can Press Enter for both Minutes and Seconds.")
                             RightAscensionHours = float(input("\n> Right Ascension (α) Hours: ") or "0")
                             RightAscensionMinutes = float(input("> Right Ascension (α) Minutes: ") or "0")
                             RightAscensionSeconds = float(input("> Right Ascension (α) Seconds: ") or "0")
@@ -1812,6 +1861,7 @@ while(True):
                                 print(">> Predefined Objects you can choose from:")
                                 for keys in StellarDict.items():
                                     print(keys)
+                                print('\n')
                             
                             else:
                                 try:
@@ -1901,7 +1951,7 @@ while(True):
 
                         elif(EquIToHorChooseD == 'N' or EquIToHorChooseD == 'n' or EquIToHorChooseD == 'No' or EquIToHorChooseD == 'no' or EquIToHorChooseD == 'nO'):
                             LocalHourAngle = None
-                            print("\n From the given data, you can calculate Azimuth (A),\n>> If Altitude (m) is given.")
+                            print("\n>> From the given data, you can calculate Azimuth (A),\n>> If Altitude (m) is given.")
                             print(">> HINT: You can write Altitude as a Decimal Fraction. For this you need to\n>> Write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
                             Azimuth == None
 
@@ -2006,6 +2056,7 @@ while(True):
                                 print(">> Predefined Objects you can choose from:")
                                 for keys in StellarDict.items():
                                     print(keys)
+                                print('\n')
                             
                             else:
                                 try:
@@ -2067,7 +2118,7 @@ while(True):
                     print(declinmsg.format(Declination))
 
                 else:
-                    print("Declination is Unknown!")
+                    print("- Declination is Unknown!")
 
                 print('\n')
 
@@ -2185,9 +2236,10 @@ while(True):
                             Location = input("> Location's name (type \'H\' for Help): ")
 
                             if(Location == "Help" or Location == "help" or Location == "H" or Location == "h"):
-                                print(">> Predefined Locations you can choose from:")
+                                print("\n>> Predefined Locations you can choose from:")
                                 for keys in LocationDict.items():
                                     print(keys)
+                                print('\n')
 
                             else:
                                 try:
@@ -2246,6 +2298,7 @@ while(True):
                                 print(">> Predefined Objects you can choose from:")
                                 for keys in StellarDict.items():
                                     print(keys)
+                                print('\n')
 
                             else:
                                 try:
@@ -2294,8 +2347,8 @@ while(True):
                 # Print Results
                 print("> Calculated Parameters in Horizontal Coord. Sys.:")
 
-                azimmsg = ">>> Azimuth (A):  {0}°"
-                altitmsg = ">>> Altitude (m): {0}°"
+                azimmsg = "- Azimuth (A):  {0}°"
+                altitmsg = "- Altitude (m): {0}°"
                 print(azimmsg.format(Azimuth))
                 print(altitmsg.format(Altitude))
                 print('\n')
@@ -2345,12 +2398,13 @@ while(True):
                 print(">> Calculate Distance of Choosen Predefined Locations\n")
                 print(">> Write the Names of Two Choosen Cities to the Input!")
                 while(True):
-                    Location1 = input("Location #1 (type \'H\' for Help): ")
+                    Location1 = input("> Location #1 (type \'H\' for Help): ")
 
                     if(Location1 == "Help" or Location1 == "help" or Location1 == "H" or Location1 == "h"):
-                        print(">> Predefined Locations you can choose from:")
+                        print("\n>> Predefined Locations you can choose from:")
                         for keys in LocationDict.items():
                             print(keys)
+                        print('\n')
 
                     else:
                         try:
@@ -2365,12 +2419,13 @@ while(True):
                             break
 
                 while(True):
-                    Location2 = input("Location #2 (type \'H\' for Help): ")
+                    Location2 = input("> Location #2 (type \'H\' for Help): ")
 
                     if(Location2 == "Help" or Location2 == "help" or Location2 == "H" or Location2 == "h"):
-                        print(">> Predefined Locations you can choose from:")
+                        print("\n>> Predefined Locations you can choose from:")
                         for keys in LocationDict.items():
                             print(keys)
+                        print('\n')
 
                     else:
                         try:
@@ -2495,12 +2550,13 @@ while(True):
                 # Input Choosen Location's Name
                 while(True):
                     Location = input("> Location's name (type \'H\' for Help): ")
-                    
+
                     if(Location == "Help" or Location == "help" or Location == "H" or Location == "h"):
-                        print(">> Predefined Locations you can choose from:")
+                        print("\n>> Predefined Locations you can choose from:")
                         for keys in LocationDict.items():
                             print(keys)
-                    
+                        print('\n')
+
                     else:
                         try:
                             Longitude = LocationDict[Location][1]
@@ -2508,7 +2564,7 @@ while(True):
                         except KeyError:
                             print(">>>> ERROR: The Location, named \"" + Location + "\" is not in the Database!")
                             print(">>>> Type \"Help\" to list Available Cities in Database!")
-                            
+
                         else:
                             break
 
@@ -2519,7 +2575,7 @@ while(True):
                         break
                     else:
                         print(">>>> ERROR: Year 0 is not defined! Please write another date!\n")
-                
+
                 while(True):
                     DateMonth = int(input("> Month: "))
                     if(DateMonth > 0 and DateMonth < 13):
@@ -2576,126 +2632,6 @@ while(True):
                 print(">>>> ERROR: Invalid option! Try Again!")
 
 
-
-    #   _____                      _           _______ _               
-    #  /  ___|                    | |         / / ___ (_)              
-    #  \ `--. _   _ _ __  ___  ___| |_ ___   / /| |_/ /_ ___  ___  ___ 
-    #   `--. \ | | | '_ \/ __|/ _ \ __/ __| / / |    /| / __|/ _ \/ __|
-    #  /\__/ / |_| | | | \__ \  __/ |_\__ \/ /  | |\ \| \__ \  __/\__ \
-    #  \____/ \__,_|_| |_|___/\___|\__|___/_/   \_| \_|_|___/\___||___/
-    # DATETIME CALCULATION FOR SURISES AND SUNSET
-    elif(mode == '4'):
-        while(True):
-            print(">> Calculate Datetimes of Sunset/Rises at Specific Location")
-            print(">> Please choose a mode you'd like to use!")
-            print("(1) Parameters from User Input")
-            print("(2) Parameters of Predefined Locations")
-            print("(Q) Quit to Main Menu\n")
-
-            SunMode = input("> Choose a mode and press enter...: ")
-            print('\n')
-
-            if(SunMode == '1'):
-                print(">> Calculate Sunset/Rises from given Parameters\n")
-                print(">> Give Parameters!")
-
-                # Input Positional Parameters
-                print(">> HINT: You can write Latitude as a Decimal Fraction. For this you need to\n>> Write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
-                LatitudeHours = float(input("> Latitude (φ) Hours: ") or "0")
-                LatitudeMinutes = float(input("> Latitude (φ) Minutes: ") or "0")
-                LatitudeSeconds = float(input("> Latitude (φ) Seconds: ") or "0")
-                Latitude = LatitudeHours + LatitudeMinutes/60 + LatitudeSeconds/3600
-
-                print(">> HINT: You can write Longitude as a Decimal Fraction. For this you need to\n>> Write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
-                LongitudeHours = float(input("> Longitude (λ) Hours: ") or "0")
-                LongitudeMinutes = float(input("> Longitude (λ) Minutes: ") or "0")
-                LongitudeSeconds = float(input("> Longitude (λ) Seconds: ") or "0")
-                Longitude = LongitudeHours + LongitudeMinutes/60 + LongitudeSeconds/3600
-
-
-            elif(SunMode == '2'):
-                print(">> Calculate Datetimes of Sunset/Rises from the Coordinates of a Predefined Location")
-                print(">> Write the Name of a Choosen Location to the Input!")
-
-                # Input Choosen Location's Name
-                while(True):
-                    Location = input("> Location's name (type \'H\' for Help): ")
-                    
-                    if(Location == "Help" or Location == "help" or Location == "H" or Location == "h"):
-                        print(">> Predefined Locations you can choose from:")
-                        for keys in LocationDict.items():
-                            print(keys)
-                    
-                    else:
-                        try:
-                            Latitude = LocationDict[Location][0]
-                            Longitude = LocationDict[Location][1]
-
-                        except KeyError:
-                            print(">>>> ERROR: The Location, named \"" + Location + "\" is not in the Database!")
-                            print(">>>> Type \"Help\" to list Available Cities in Database!")
-                            
-                        else:
-                            break
-
-            elif(SunMode == 'Q' or SunMode == 'q'):
-                break
-
-            else:
-                print(">>>> ERROR: Invalid option! Try Again!\n")
-
-
-            if(SunMode == '1' or SunMode == '2'):
-                # Input Time Parameters
-                while(True):
-                    LocalDateYear = int(input("> Year: "))
-                    if(LocalDateYear != 0):
-                        break
-                    else:
-                        print(">>>> ERROR: Year 0 is not defined! Please write another date!\n")
-
-                while(True):
-                    LocalDateMonth = int(input("> Month: "))
-                    if(LocalDateMonth > 0 and LocalDateMonth < 13):
-                        break
-                    else:
-                        print(">>>> ERROR: Months should be inside [1,12] interval, and should be Integer!\n")
-
-                # Leap Year	Handling
-                while(True):
-                    LocalDateDay = int(input("> Day: "))
-                    if(LocalDateYear%4 == 0 and (LocalDateYear%100 != 0 or LocalDateYear%400 == 0)):
-                        if(MonthLengthListLeapYear[LocalDateMonth - 1] >= LocalDateDay and LocalDateDay > 0):
-                            break
-                        else:
-                            daysmsg = ">>>> ERROR: Days should be inside [1,{0}] interval, and should be Integer!\n"
-                            print(daysmsg.format(MonthLengthListLeapYear[LocalDateMonth - 1]))
-                    else:
-                        if(MonthLengthList[LocalDateMonth - 1] >= LocalDateDay and LocalDateDay > 0):
-                            break
-                        else:
-                            daysmsg = ">>>> ERROR: Days should be inside [1,{0}] interval, and should be Integer!\n"
-                            print(daysmsg.format(MonthLengthList[LocalDateMonth - 1]))
-
-                Planet = "Earth"
-                AltitudeOfSun = 0
-
-                (LocalTimeSet, LocalHoursSet, LocalMinutesSet, LocalSecondsSet, LocalDateYearSet, LocalDateMonthSet, LocalDateDaySet, 
-                LocalTimeRise, LocalHoursRise, LocalMinutesRise, LocalSecondsRise, LocalDateYearRise, LocalDateMonthRise, LocalDateDayRise) = SunSetAndRiseDateTime(Planet, Latitude, Longitude, AltitudeOfSun, LocalDateYear, LocalDateMonth, LocalDateDay)
-
-                if(SunMode == '1'):
-                    suncoordmsg = ">>> Calculated Datetimes of Sunset/Rise for Coordinates: \n>>> {0}, {1}"
-                    print(suncoordmsg.format(Latitude, Longitude))
-
-                elif(SunMode == '2'):
-                    print("\n>>> Calculated Datetimes of Sunset/Rise for " + Location + ":")
-
-                sunrisemsg = "\n>> The Sunrise will occur on {0}.{1}.{2}.,\n>> At {3}:{4}:{5} LT"
-                sunsetmsg = "\n>> The Sunset will occur on {0}.{1}.{2}.,\n>> At {3}:{4}:{5} LT\n"
-                print(sunrisemsg.format(LocalDateYearRise, LocalDateMonthRise, LocalDateDayRise, LocalHoursRise, LocalMinutesRise, LocalSecondsRise))
-                print(sunsetmsg.format(LocalDateYearSet, LocalDateMonthSet, LocalDateDaySet, LocalHoursSet, LocalMinutesSet, LocalSecondsSet))
-
-
     #   _______       _ _ _       _     _      _____      _      
     #  |__   __|     (_) (_)     | |   | |    / ____|    | |     
     #     | |_      ___| |_  __ _| |__ | |_  | |     __ _| | ___ 
@@ -2705,7 +2641,7 @@ while(True):
     #                        __/ |                               
     #                       |___/                                
     # DATETIME CALCULATION FOR TWILIGHTS
-    elif(mode == '5'):
+    elif(mode == '4'):
         while(True):
             print(">> Calculate Datetimes of Twilights at Specific Location")
             print(">> Please choose a mode you'd like to use!")
@@ -2745,9 +2681,10 @@ while(True):
                     Location = input("> Location's name (type \'H\' for Help): ")
                     
                     if(Location == "Help" or Location == "help" or Location == "H" or Location == "h"):
-                        print(">> Predefined Locations you can choose from:")
+                        print("\n>> Predefined Locations you can choose from:")
                         for keys in LocationDict.items():
                             print(keys)
+                        print('\n')
                     
                     else:
                         try:
@@ -2811,6 +2748,12 @@ while(True):
                 LocalHoursRiseAstro, LocalMinutesRiseAstro, LocalSecondsRiseAstro, LocalDateYearSetAstro, LocalDateMonthSetAstro, LocalDateDaySetAstro,
                 LocalHoursSetAstro, LocalMinutesSetAstro, LocalSecondsSetAstro, LocalDateYearRiseAstro, LocalDateMonthRiseAstro, LocalDateDayRiseAstro) = TwilightCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, LocalDateDay)
 
+                if(TwiMode == '1'):
+                    suncoordmsg = ">>> Calculated Datetimes of Twilights at Coordinates \n>>> {0}, {1}:"
+                    print(suncoordmsg.format(Latitude, Longitude))
+
+                elif(TwiMode == '2'):
+                    print("\n>>> Calculated Datetimes of Twilights at " + Location + ":")
 
                 msgdaylightrise = "\n>> Rising Daylight's time: {0}:{1}:{2} on {3}.{4}.{5}"
                 msgdaylightset = ">> Setting Daylight's time: {0}:{1}:{2} on {3}.{4}.{5}\n"
@@ -2855,7 +2798,7 @@ while(True):
     #                                                     __/ |            
     #                                                    |___/             
     # Calculate Astronomical Triangles Parameters
-    elif(mode == '6'):
+    elif(mode == '5'):
         while(True):
             print(">> Calculate Astronomical Triangles Parameters from given Ones")
             print(">> Please choose a mode you'd like to use!")
@@ -2911,7 +2854,7 @@ while(True):
     #  /\__/ / |_| | | | | (_| | | (_| | |
     #  \____/ \__,_|_| |_|\__,_|_|\__,_|_|
     # Plot Sundial for Choosen Locations
-    elif(mode == '7'):
+    elif(mode == '6'):
         while(True):
             print(">> Plot Sun's Path on a Sundial at Choosen Location on Earth")
             print(">> Please choose a mode you'd like to use!")
@@ -2953,9 +2896,10 @@ while(True):
                     Location = input("> Location's name (type \'H\' for Help): ")
                     
                     if(Location == "Help" or Location == "help" or Location == "H" or Location == "h"):
-                        print(">> Predefined Locations you can choose from:")
+                        print("\n>> Predefined Locations you can choose from:")
                         for keys in LocationDict.items():
                             print(keys)
+                        print('\n')
                     
                     else:
                         try:
@@ -3443,12 +3387,13 @@ while(True):
                         AzimuthsSeptember.append(AzimuthActual)
                         ShadowsSeptember.append(ShadowsLengthActual)
 
+                # Sun's path on the Sky
                 plt.title("Sun's path on the Sky")
                 plt.plot(LocalHourAngleSummer, AltitudesSummer, '.', label="Summer Solstice")
                 plt.plot(LocalHourAngleWinter, AltitudesWinter, '.', label="Winter Solstice")
                 plt.plot(LocalHourAngleMarch, AltitudesMarch, '.', label="March Equinox")
                 plt.plot(LocalHourAngleSeptember, AltitudesSeptember, '.', label="Sept. Equinox")
-                
+
                 plt.xlabel("Hours (h)")
                 plt.ylabel("Altitude of the Sun (°)")
                 plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
@@ -3469,6 +3414,7 @@ while(True):
                 plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
                 plt.show()'''
 
+                # Shadow's length on the ground
                 plt.title("Sun's path on Sundial")
                 plt.plot(LocalHourAngleSummer, ShadowsSummer, '.', label="Summer Solstice")
                 plt.plot(LocalHourAngleWinter, ShadowsWinter, '.', label="Winter Solstice")
@@ -3482,6 +3428,128 @@ while(True):
                 plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
                 plt.grid()
                 plt.show()
+
+
+
+    #    ___              _                                
+    #   / _ \            | |                               
+    #  / /_\ \_ __   __ _| | ___ _ __ ___  _ __ ___   __ _ 
+    #  |  _  | '_ \ / _` | |/ _ \ '_ ` _ \| '_ ` _ \ / _` |
+    #  | | | | | | | (_| | |  __/ | | | | | | | | | | (_| |
+    #  \_| |_/_| |_|\__,_|_|\___|_| |_| |_|_| |_| |_|\__,_|
+    # Draw Sun Analemma at Choosen Location on Earth
+    elif(mode == '7'):
+        while(True):
+            print(">> Plot the Sun Analemma at Choosen Location on Earth")
+            print(">> Please choose a mode you'd like to use!")
+            print("(1) Parameters from User Input")
+            print("(2) Parameters of Predefined Locations")
+            print("(Q) Quit to Main Menu")
+            
+            SundialMode = input("> Choose a mode and press enter...: ")
+
+            print('\n')
+
+            # Constants for calculation
+            Planet = "Earth"
+
+            if(SundialMode == '1'):
+                print(">> Plot Analemma on a User-defined Location\n")
+                print(">> Give Parameters!")
+
+                # Input Positional Parameters
+                print(">> HINT: You can write Latitude as a Decimal Fraction. For this you need to\n>> Write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                LatitudeHours = float(input("> Latitude (φ) Hours: ") or "0")
+                LatitudeMinutes = float(input("> Latitude (φ) Minutes: ") or "0")
+                LatitudeSeconds = float(input("> Latitude (φ) Seconds: ") or "0")
+                Latitude = LatitudeHours + LatitudeMinutes/60 + LatitudeSeconds/3600
+
+                print(">> HINT: You can write Longitude as a Decimal Fraction. For this you need to\n>> Write Hours as a float-type value, then you can\n>> Press Enter for both Minutes and Seconds.")
+                LongitudeHours = float(input("> Longitude (λ) Hours: ") or "0")
+                LongitudeMinutes = float(input("> Longitude (λ) Minutes: ") or "0")
+                LongitudeSeconds = float(input("> Longitude (λ) Seconds: ") or "0")
+                Longitude = LongitudeHours + LongitudeMinutes/60 + LongitudeSeconds/3600
+
+
+            elif(SundialMode == '2'):
+                print(">> Plot Analemma on a Predefined Location's Coordinates")
+                print(">> Write the Name of a Choosen Location to the Input!")
+
+                # Input Choosen Location's Name
+                while(True):
+                    Location = input("> Location's name (type \'H\' for Help): ")
+                    
+                    if(Location == "Help" or Location == "help" or Location == "H" or Location == "h"):
+                        print("\n>> Predefined Locations you can choose from:")
+                        for keys in LocationDict.items():
+                            print(keys)
+                        print('\n')
+                    
+                    else:
+                        try:
+                            Latitude = LocationDict[Location][0]
+                            Longitude = LocationDict[Location][1]
+
+                        except KeyError:
+                            print(">>>> ERROR: The Location, named \"" + Location + "\" is not in the Database!")
+                            print(">>>> Type \"Help\" to list Available Cities in Database!")
+                            
+                        else:
+                            break
+
+            elif(SundialMode == 'Q' or SundialMode == 'q'):
+                break
+
+            else:
+                print(">>>> ERROR: Invalid option! Try Again!")
+
+
+            if(SundialMode == '1' or SundialMode == '2'):
+                print(">> For which Year would You like to Draw the Sundial?")
+                while(True):
+                    SunDialYear = float(input("> Choosen Year: "))
+                    if(SunDialYear != 0):
+                        break
+                    else:
+                        print(">>>> ERROR: Year 0 is not defined! Please write another date!\n")
+
+                
+                while(True):
+                    print(">> Would you like to plot the Sun's path for a Choosen Date in This Year too?")
+                    SunDialChoose = input(">> Write Y for Yes or N for No: ")
+                    if(SunDialChoose == 'Y' or SunDialChoose == 'y' or SunDialChoose == 'Yes' or SunDialChoose == 'yes' or SunDialChoose == 'YEs' or SunDialChoose == 'yEs' or SunDialChoose == 'yeS' or SunDialChoose == 'YeS' or SunDialChoose == 'yES'):
+                        # Input Time Parameters
+                        while(True):
+                            LocalDateMonth = int(input("> Month: "))
+                            if(LocalDateMonth > 0 and LocalDateMonth < 13):
+                                break
+                            else:
+                                print(">>>> ERROR: Months should be inside [1,12] interval, and should be Integer!\n")
+
+                        # Leap Year	Handling
+                        while(True):
+                            LocalDateDay = int(input("> Day: "))
+                            if(LocalDateYear%4 == 0 and (LocalDateYear%100 != 0 or LocalDateYear%400 == 0)):
+                                if(MonthLengthListLeapYear[LocalDateMonth - 1] >= LocalDateDay and LocalDateDay > 0):
+                                    break
+                                else:
+                                    daysmsg = ">>>> ERROR: Days should be inside [1,{0}] interval, and should be Integer!\n"
+                                    print(daysmsg.format(MonthLengthListLeapYear[LocalDateMonth - 1]))
+                            else:
+                                if(MonthLengthList[LocalDateMonth - 1] >= LocalDateDay and LocalDateDay > 0):
+                                    break
+                                else:
+                                    daysmsg = ">>>> ERROR: Days should be inside [1,{0}] interval, and should be Integer!\n"
+                                    print(daysmsg.format(MonthLengthList[LocalDateMonth - 1]))
+
+                        break
+
+                    elif(SunDialChoose == 'N' or SunDialChoose == 'n' or SunDialChoose == 'No' or SunDialChoose == 'no' or SunDialChoose == 'nO'):
+                        break
+
+                    else:
+                        print(">>>> ERROR: Invalid option! Try Again!")
+
 
     #   _   _                                         _    
     #  | | | |                                       | |   
@@ -3768,7 +3836,7 @@ while(True):
         print("1.3\n")
 
         print(">>> For the Sundial, do the following:")
-        print(">>> 1. Choose mode \'7\'")
+        print(">>> 1. Choose mode \'6\'")
         print(">>> 2. Choose eg. Predefined Locations with option \'2\'")
         print(">>> 3. Write eg. \'Budapest\'")
         print(">>> 4. Year = 2018")
