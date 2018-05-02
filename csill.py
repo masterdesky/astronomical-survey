@@ -30,8 +30,8 @@
 ##        > Calculate Twilights' Correct Datetimes at Specific Locations                     ##
 ##        > Draw Sun's Path on Earth during a Choosen Year                                   ##
 ##        > Solve Csillész II End-Semester Homework with One Click                           ##
-##       Future:                                                                             ##
 ##        > Draw Sun Analemma for a Choosen Year                                             ##
+##       Future:                                                                             ##
 ##        > Better Optimalization and Greater Precision                                      ##
 ####                                                                                       ####
 ###############################################################################################
@@ -63,7 +63,7 @@ import matplotlib.pyplot as plt
 #import numpy as np
 
 # Current Version of the Csillész II Problem Solver
-ActualVersion = 'v1.30'
+ActualVersion = 'v1.32'
 
 
 
@@ -165,10 +165,10 @@ MonthLengthListLeapYear = [31,29,31,30,31,30,31,31,30,31,30,31]
 # "PlanetNameX": [X_0, X_1, X_2 .., X_E.] or [X_1, X_3, ..., X_E] etc.
 # "PlanetNameOrbit": [Π, ε, Correction for Refraction and Sun's visible shape]
 OrbitDict = {
-    "MercuryM": [],
-    "MercuryC": [],
-    "MercuryA": [],
-    "MercuryD": [],
+    "MercuryM": [174.7948, 4.09233445],
+    "MercuryC": [23.4400, 2.9818, 0.5255, 0.1058, 0.0241, 0.0055, 0.0026],
+    "MercuryA": [-0.0000, 0.0000, 0.0000, 0.0000],
+    "MercuryD": [0.0351, 0.0000, 0.0000, 0.0000],
     "MercuryJ": [45.3497, 11.4556, 0.00000, 175.9386],
     "MercuryH": [0.035, 0.00000, 0.00000],
     "MercuryOrbit": [230.3265, 0.0351, -0.69],
@@ -189,54 +189,55 @@ OrbitDict = {
     "EarthH": [22.137, 0.599, 0.016],
     "EarthOrbit": [102.9373, 23.4393, -0.83],
 
-    "MarsM": [],
-    "MarsC": [],
-    "MarsA": [],
-    "MarsD": [],
+    "MarsM": [19.3730, 0.52402068],
+    "MarsC": [10.6912, 0.6228, 0.0503, 0.0046, 0.0005, 0.00000, 0.0001],
+    "MarsA": [-2.8608, 0.0713, -0.0022, 0.0004],
+    "MarsD": [24.3880, 0.7332, 0.0706, 0.0011],
     "MarsJ": [0.9047, 0.0305, -0.0082, 1.027491],
     "MarsH": [23.576, 0.733, 0.024],
     "MarsOrbit": [71.0041, 25.1918, -0.17],
 
-    "JupiterM": [],
-    "JupiterC": [],
-    "JupiterA": [],
-    "JupiterD": [],
+    "JupiterM": [20.0202, 0.08308529],
+    "JupiterC": [5.5549, 0.1683, 0.0071, 0.0003, 0.00000, 0.00000, 0.0001],
+    "JupiterA": [-0.0425, 0.00000, 0.00000, 0.0001],
+    "JupiterD": [3.1173, 0.0015, 0.00000, 0.0034],
     "JupiterJ": [0.3345, 0.0064, 0.00000, 0.4135778],
     "JupiterH": [3.116, 0.002, 0.00000],
     "JupiterOrbit": [237.1015, 3.1189, -0.05],
 
-    "SaturnM": [],
-    "SaturnC": [],
-    "SaturnA": [],
-    "SaturnD": [],
+    "SaturnM": [317.0207, 0.03344414],
+    "SaturnC": [6.3585, 0.2204, 0.0106, 0.0006, 0.00000, 0.00000, 0.0001],
+    "SaturnA": [-3.2338, 0.0909, -0.0031, 0.0009],
+    "SaturnD": [25.7696, 0.8640, 0.0949, 0.0010],
     "SaturnJ": [0.0766, 0.0078, -0.0040, 0.4440276],
     "SaturnH": [24.800, 0.864, 0.032],
     "SaturnOrbit": [99.4587, 26.7285, -0.03],
 
-    "UranusM": [],
-    "UranusC": [],
-    "UranusA": [],
-    "UranusD": [],
+    "UranusM": [141.0498, 0.01172834],
+    "UranusC": [5.3042, 0.1534, 0.0062, 0.0003, 0.00000, 0.00000, 0.0001],
+    "UranusA": [-42.5874, 12.8117, -2.6077, 17.6902],
+    "UranusD": [56.9083, -0.8433, 26.1648, 3.34],
     "UranusJ": [0.1260, -0.0106, 0.0850, -0.7183165],
     "UranusH": [28.680, -0.843, 8.722],
     "UranusOrbit": [5.4634, 82.2298, -0.01],
 
-    "NeptunusM": [],
-    "NeptunusC": [],
-    "NeptunusA": [],
-    "NeptunusD": [],
+    "NeptunusM": [256.2250, 0.00598103],
+    "NeptunusC": [1.0302, 0.0058, 0.00000, 0.00000, 0.00000, 0.00000, 0.0001],
+    "NeptunusA": [-3.5214, 0.1078, -0.0039, 0.0163],
+    "NeptunusD": [26.7643, 0.9669, 0.1166, 0.060],
     "NeptunusJ": [0.3841, 0.0019, -0.0066, 0.6712575],
     "NeptunusH": [26.668, 0.967, 0.039],
     "NeptunusOrbit": [182.2100, 27.8477, -0.01],
 
-    "PlutoM": [],
-    "PlutoC": [],
-    "PlutoA": [],
-    "PlutoD": [],
+    "PlutoM": [14.882, 0.00396],
+    "PlutoC": [28.3150, 4.3408, 0.9214, 0.2235, 0.0627, 0.0174, 0.0096],
+    "PlutoA": [-19.3248, 3.0286, -0.4092, 0.5052],
+    "PlutoD": [49.8309, 4.9707, 5.5910, 0.19],
     "PlutoJ": [4.5635, -0.5024, 0.3429, 6.387672],
     "PlutoH": [38.648, 4.971, 1.864],
     "PlutoOrbit": [184.5484, 119.6075, -0.01]
 }
+
 
 
 ################################################################
@@ -470,6 +471,8 @@ def CalculateGMST(Longitude, UnitedHoursForGMST, UnitedMinutesForGMST, UnitedSec
 
     return(GMST)
 
+
+
 ################################################################
 ########                                                ########
 ########      1. CONVERSION OF COORDINATE SYSTEMS       ########
@@ -565,7 +568,7 @@ def HorToEquII(Latitude, Altitude, Azimuth, LocalSiderealTime):
 
 
 # 3. Equatorial I to Horizontal
-def EquIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSiderealTime, LocalHourAngle):
+def EquIToHor(Latitude, RightAscension, Declination, Altitude=None, LocalSiderealTime=None, LocalHourAngle=None):
 
     # Initial Data Normalization
     # Latitude: [-π,+π]
@@ -586,7 +589,7 @@ def EquIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSid
         # LHA: [0h,24h[
         LocalHourAngle = NormalizeZeroBounded(LocalHourAngle, 24)
 
-    if(LocalHourAngle != None and Azimuth == None):
+    if(LocalHourAngle != None):
         # Convert to angles from hours (t -> H)
         LocalHourAngleDegrees = LocalHourAngle * 15
 
@@ -828,7 +831,7 @@ def EquIIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSi
     RightAscension = NormalizeZeroBounded(RightAscension, 24)
 
     # Convert Equatorial I to Horizontal
-    Altitude, Azimuth = EquIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSiderealTime, LocalHourAngle)
+    Altitude, Azimuth = EquIToHor(Latitude, RightAscension, Declination, Altitude, LocalSiderealTime, LocalHourAngle)
 
     # Normalization of Output Data
     # Altitude: [-π/2,+π/2]
@@ -839,11 +842,13 @@ def EquIIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSi
     return(Altitude, Azimuth)
 
 
-################################################
-########                                ########
-########    2. GEOGRAPHICAL DISTANCE    ########
-########                                ########
-################################################
+
+################################################################
+########                                                ########
+########            2. GEOGRAPHICAL DISTANCE            ########
+########                                                ########
+################################################################
+
 # Calculate distances between coordinates
 def GeogDistCalc(Latitude1, Latitude2, Longitude1, Longitude2):
     
@@ -902,6 +907,7 @@ def GeogDistLocationCalc(Latitude1, Latitude2, Longitude1, Longitude2):
     return(Distance)
 
 
+
 ################################################################
 ########                                                ########
 ######## 3. CALCULATE LOCAL MEAN SIDEREAL TIME (LMST)   ########
@@ -935,7 +941,10 @@ def LocalSiderealTimeCalc(Longitude, LocalHours, LocalMinutes, LocalSeconds, Dat
 
     LocalSiderealTime, LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeconds, LocalDateYear, LocalDateMonth, LocalDateDay = NormalizeTimeParameters(LMSTNorm, DateYear, DateMonth, DateDay)
 
-    return(LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeconds, UnitedHours, UnitedMinutes, UnitedSeconds, GreenwichSiderealHours, GreenwichSiderealMinutes, GreenwichSiderealSeconds)
+    return(LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeconds,
+           UnitedHours, UnitedMinutes, UnitedSeconds, 
+           GreenwichSiderealHours, GreenwichSiderealMinutes, GreenwichSiderealSeconds)
+
 
 
 ################################################################
@@ -961,7 +970,7 @@ def CalculateJulianDate(LocalDateYear, LocalDateMonth, LocalDateDay, UnitedHours
     return(JulianDays)
 
 # Calculate Sun's Position
-def SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeOfSun, JulianDays):
+def SunsCoordinatesCalc(Planet, Longitude, JulianDays):
 
     # 1. Mean Solar Noon
     # JAnomaly is an approximation of Mean Solar Time at WLongitude expressed as a Julian day with the day fraction
@@ -1016,13 +1025,28 @@ def SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeOfSun, JulianDays):
     DeclinationSun = (OrbitDict[Planet + "D"][0] * math.sin(math.radians(EclLongitudeSun)) + OrbitDict[Planet + "D"][1] * 
                      (math.sin(math.radians(EclLongitudeSun)))**3 + OrbitDict[Planet + "D"][2] * (math.sin(math.radians(EclLongitudeSun)))**5)
 
-    # 7./a Local Hour Angle of Sun (H)
+
+    # 7. Solar Transit
+    # Jtransit is the Julian date for the Local True Solar Transit (or Solar Noon)
+    # JulianDate = JulianDays + 2451545
+    # 2451545.5 is midnight or the beginning of the equivalent Julian year reference
+    # Jtransit = J_x + 0.0053 * sin(MeanANomaly) - 0.0068 * sin(2 * L_sun)
+    # "0.0053 * sin(MeanAnomaly) - 0.0069 * sin(2 * EclLongitudeSun)"  is a simplified version of the equation of time
+    J_x = (JulianDays + 2451545) + OrbitDict[Planet + "J"][3] * (JulianDays - JAnomaly)
+    Jtransit = J_x + OrbitDict[Planet + "J"][1] * math.sin(math.radians(MeanAnomaly)) + OrbitDict[Planet + "J"][2] * math.sin(math.radians(2 * MeanEclLongitudeSun))
+
+
+    return(RightAscensionSun, DeclinationSun, EclLongitudeSun, Jtransit)
+
+def SunsLocalHourAngle(Planet, Latitude, Longitude, DeclinationSun, EclLongitudeSun, AltitudeOfSun):
+
+    # 8./a Local Hour Angle of Sun (H)
     # H+ ≈ 90° + H_1 * sin(EclLongitudeSun) * tan(φ) + H_3 * sin(EclLongitudeSun)^3 * tan(φ) * (3 + tan(φ)^2) + H_5 * sin(EclLongitudeSun)^5 * tan(φ) * (15 + 10*tan(φ)^2 + 3 * tan(φ)^4))
     LocalHourAngleSun_Pos = (90 + OrbitDict[Planet + "H"][0] * math.sin(math.radians(EclLongitudeSun)) * math.tan(math.radians(Latitude)) + OrbitDict[Planet + "H"][1] * 
                             math.sin(math.radians((EclLongitudeSun))**3 * math.tan(math.radians(Latitude)) * (3 + math.tan(math.radians(Latitude))**2) + OrbitDict[Planet + "H"][2] * 
                             math.sin(math.radians(EclLongitudeSun))**5 * math.tan(math.radians(Latitude)) * (15 + 10 * math.tan(math.radians(Latitude))**2 + 3 * math.tan(math.radians(Latitude))**4)))
 
-    # 7./b1 Local Hour Angle of Sun (H)
+    # 8./b1 Local Hour Angle of Sun (H)
     # cos(H) = (sin(m_0) - sin(φ) * sin(δ)) / (cos(φ) * cos(δ))
     # LocalHourAngleSun (t_0) is the Local Hour Angle from the Observer's Zenith
     # Latitude (φ) is the North Latitude of the Observer (north is positive, south is negative)
@@ -1043,21 +1067,15 @@ def SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeOfSun, JulianDays):
     LocalHourAngleSun_Pos = NormalizeZeroBounded(LocalHourAngleSun_Pos, 360)
     LocalHourAngleSun_Orig = NormalizeZeroBounded(LocalHourAngleSun_Orig, 360)
 
-    # 8. Solar Transit
-    # Jtransit is the Julian date for the Local True Solar Transit (or Solar Noon)
-    # JulianDate = JulianDays + 2451545
-    # 2451545.5 is midnight or the beginning of the equivalent Julian year reference
-    # Jtransit = J_x + 0.0053 * sin(MeanANomaly) - 0.0068 * sin(2 * L_sun)
-    # "0.0053 * sin(MeanAnomaly) - 0.0069 * sin(2 * EclLongitudeSun)"  is a simplified version of the equation of time
-    J_x = (JulianDays + 2451545) + OrbitDict[Planet + "J"][3] * (JulianDays - JAnomaly)
-    Jtransit = J_x + OrbitDict[Planet + "J"][1] * math.sin(math.radians(MeanAnomaly)) + OrbitDict[Planet + "J"][2] * math.sin(math.radians(2 * MeanEclLongitudeSun))
+    return(LocalHourAngleSun_Pos, LocalHourAngleSun_Orig)
 
-    return(LocalHourAngleSun_Pos, LocalHourAngleSun_Orig, RightAscensionSun, DeclinationSun, Jtransit)
 
 def CalculateCorrectionsForJ(Planet, Latitude, Longitude, AltitudeOfSun, JAlt_0):
 
     # Calculate Corrections for LHA of Sun
-    LocalHourAngleSun_PosCorr, LocalHourAngleSun_OrigCorr, RightAscensionSunCorr, DeclinationSunCorr, JtransitCorr = SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeOfSun, JAlt_0)
+    RightAscensionSunCorr, DeclinationSunCorr, EclLongitudeSun, JtransitCorr = SunsCoordinatesCalc(Planet, Longitude, JAlt_0)
+    LocalHourAngleSun_PosCorr, LocalHourAngleSun_OrigCorr = SunsLocalHourAngle(Planet, Latitude, Longitude, DeclinationSunCorr, EclLongitudeSun, AltitudeOfSun)
+
 
     return(LocalHourAngleSun_PosCorr, LocalHourAngleSun_OrigCorr, RightAscensionSunCorr, DeclinationSunCorr, JtransitCorr)
 
@@ -1071,10 +1089,12 @@ def CalculateRiseAndSetTime(Planet, Latitude, Longitude, AltitudeOfSun, LocalDat
     JulianDays = CalculateJulianDate(LocalDateYear, LocalDateMonth, LocalDateDay, UnitedHours, UnitedMinutes, UnitedSeconds)
 
     # Calulate Sun's coordinates on sky
-    LocalHourAngleSun_Pos, LocalHourAngleSun_Orig, RightAscensionSun, DeclinationSun, Jtransit = SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeOfSun, JulianDays)
-    
-    print("LocalHourAngleSun_Pos: ", LocalHourAngleSun_Pos)
-    print("LocalHourAngleSun_Orig: ", LocalHourAngleSun_Orig)
+    RightAscensionSun, DeclinationSun, EclLongitudeSun, Jtransit = SunsCoordinatesCalc(Planet, Longitude, JulianDays)
+    LocalHourAngleSun_Pos, LocalHourAngleSun_Orig = SunsLocalHourAngle(Planet, Latitude, Longitude, DeclinationSun, EclLongitudeSun, AltitudeOfSun)
+
+
+    '''print("LocalHourAngleSun_Pos: ", LocalHourAngleSun_Pos)
+    print("LocalHourAngleSun_Orig: ", LocalHourAngleSun_Orig)'''
 
     # Calulate Rising and Setting Datetimes of the Sun
     # JRise is the actual Julian date of sunrise
@@ -1222,7 +1242,7 @@ def TwilightCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, Loc
 
 ################################################################
 ########                                                ########
-########        6. SOLVE ASTRONOMICAL TRIANGLES         ########
+########        5. SOLVE ASTRONOMICAL TRIANGLES         ########
 ########                                                ########
 ################################################################
 
@@ -1366,9 +1386,10 @@ def AstroTriangles(aValue, bValue, cValue, alphaValue, betaValue, gammaValue):
     return(aValue, bValue, cValue, alphaValue, betaValue, gammaValue)
 
 
+
 ################################################################
 ########                                                ########
-########   7. DRAW THE SUN'S ANNUAL PATH ON A SUNDIAL   ########
+########   6. DRAW THE SUN'S ANNUAL PATH ON A SUNDIAL   ########
 ########                                                ########
 ################################################################
 
@@ -1387,7 +1408,8 @@ def SundialPrecalculations(Planet, Latitude, Longitude, LocalDateYear, LocalDate
     UnitedMinutes = 0
     UnitedSeconds = 0
     JulianDays = CalculateJulianDate(LocalDateYear, LocalDateMonth, LocalDateDay, UnitedHours, UnitedMinutes, UnitedSeconds)
-    LocalHourAngleSun_Pos, LocalHourAngleSun_Orig, RightAscensionSun, DeclinationSun, Jtransit = SunsCoordinatesCalc(Planet, Latitude, Longitude, AltitudeOfSun, JulianDays)
+    RightAscensionSun, DeclinationSun, EclLongitudeSun, Jtransit = SunsCoordinatesCalc(Planet, Longitude, JulianDays)
+    LocalHourAngleSun_Pos, LocalHourAngleSun_Orig = SunsLocalHourAngle(Planet, Latitude, Longitude, DeclinationSun, EclLongitudeSun, AltitudeOfSun)
 
     print("RA, Dec: ", RightAscensionSun, DeclinationSun)
 
@@ -1502,9 +1524,50 @@ def SundialParametersCalc(Latitude, LocalHourAngle, DeclinationSun):
 
     return(Altitude, Azimuth, ShadowLength)
 
-    #return(Altitude, ShadowLength)
 
 
+################################################################
+########                                                ########
+########             7. DRAW SUN ANALEMMA               ########
+########                                                ########
+################################################################
+
+def SunAnalemma(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, LocalDateDay):
+
+    (LocalHoursNoon, LocalMinutesNoon, LocalSecondsNoon, LocalDateYearNoon, LocalDateMonthNoon, LocalDateDayNoon,
+    LocalHoursMidnight, LocalMinutesMidnight, LocalSecondsMidnight, LocalDateYearMidnight, LocalDateMonthMidnight, LocalDateDayMidnight,
+    LocalHoursRiseDaylight, LocalMinutesRiseDaylight, LocalSecondsRiseDaylight, LocalDateYearRiseDaylight, LocalDateMonthRiseDaylight, LocalDateDayRiseDaylight,
+    LocalHoursSetDaylight, LocalMinutesSetDaylight, LocalSecondsSetDaylight, LocalDateYearSetDaylight, LocalDateMonthSetDaylight, LocalDateDaySetDaylight,
+    LocalHoursRiseCivil, LocalMinutesRiseCivil, LocalSecondsRiseCivil, LocalDateYearRiseCivil, LocalDateMonthRiseCivil, LocalDateDayRiseCivil,
+    LocalHoursSetCivil, LocalMinutesSetCivil, LocalSecondsSetCivil, LocalDateYearSetCivil, LocalDateMonthSetCivil, LocalDateDaySetCivil,
+    LocalHoursRiseNaval, LocalMinutesRiseNaval, LocalSecondsRiseNaval, LocalDateYearRiseNaval, LocalDateMonthRiseNaval, LocalDateDayRiseNaval,
+    LocalHoursSetNaval, LocalMinutesSetNaval, LocalSecondsSetNaval, LocalDateYearSetNaval, LocalDateMonthSetNaval, LocalDateDaySetNaval,
+    LocalHoursRiseAstro, LocalMinutesRiseAstro, LocalSecondsRiseAstro, LocalDateYearSetAstro, LocalDateMonthSetAstro, LocalDateDaySetAstro,
+    LocalHoursSetAstro, LocalMinutesSetAstro, LocalSecondsSetAstro, LocalDateYearRiseAstro, LocalDateMonthRiseAstro, LocalDateDayRiseAstro) = TwilightCalc(Planet, Latitude, Longitude, LocalDateYear, LocalDateMonth, LocalDateDay)
+
+    # Calculate Local Mean Sidereal Time
+    (LocalSiderealHours, LocalSiderealMinutes, LocalSiderealSeconds,
+    UnitedHours, UnitedMinutes, UnitedSeconds, 
+    GreenwichSiderealHours, GreenwichSiderealMinutes, GreenwichSiderealSeconds) = LocalSiderealTimeCalc(Longitude, LocalHoursNoon, LocalMinutesNoon, LocalSecondsNoon, LocalDateYearNoon, LocalDateMonthNoon, LocalDateDayNoon)
+
+    # Convert LT noon to UT noon time
+    UnitedTime, UnitedHours, UnitedMinutes, UnitedSeconds, UnitedDateYear, UnitedDateMonth, UnitedDateDay = LTtoUT(LocalHoursNoon, LocalMinutesNoon, LocalSecondsNoon, LocalDateYearNoon, LocalDateMonthNoon, LocalDateDayNoon)
+
+    # Calculate corresponding Julian Date
+    JulianDays = CalculateJulianDate(UnitedDateYear, UnitedDateMonth, UnitedDateDay, UnitedHours, UnitedMinutes, UnitedSeconds)
+
+    # Calculate Sun's position at this time
+    RightAscensionSun, DeclinationSun, EclLongitudeSun, Jtransit = SunsCoordinatesCalc(Planet, Longitude, JulianDays)
+
+    # Convert to horizontal
+    LocalSiderealTime = LocalSiderealHours + LocalSiderealMinutes/60 + LocalSiderealSeconds/3600
+    LocalHourAngle = LocalSiderealTime - RightAscensionSun
+    # Normalize output
+    LocalHourAngle = NormalizeZeroBounded(LocalHourAngle, 24)
+    Altitude = None
+    Altitude, Azimuth = EquIToHor(Latitude, RightAscensionSun, DeclinationSun, Altitude, LocalSiderealTime, LocalHourAngle)
+
+    return(LocalHourAngle, Altitude)
 
 
 ###############################################################################################
@@ -1541,6 +1604,7 @@ while(True):
     print("(4) Datetimes of Twilights")
     print("(5) Solve Astronomical Triangles")
     print("(6) Plot Sun's Path on Sundial")
+    print("(7) Plot Sun's Analemma")
     print("(H) Solve End-Semester Homework")
     print("(Q) Quit Program\n")
 
@@ -1858,7 +1922,7 @@ while(True):
                             StellarObject = input("> Stellar object's name (type \'H\' for Help): ")
 
                             if(StellarObject == "Help" or StellarObject == "help" or StellarObject == "H" or StellarObject == "h"):
-                                print(">> Predefined Objects you can choose from:")
+                                print("\n>> Predefined Objects you can choose from:")
                                 for keys in StellarDict.items():
                                     print(keys)
                                 print('\n')
@@ -1985,7 +2049,7 @@ while(True):
                 # sin(m) = sin(δ) * sin(φ) + cos(δ) * cos(φ) * cos(H)
                 if(LocalSiderealTime != None or LocalHourAngle != None):
 
-                    Altitude, Azimuth = EquIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSiderealTime, LocalHourAngle)
+                    Altitude, Azimuth = EquIToHor(Latitude, RightAscension, Declination, Altitude, LocalSiderealTime, LocalHourAngle)
 
                     # Print Results
                     print("\n> Calculated Parameters in Horizontal Coord. Sys.:")
@@ -2000,7 +2064,7 @@ while(True):
                 # cos(H) = (sin(m) - sin(δ) * sin(φ)) / cos(δ) * cos(φ)
                 # sin(A) = - sin(H) * cos(δ) / cos(m)
                 elif(Altitude != None):
-                    Altitude, Azimuth1, Azimuth2, H_dil = EquIToHor(Latitude, RightAscension, Declination, Altitude, Azimuth, LocalSiderealTime, LocalHourAngle)
+                    Altitude, Azimuth1, Azimuth2, H_dil = EquIToHor(Latitude, RightAscension, Declination, Altitude, LocalSiderealTime, LocalHourAngle)
 
                     # Print Results
                     print(">> Available Data are only suited for Calculating Rising/Setting Altitudes!")
@@ -2053,7 +2117,7 @@ while(True):
                             StellarObject = input("> Stellar object's name (type \'H\' for Help): ")
 
                             if(StellarObject == "Help" or StellarObject == "help" or StellarObject == "H" or StellarObject == "h"):
-                                print(">> Predefined Objects you can choose from:")
+                                print("\n>> Predefined Objects you can choose from:")
                                 for keys in StellarDict.items():
                                     print(keys)
                                 print('\n')
@@ -2295,7 +2359,7 @@ while(True):
                             StellarObject = input("> Stellar object's name (type \'H\' for Help): ")
 
                             if(StellarObject == "Help" or StellarObject == "help" or StellarObject == "H" or StellarObject == "h"):
-                                print(">> Predefined Objects you can choose from:")
+                                print("\n>> Predefined Objects you can choose from:")
                                 for keys in StellarDict.items():
                                     print(keys)
                                 print('\n')
@@ -3446,14 +3510,14 @@ while(True):
             print("(2) Parameters of Predefined Locations")
             print("(Q) Quit to Main Menu")
             
-            SundialMode = input("> Choose a mode and press enter...: ")
+            AnalemmaMode = input("> Choose a mode and press enter...: ")
 
             print('\n')
 
             # Constants for calculation
             Planet = "Earth"
 
-            if(SundialMode == '1'):
+            if(AnalemmaMode == '1'):
                 print(">> Plot Analemma on a User-defined Location\n")
                 print(">> Give Parameters!")
 
@@ -3471,7 +3535,7 @@ while(True):
                 Longitude = LongitudeHours + LongitudeMinutes/60 + LongitudeSeconds/3600
 
 
-            elif(SundialMode == '2'):
+            elif(AnalemmaMode == '2'):
                 print(">> Plot Analemma on a Predefined Location's Coordinates")
                 print(">> Write the Name of a Choosen Location to the Input!")
 
@@ -3497,58 +3561,48 @@ while(True):
                         else:
                             break
 
-            elif(SundialMode == 'Q' or SundialMode == 'q'):
+            elif(AnalemmaMode == 'Q' or AnalemmaMode == 'q'):
                 break
 
             else:
                 print(">>>> ERROR: Invalid option! Try Again!")
 
 
-            if(SundialMode == '1' or SundialMode == '2'):
-                print(">> For which Year would You like to Draw the Sundial?")
+            if(AnalemmaMode == '1' or AnalemmaMode == '2'):
                 while(True):
-                    SunDialYear = float(input("> Choosen Year: "))
-                    if(SunDialYear != 0):
+                    print(">> For which Year would You like to Draw the Analemma?")
+                    AnalemmaYear = float(input("> Choosen Year: "))
+                    if(AnalemmaYear != 0):
                         break
                     else:
                         print(">>>> ERROR: Year 0 is not defined! Please write another date!\n")
 
-                
-                while(True):
-                    print(">> Would you like to plot the Sun's path for a Choosen Date in This Year too?")
-                    SunDialChoose = input(">> Write Y for Yes or N for No: ")
-                    if(SunDialChoose == 'Y' or SunDialChoose == 'y' or SunDialChoose == 'Yes' or SunDialChoose == 'yes' or SunDialChoose == 'YEs' or SunDialChoose == 'yEs' or SunDialChoose == 'yeS' or SunDialChoose == 'YeS' or SunDialChoose == 'yES'):
-                        # Input Time Parameters
-                        while(True):
-                            LocalDateMonth = int(input("> Month: "))
-                            if(LocalDateMonth > 0 and LocalDateMonth < 13):
-                                break
-                            else:
-                                print(">>>> ERROR: Months should be inside [1,12] interval, and should be Integer!\n")
+                LocalHourAngleAnalemma = []
+                AltitudesAnalemma = []
 
-                        # Leap Year	Handling
-                        while(True):
-                            LocalDateDay = int(input("> Day: "))
-                            if(LocalDateYear%4 == 0 and (LocalDateYear%100 != 0 or LocalDateYear%400 == 0)):
-                                if(MonthLengthListLeapYear[LocalDateMonth - 1] >= LocalDateDay and LocalDateDay > 0):
-                                    break
-                                else:
-                                    daysmsg = ">>>> ERROR: Days should be inside [1,{0}] interval, and should be Integer!\n"
-                                    print(daysmsg.format(MonthLengthListLeapYear[LocalDateMonth - 1]))
-                            else:
-                                if(MonthLengthList[LocalDateMonth - 1] >= LocalDateDay and LocalDateDay > 0):
-                                    break
-                                else:
-                                    daysmsg = ">>>> ERROR: Days should be inside [1,{0}] interval, and should be Integer!\n"
-                                    print(daysmsg.format(MonthLengthList[LocalDateMonth - 1]))
+                for LocalDateMonth in range(1, 12):
+                    for LocalDateDay in range(1, 28, 1):
 
-                        break
+                        LocalHourAngleActual, AltitudeActual = SunAnalemma(Planet, Latitude, Longitude, AnalemmaYear, LocalDateMonth, LocalDateDay)
 
-                    elif(SunDialChoose == 'N' or SunDialChoose == 'n' or SunDialChoose == 'No' or SunDialChoose == 'no' or SunDialChoose == 'nO'):
-                        break
+                        LocalHourAngleAnalemma.append(LocalHourAngleActual + 12)
+                        AltitudesAnalemma.append(AltitudeActual)
 
-                    else:
-                        print(">>>> ERROR: Invalid option! Try Again!")
+                # Shadow's length on the ground
+                if(AnalemmaMode == '1'):
+                    plt.title("Sun Analemma at Cordinates " + str(Latitude) + "; " + str(Longitude))
+
+                elif(AnalemmaMode == '2'):
+                    plt.title("Sun Analemma at " + Location)
+
+                plt.plot(LocalHourAngleAnalemma, AltitudesAnalemma, '.')
+
+                plt.xlabel("Hours (h)")
+                plt.ylabel("Altitude of Sun (°)")
+                plt.xlim((12.0,12.1))
+                plt.grid()
+                plt.show()
+
 
 
     #   _   _                                         _    
