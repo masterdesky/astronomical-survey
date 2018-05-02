@@ -3580,8 +3580,8 @@ while(True):
                 LocalHourAngleAnalemma = []
                 AltitudesAnalemma = []
 
-                for LocalDateMonth in range(1, 12):
-                    for LocalDateDay in range(1, 28, 1):
+                for LocalDateMonth in range(1, 13):
+                    for LocalDateDay in range(1, MonthLengthList[LocalDateMonth - 1] + 1, 1):
 
                         LocalHourAngleActual, AltitudeActual = SunAnalemma(Planet, Latitude, Longitude, AnalemmaYear, LocalDateMonth, LocalDateDay)
 
@@ -3644,7 +3644,7 @@ while(True):
         Latitude = LocationDict[Location][0]
         RightAscensionVenus = 18 + 41/60 + 54/3600
         DeclinationVenus = -(24 + 4/60 + 9/3600)
-        Altitude, Azimuth1, Azimuth2, H_dil = EquIToHor(Latitude, RightAscensionVenus, DeclinationVenus, 0, None, None, None)
+        Altitude, Azimuth1, Azimuth2, H_dil = EquIToHor(Latitude, RightAscensionVenus, DeclinationVenus, 0, None, None)
 
         print(">>> Calculate Rising and Setting Local Time of Venus,\n>>> As seen from " + Location + ".")
         print(">>> Used formulas:")
