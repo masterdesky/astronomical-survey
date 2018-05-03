@@ -160,6 +160,19 @@ MonthLengthList = [31,28,31,30,31,30,31,31,30,31,30,31]
 # Months' length int days, with leap day
 MonthLengthListLeapYear = [31,29,31,30,31,30,31,31,30,31,30,31]
 
+# Dictionary for Planets in 
+PlanetDict = {
+    "Mercury": "Mercury",
+    "Venus": "Venus",
+    "Earth": "Earth",
+    "Mars": "Mars",
+    "Jupiter": "Jupiter",
+    "Saturn": "Saturn",
+    "Uranus": "Uranus",
+    "Neptunus": "Neptunus",
+    "Pluto": "Pluto"
+}
+
 # Constants for Planetary Orbits
 # Format:
 # "PlanetNameX": [X_0, X_1, X_2 .., X_E.] or [X_1, X_3, ..., X_E] etc.
@@ -2920,7 +2933,7 @@ while(True):
     # Plot Sundial for Choosen Locations
     elif(mode == '6'):
         while(True):
-            print(">> Plot Sun's Path on a Sundial at Choosen Location on Earth")
+            print(">> Plot Sun's Path on a Sundial at Choosen Location")
             print(">> Please choose a mode you'd like to use!")
             print("(1) Parameters from User Input")
             print("(2) Parameters of Predefined Locations")
@@ -2932,6 +2945,27 @@ while(True):
 
             # Constants for calculation
             Planet = "Earth"
+
+            '''while(True):
+                print("On which Planet would you plot the Sundial?")
+                PlanetChoose = input("> Planet's name (type \'H\' for Help): ")
+
+                if(PlanetChoose == "Help" or PlanetChoose == "help" or PlanetChoose == "H" or PlanetChoose == "h"):
+                    print("\n>> Planets you can choose from:")
+                    for keys in PlanetDict.items():
+                        print(keys)
+                    print('\n')
+
+                else:
+                    try:
+                        Planet = PlanetDict[PlanetChoose]
+
+                    except KeyError:
+                        print(">>>> ERROR: The Planet, named \"" + PlanetChoose + "\" is not in the Database!")
+                        print(">>>> Type \"Help\" to list Available Planets in the Database!")
+
+                    else:
+                        break'''
 
             if(SundialMode == '1'):
                 print(">> Plot a Sundial on a User-defined Location\n")
