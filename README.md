@@ -14,11 +14,3 @@ At 2018.05.04, 11:50 UT, I migrated the files into this repository and continued
 5. Solves Astronomical (Spherical) Triangles
 6. Draws a Sundial at given Location for the whole year
 7. Draws Sun's Analemma for given Date and Location
-
-
-To run program as Python:
-1. python csillesz.py
-2. Follow all the Commands inside the program
-
-To run the program as C++:
-1. Run the exe
