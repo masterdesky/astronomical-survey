@@ -1,4 +1,4 @@
-# IMPORTANT INFO!!!!!!
+# Astronomical Calculations 2018
 
 The program was first developed in python, and I first comitted it to the following repository:
 https://github.com/masterdesky/Astro_Calculations_2018
