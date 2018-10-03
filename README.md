@@ -1,4 +1,4 @@
-# Astronomical Calculations
+# Astronomical Survey
 
 The program was developed in Python first, and I first comitted it to this repository.
 
