@@ -1,5 +1,7 @@
 # Astronomical Survey
 
+[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+
 The program was developed in Python first, and I first comitted it to this repository.
 
 At 2018.05.04, 11:50 UT, I migrated the files to the https://github.com/masterdesky/ELTE_Tools_of_Information_2018 repository and continued to translate the source code to C++. Now it's moved backed into this repository, and will stay here.
