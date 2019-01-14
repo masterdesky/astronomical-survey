@@ -20,5 +20,5 @@ The main goal was - primarily - to create an application, which could be helpful
 6. Exact datetime of sunrise/sunset and twilights for given date and location
 7. Solving astronomical (spherical) triangle
 8. a) Sun's annual path on the sky at given location
-   b) Shadow on a horizontal sun-dial at given date and location
+8. b) Shadow on a horizontal sun-dial at given date and location
 9. Solar analemma at given date and location
