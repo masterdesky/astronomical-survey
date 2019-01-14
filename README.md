@@ -4,7 +4,7 @@
 
 The program was developed in Python first, and I first comitted it to this repository.
 
-At 2018.05.04, 11:50 UT, I migrated the files to the https://github.com/masterdesky/ELTE_Tools_of_Information_2018 repository and continued to translate the source code to C++. Now it's moved backed into this repository, and will stay here.
+At 2018.05.04, 11:50 UT, I migrated the files to the https://github.com/masterdesky/ELTE_Tools_of_Information_2018 repository and continued to translate the source code to C++. Now it's moved backed into this repository, and will stay here from now on.
 
 ## Main ojectives of the application:
 
