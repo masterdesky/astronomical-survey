@@ -6,16 +6,19 @@ The program was developed in Python first, and I first comitted it to this repos
 
 At 2018.05.04, 11:50 UT, I migrated the files to the https://github.com/masterdesky/ELTE_Tools_of_Information_2018 repository and continued to translate the source code to C++. Now it's moved backed into this repository, and will stay here.
 
-## Functionality of the program:
+## Main ojectives of the application:
 
-The main goal was, primarily, to create a program, with various functions, which could be helpful at solving simple, yet many astronomical problems. Secondly to implement some informative functionality, like plotting analemma, or calculating time of the sunset at given date and location, etc.
+The main goal was - primarily - to create an application, which could be helpful at solving simple astronomical problems, like coordinate system conversions. Secondly to implement many informative functionality, like calculating datetime of the sunrise/sunset at given date and location on Earth or even on other planets in the Solar System.
 
 ### Currently the following functions are implemented:
 
-1. Conversion of astronomical coordinate systems
-2. Calculating geographical distance of given locations on the spherical Earth
-3. Calculating Local Mean Sidereal Time (LMST) for given date and location
-4. Calculating exact time of sunrise/sunset and twilights for given date and location
-5. Solving astronomical (spherical) triangle
-6. Drawing a the shadow of the Sun's path on the ground at given date and location
-7. Drawing Solar analemma for given date and location
+1. Conversion of primitive astronomical coordinate systems (Hor., Eq. I, Eq. II)
+2. Geographical distance of given locations on the spherical Earth
+3. Local Mean Sidereal Time (LMST) for given date and location
+4. First equatorial coordinates of the Sun at given date
+5. Local Hour Angle of the Sun at given location
+6. Exact datetime of sunrise/sunset and twilights for given date and location
+7. Solving astronomical (spherical) triangle
+8a. Sun's annual path on the sky at given location
+8b. Shadow on a horizontal sun-dial at given date and location
+9. Solar analemma at given date and location
